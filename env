@@ -1,0 +1,43 @@
+ #Webserver Port
+PORT=3000
+
+#API Keys
+API_TELEGRAM=933041301:AAEJ5RUBaVHmZHAJA4ZnIsPrxbgxQs71Prk
+API_SENDGRID=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
+ORIGIN=https://splan.annika.nils-witt.de
+
+
+#LDAP
+LDAP_HOST=ldap://93.177.67.192:10042
+#LDAP_HOST=ldap://127.0.0.1:389
+#LDAP_USER=apiUser@nils-witt.de
+LDAP_USER=wittnil1611
+#LDAP_PASS=67!CbzsCb8AE
+LDAP_PASS=l8keGMqB*2
+#LDAP_ROOT=DC=nils-witt,DC=de
+LDAP_ROOT=DC=netman,DC=lokal
+LDAP_STUDENTS=OU=Students
+LDAP_TEACHER=OU=Teachers
+#LDAP_DOMAIN=nils-witt
+LDAP_DOMAIN=netman
+
+#MySQL
+#SQL_PORT=32769
+SQL_PORT=3306
+SQL_HOST=10.1.1.110
+SQL_USER=root
+SQL_PASS=filerun
+SQL_DB=splan
+
+#Moodle
+MOODLE_URL=https://moodle.nils-witt.de/webservice/rest/server.php'
+MOODLE_KEY=3971daf5d153864b293247b901236895
+
+#VAPID KEYS
+
+VAPID_PUBLIC=BBDWHJkJr4mFzQwkNVWKG_Lj6NTXFx38XxBvUCHV9Sm_U4xlvMYapvImY8BBUSd6UI8NkzNygJRZ5J_MMgsSTek
+VAPID_PRIVATE=zvf9qKdL5Np5Y2KWrliUmoDnzZfGNM9yGJT8B1rBjeU
+VAPID_MAIL=mailto:nils@nils-witt.de
+
+GOOGLE_APPLICATION_CREDENTIALS=/Volumes/Development/api-typescript/keys/fcm_key.json
+
