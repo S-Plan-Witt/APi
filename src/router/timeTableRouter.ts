@@ -1,4 +1,4 @@
-import express from 'express';
+import express, {Request, Response} from 'express';
 import winston from 'winston';
 
 import {TimeTable} from '../classes/timeTable';

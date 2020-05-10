@@ -32,7 +32,7 @@ router.use((req, res, next) =>{
 router.post('/', async function(req,res){
 
     let body = req.body;
-    let author = req.decoded.username;
+    let author = req.decoded.userId.toString();
     try {
         let course = new Course(body["course"]["grade"],body["course"]["subject"],body["course"]["group"],null);
 
