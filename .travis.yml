@@ -1,0 +1,12 @@
+language: node_js
+node_js:
+  - lts/*
+services:
+  - docker
+
+before_install:
+  - npm install
+  - docker build -t nwitt/test:latest .
+
+script:
+  - docker ps
