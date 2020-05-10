@@ -6,6 +6,7 @@ services:
 
 before_install:
   - npm install
+  - npx tsc
   - docker build -t nwitt/test:latest .
 
 script:
