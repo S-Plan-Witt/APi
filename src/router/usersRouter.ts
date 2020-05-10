@@ -1,27 +1,37 @@
-import express from 'express';
+import express, {Request, Response} from 'express';
 import winston from 'winston';
+import { User, UserFilter } from '../classes/user';
+import { Ldap }   from '../classes/ldap';
 
-import {User}   from '../classes/user';
-import {Ldap}   from '../classes/ldap';
 const logger = winston.loggers.get('main');
-
 export let router = express.Router();
 
-
+/**
+ * Checks if base permission for all sub functions is given
+ */
 router.use((req, res, next) =>{
-    if(req.decoded.admin){
+    if(req.decoded.permissions.users){
         next();
         return;
     }
+    logger.log({
+        level: 'notice',
+        label: 'Privileges violation',
+        message: `Path: ${req.path} By UserId ${req.decoded.userId}`
+    });
     return res.sendStatus(401);
 });
 
 
 /**
- * Returns all users from Database
- *
+ * Returns all users
+ * @route GET /users/
+ * @group Users - Operations about all users
+ * @returns {Array.<User>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/', async function(req, res){
+router.get('/', async (req: Request, res : Response) => {
     try {
         let data = await User.getAllUsers();
         await res.json(data);
@@ -37,10 +47,14 @@ router.get('/', async function(req, res){
 });
 
 /**
- * Returns all users by Type from Database
- *
+ * Returns all users by a specific type
+ * @route GET /users/type/{type}
+ * @group Users - Operations about all users
+ * @returns {Array.<User>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/type/:type', async function(req, res){
+router.get('/type/:type', async (req: Request, res: Response) => {
 
     try {
         let data = await User.getUsersByType(req.params.type);
@@ -56,10 +70,14 @@ router.get('/type/:type', async function(req, res){
 });
 
 /**
- * Get Information for user
- * returns Json with userInformation
+ * Returns user specified by username
+ * @route GET /users/username/{username}
+ * @group Users - Operations about all users
+ * @returns {User.model} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/username/:username', async function(req, res){
+router.get('/username/:username', async (req: Request, res: Response) => {
     try {
         let data = await User.getUserByUsername(req.params.username);
         await res.json([data]);
@@ -75,10 +93,14 @@ router.get('/username/:username', async function(req, res){
 });
 
 /**
- * Get Information for user
- * returns Json with userInformation
+ * Returns user specified by id
+ * @route GET /users/id/{id}
+ * @group Users - Operations about all users
+ * @returns {User.model} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/id/:id', async function(req, res){
+router.get('/id/:id', async (req: Request, res: Response) => {
     try {
         let data = await User.getUserById(parseInt(req.params.id));
         await res.json([data]);
@@ -94,20 +116,31 @@ router.get('/id/:id', async function(req, res){
 });
 
 /**
- * Generate a Link to skip username and password prompt for user
- * Return Json with link to login
+ * Generates a Link for login without password
+ * @route GET /users/userid/{id}/preAuth
+ * @group Users - Operations about all users
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/username/:username/preAuth', async function(req, res){
-
-    let username = req.params.username.toLowerCase();
+router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
+    if(!req.decoded.permissions.usersAdmin){
+        logger.log({
+            level: 'debug',
+            label: 'Express',
+            message: 'No permissions : /students/find'
+        });
+        return res.sendStatus(401);
+    }
+    let userId = parseInt(req.params.userId.toLowerCase());
     try {
-        let user: User = await User.getUserByUsername(req.params.username);
+        let user: User = await User.getUserById(userId);
         await user.isActive();
-        let token = await user.createPreAuthToken(username);
+        let token = await user.createPreAuthToken(userId);
 
         //TODO add eviro var for domain
 
-        await res.json(["https://splan.nils-witt.de/pages/login.html?token="+ token]);
+        await res.json([token]);
     } catch(e){
         logger.log({
             level: 'error',
@@ -119,10 +152,17 @@ router.get('/username/:username/preAuth', async function(req, res){
     }
 });
 
-router.get('/ldap/', async function(req, res){
+/**
+ * Returns all users from the connected Ldap server
+ * @route GET /users/ldap
+ * @group Users - Operations about all users
+ * @returns {Array.<User>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
+router.get('/ldap/', async (req: Request, res: Response) => {
 
     try {
-
         await res.json(await Ldap.getAllStudents());
     } catch(e){
         logger.log({
@@ -131,6 +171,42 @@ router.get('/ldap/', async function(req, res){
             message: 'Routing: /users/ldap/ ; ' + JSON.stringify(e)
         });
         console.log(e);
+        res.sendStatus(500);
+    }
+});
+
+/**
+ * Returns all users from the connected Ldap server
+ * @route POST /users/ldap/find
+ * @group Users - Operations about all users
+ * @param {UserFilter.model} UserFilter.body.required
+ * @returns {Array.<User>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
+router.post('/ldap/find', async (req: Request, res: Response) => {
+
+    let filter = new UserFilter("","","","");
+
+    if(req.body.hasOwnProperty("firstname")){
+        filter.firstName = req.body.firstname;
+    }
+    if(req.body.hasOwnProperty("lastname")){
+        filter.lastName = req.body.lastname;
+    }
+    if(req.body.hasOwnProperty("birthday")){
+        filter.birthday = req.body.birthday;
+    }
+
+    try {
+        let users = await Ldap.searchUser(filter);
+        res.json(users);
+    } catch (e){
+        logger.log({
+            level: 'warn',
+            label: 'Express',
+            message: 'Error while executing callback : /students/find : ' + e
+        });
         res.sendStatus(500);
     }
 });

@@ -1,29 +1,35 @@
+/*
+ * Copyright (c) 2020. Nils Witt
+ */
+
 import {Course} from "./timeTable";
 
-import {Ldap, LdapSearch}from './ldap';
-import {SendGrid, EMails, EMail} from './eMail';
+import {Ldap}from './ldap';
+import {EMail} from './eMail';
 import {Jwt} from './jwt';
 
 import winston from 'winston';
 const logger = winston.loggers.get('main');
 
 import {ApiGlobal} from "../types/global";
+import {Moodle} from "./moodle";
 declare const global: ApiGlobal;
 let pool = global["mySQLPool"];
 
 export class User {
     displayName: string = "";
     lastName: string;
-    active: any;
+    active: boolean;
     firstName: string;
     username: string;
-    type: string;
+    type: string | null;
     devices: any;
     mails: any;
-    id: number;
+    id: number | null;
     courses: Course[];
-    secondFactor: number;
+    secondFactor: number | null;
     permissions: Permissions;
+    moodleUID: number |null;
 
 
     /**
@@ -39,8 +45,9 @@ export class User {
      * @param devices
      * @param secondFactor
      * @param permissions
-     */                                                                                                                                                                                                                                                                     
-    constructor(firstName = "", lastName = "", username= "" , id = 0, type = "", courses: Course[], active = null, mails = null, devices = null, secondFactor = 0, permissions = new Permissions()) {
+     * @param moodleUID
+     */
+    constructor(firstName: string = "", lastName: string = "", username: string = "", id: number|null = null, type: string|null = "", courses: Course[] = [], active = false, mails = null, devices = null, secondFactor:number|null = null, permissions: Permissions = Permissions.getDefault(), moodleUID: number |null = null) {
         this.active = active;
         this.id = id;
         this.firstName = firstName;
@@ -52,36 +59,78 @@ export class User {
         this.devices = devices;
         this.secondFactor = secondFactor;
         this.permissions = permissions;
+        this.moodleUID = moodleUID;
+
+    }
+
+    createToDB () {
+        let firstName = this.firstName;
+        let lastName = this.lastName;
+        let username = this.username;
+        let type: number;
+        if(this.type == "teacher"){
+            type = 2;
+        }else if(this.type == "student"){
+            type = 1;
+        }
+        let displayName = this.displayName;
+        return new Promise(async function (resolve, reject) {
+            let conn;
+            try {
+                conn = await pool.getConnection();
+                let result = await conn.query("INSERT INTO splan.users ( username, firstname, lastname, type, displayname) VALUES (?, ?, ?, ?, ?)",[username, firstName, lastName, type, displayName]);
+                console.log(result);
+                resolve();
+            } catch (e) {
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: createToDB: ' + JSON.stringify(e)
+                });
+                console.log(e);
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
     }
 
     static getUserByUsername(username: string): Promise<User> {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = [];
+                let rows: any[];
                 rows = await conn.query("SELECT * FROM splan.users WHERE `username`= ?", [username]);
                 await conn.end();
                 if (rows.length > 0) {
                     let loadedUser: User = await User.fromSqlUser(rows[0]);
                     resolve(loadedUser);
                 } else {
-                    //TODO add logger
-                    reject();
+                    logger.log({
+                        level: 'error',
+                        label: 'User',
+                        message: 'Class: User; Function: getUserByUsername: no user found'
+                    });
+                    reject("User not found");
                 }
             } catch (e) {
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getUserByUsername: ' + JSON.stringify(e)
+                });
                 conn.end();
                 reject(e);
             }
         });
     }
 
-    static getUserById(id: number) {
+    static getUserById(id: number) : Promise<User> {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = [];
-                rows = await conn.query("SELECT * FROM splan.users WHERE `idusers`= ?", [id]);
+                let rows: any[];
+                rows = await conn.query("SELECT * FROM splan.users LEFT JOIN splan.moodle_mapping ON users.idusers = moodle_mapping.userid WHERE `idusers`= ?", [id]);
                 await conn.end();
                 if (rows.length > 0) {
                     let loadedUser = await User.fromSqlUser(rows[0]);
@@ -91,7 +140,11 @@ export class User {
                     reject();
                 }
             } catch (e) {
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getUserById: ' + JSON.stringify(e)
+                });
                 conn.end();
                 reject(e);
             }
@@ -112,7 +165,7 @@ export class User {
                 default:
                     break;
             }
-            resolve( new User(sql["firstname"], sql["lastname"], sql["username"], sql["idusers"], type, await User.getCourses(sql["idusers"], type, sql["username"]),sql["active"], await User.getEMails(sql["idusers"]), await User.getDevices(sql["idusers"]),sql["twoFactor"]))
+            resolve( new User(sql["firstname"], sql["lastname"], sql["username"], sql["idusers"], type, await User.getCourses(sql["idusers"], type, sql["username"]),sql["active"], await User.getEMails(sql["idusers"]), await User.getDevices(sql["idusers"]),sql["twoFactor"], await Permissions.getByUID(parseInt(sql["idusers"])),sql["moodleid"]))
         });
     }
 
@@ -121,7 +174,7 @@ export class User {
      * @param username {String}
      * @returns Promise resolves if user is created
      */
-     createUserFromLdap(username: string) {
+     static createUserFromLdap(username: string) {
         return new Promise(async function (resolve, reject) {
             let user: User = await Ldap.getUserByUsername(username);
 
@@ -130,8 +183,11 @@ export class User {
                 await conn.query("INSERT INTO `splan`.`users` (`username`, `firstname`, `lastname`, `type`, `displayname`) VALUES (?, ?, ?, '1', ?);", [username.toLowerCase(), user.firstName, user.lastName, user.displayName]);
                 resolve();
             } catch (e) {
-                //TODO add logger
-                reject(e);
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: createUserFromLdap: ' + JSON.stringify(e)
+                });                reject(e);
             } finally {
                 await conn.end();
             }
@@ -143,14 +199,21 @@ export class User {
      * @returns Promise {String} token
      */
     generateToken(){
-        let username = this.username;
         let type = this.type;
+        let id = this.id;
         return new Promise(async function (resolve, reject) {
             let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             try {
-                resolve(await Jwt.createJWT(username, type, tokenId));
+                if (id != null) {
+                    resolve(await Jwt.createJWT(id, type, tokenId));
+                }
+                reject("NAN UID")
             } catch (e) {
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: generateToken: ' + JSON.stringify(e)
+                });
                 reject(e);
             }
 
@@ -168,9 +231,13 @@ export class User {
             try {
                 await Ldap.checkPassword(username, password);
                 resolve("Ldap")
-            } catch (err) {
-                //TODO add logger
-                reject();
+            } catch (e) {
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: verifyPassword: ' + JSON.stringify(e)
+                });
+                reject(e);
             }
         });
     }
@@ -200,7 +267,11 @@ export class User {
                 }
 
             } catch (e) {
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: userInDB: ' + JSON.stringify(e)
+                });
                 reject();
                 console.log(e)
             } finally {
@@ -240,10 +311,14 @@ export class User {
                     });
                 }
                 resolve(courses);
-            } catch (err) {
+            } catch (e) {
                 await conn.end();
-                //TODO add logger
-                reject(err);
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getCourses: ' + JSON.stringify(e)
+                });
+                reject(e);
             }
         });
     }
@@ -260,10 +335,14 @@ export class User {
                 });
 
                 resolve(mails);
-            } catch (err) {
+            } catch (e) {
                 await conn.end();
-                //TODO add logger
-                reject(err);
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getEmails: ' + JSON.stringify(e)
+                });
+                reject(e);
             }
         });
     }
@@ -286,9 +365,13 @@ export class User {
 
 
                 resolve(announcements);
-            } catch (err) {
-                //TODO add logger
-                reject(err);
+            } catch (e) {
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getAnnouncements: ' + JSON.stringify(e)
+                });
+                reject(e);
             } finally {
                 await conn.end();
             }
@@ -316,9 +399,13 @@ export class User {
                     }
                 });
                 resolve(devices);
-            } catch (err) {
-                //TODO add logger
-                reject(err);
+            } catch (e) {
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getStudentDevicesByCourse: ' + JSON.stringify(e)
+                })
+                reject(e);
             } finally {
                 await conn.end();
             }
@@ -361,13 +448,21 @@ export class User {
                         console.log(course);
                         await conn.query("INSERT INTO `splan`.`student_courses` (`subject`, `user_id`, `grade`, `group`,`displayKlausuren`) VALUES (?, ?, ?, ?, ?)", [course.subject, userId, course.grade, course.group, course.exams]);
                     } catch (e) {
-                        //TODO add logger
+                        logger.log({
+                            level: 'error',
+                            label: 'User',
+                            message: 'Class: User; Function: addCourse(Mysql): ' + JSON.stringify(e)
+                        })
                         console.log(e)
                     }
                 }
                 resolve()
             } catch (e) {
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: addCourse: ' + JSON.stringify(e)
+                });
                 reject(e);
             } finally {
                 await conn.end();
@@ -377,7 +472,6 @@ export class User {
 
     /**
      * Delete all course associations from user
-     * @param username {String}
      * @returns Promise
      */
     deleteCourses() {
@@ -392,6 +486,11 @@ export class User {
                 }
                 resolve()
             } catch (e) {
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: deleteCourse: ' + JSON.stringify(e)
+                })
                 console.log(e);
                 reject(e);
             } finally {
@@ -406,12 +505,14 @@ export class User {
      * @param needle {Course}
      */
     isTeacherOf(needle: Course){
-        for (let i = 0; i < this.courses.length; i++) {
-            let course = this.courses[i];
+        if(this.courses != null){
+            for (let i = 0; i < this.courses.length; i++) {
+                let course = this.courses[i];
 
-            if(course.grade == needle.grade && course.subject == needle.subject && course.group == needle.group){
-                console.log("Found");
-                return true;
+                if(course.grade == needle.grade && course.subject == needle.subject && course.group == needle.group){
+                    console.log("Found");
+                    return true;
+                }
             }
         }
         return false;
@@ -429,7 +530,11 @@ export class User {
                 let rows = await conn.query("SELECT * FROM splan.users");
                 resolve(rows);
             } catch (e) {
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getAllUsers: ' + JSON.stringify(e)
+                });
                 reject(e)
             } finally {
                 await conn.end();
@@ -486,7 +591,11 @@ export class User {
                 resolve(true);
             } catch (e) {
                 reject(e);
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: addDevice: ' + JSON.stringify(e)
+                })
             } finally {
                 await conn.end();
             }
@@ -535,15 +644,15 @@ export class User {
 
     /**
      * Create Token for preAuthorization
-     * @param username {String}
      * @returns Promise(token)
+     * @param userId
      */
-    createPreAuthToken(username: string) {
+    createPreAuthToken(userId: number) {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
                 let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                await conn.query("INSERT INTO `splan`.`preAuth_Token` (`token`, `username`) VALUES (?, ?);", [token, username]);
+                await conn.query("INSERT INTO `splan`.`preAuth_Token` (`token`, `userId`) VALUES (?, ?);", [token, userId]);
 
                 resolve(token);
             } catch (e) {
@@ -595,10 +704,13 @@ export class User {
         });
     }
 
-    static getAllStudentsLDAP(){
+    /**
+     *
+     */
+    static getAllStudentsLDAP(): Promise<Student[]> {
         return new Promise(async function (resolve, reject) {
             try{
-                let users = await Ldap.getAllStudents();
+                let users: Student[] = await Ldap.getAllStudents();
                 resolve(users);
             }catch(e){
                 console.log(e);
@@ -607,13 +719,74 @@ export class User {
         });
     }
 
+    /**
+     * @returns {Promise<boolean>}
+     */
     isActive(){
         let active = this.active;
         return new Promise(async function (resolve, reject) {
-            if(active == "1"){
-                resolve();
+            if(active){
+                resolve(true);
             }else {
-                reject("disabled")
+                reject("disabled");
+            }
+        });
+    }
+
+    /**
+     *
+     */
+    enableMoodleAccount(){
+        let uid = this.id;
+        let username: string = this.username;
+        let firstname: string = this.firstName;
+        let lastname: string = this.lastName;
+        let mail: string;
+        if (this.mails.length == 0){
+            mail = this.username + "@netman.lokal";
+        }else {
+            mail = this.mails[0];
+        }
+        return new Promise(async function (resolve, reject) {
+            let muid = null;
+            try {
+                 muid = await Moodle.createUser(username, firstname, lastname, mail);
+                console.log(muid)
+            }catch (e) {
+                reject(e);
+            }
+            if(muid != null){
+                let conn;
+                try {
+                    conn = await pool.getConnection();
+                    let result = await conn.query("INSERT INTO `splan`.`moodle_mapping` (`userid`, `moodleid`) VALUES (?, ?);",[uid,muid]);
+                    console.log(result);
+                    resolve(muid);
+                }catch (e) {
+                    console.log(e);
+                }
+            }
+        });
+    }
+
+    disableMoodleAccount(){
+        let mUID: number | null = this.moodleUID;
+        let uid: number | null = this.id;
+        return new Promise(async function (resolve, reject) {
+            if(mUID != null){
+                let conn;
+                try {
+                    await Moodle.deleteUserById(mUID);
+
+                    conn = await pool.getConnection();
+                    let result = await conn.query("DELETE FROM `splan`.`moodle_mapping` WHERE `userid` = ?",[uid]);
+                    console.log(result);
+                    resolve(mUID);
+                }catch (e) {
+                    console.log(e);
+                }
+            }else {
+                console.log("NO account");
             }
         });
     }
@@ -621,49 +794,121 @@ export class User {
 
 export class Student extends User {
     _grade: string;
+    birthday: string;
 
-    constructor(firstName = "", lastName = "", username = "", id = 0, grade = "", birthday = null, active = null) {
-        super(firstName , lastName, username, id, "student", [], active, null, null, 0, new Permissions());
+
+    constructor(firstName = "", lastName = "", displayName: string, username = "", id = 0, grade = "", birthday: string,) {
+        super(firstName , lastName, username, id, "student", [], false, null, null, 0, Permissions.getDefault());
         this._grade = grade;
+        this.birthday = birthday;
+        this.displayName = displayName;
     }
 }
 
 export class Teacher extends User {
 
-    constructor(firstName = "", lastName = "", username = "", id = 0) {
-        super(firstName , lastName, username, id, "student", [], null, null, null, 0, new Permissions());    }
+    constructor(firstName = "", lastName = "", username = "", displayName: string = "", id = 0) {
+        super(firstName , lastName, username, id, "teacher", [], false, null, null, 0, Permissions.getDefault());
+        this.displayName = displayName;
+    }
 }
 
 export class Parent extends User {
     constructor(firstName = "", lastName = "", username = "", id = 0) {
-        super(firstName , lastName, username, id, "student", [], null, null, null, 0, new Permissions());    }
+        super(firstName , lastName, username, id, "student", [], false, null, null, 0, Permissions.getDefault());    }
 }
 
 export class Permissions {
-    users = 0;
-    replacementLessons = 0;
-    announcements = 0;
-    timeTable = 0;
-    moodle = 0;
-    all: boolean = false;
+    users: boolean;
+    usersAdmin: boolean;
+    replacementLessons: boolean;
+    replacementLessonsAdmin: boolean;
+    announcements: boolean;
+    announcementsAdmin: boolean;
+    timeTable: boolean;
+    timeTableAdmin: boolean;
+    moodle: boolean;
+    moodleAdmin: boolean;
+    globalAdmin: boolean;
 
-    /**
-     *
-     * @param users {int}
-     * @param replacementLessons {int}
-     * @param announcements {int}
-     * @param timeTable {int}
-     * @param moodle {int}
-     */
-    constructor(users = 0, replacementLessons = 0, announcements = 0, timeTable = 0, moodle = 0) {
+
+    constructor(users: boolean, usersAdmin: boolean, replacementLessons: boolean, replacementLessonsAdmin: boolean, announcements: boolean, announcementsAdmin: boolean, timeTable: boolean, timeTableAdmin: boolean, moodle: boolean, moodleAdmin: boolean, globalAdmin: boolean) {
         this.users = users;
+        this.usersAdmin = usersAdmin;
         this.replacementLessons = replacementLessons;
+        this.replacementLessonsAdmin = replacementLessonsAdmin;
         this.announcements = announcements;
+        this.announcementsAdmin = announcementsAdmin;
         this.timeTable = timeTable;
+        this.timeTableAdmin = timeTableAdmin;
         this.moodle = moodle;
+        this.moodleAdmin = moodleAdmin;
+        this.globalAdmin = globalAdmin;
+    }
+
+    static getDefault(){
+        return new Permissions(false, false, true, false, true,false, true, false, true, false, false);
+    }
+
+    static getByUID(userId: number): Promise<Permissions> {
+        return new Promise(async function (resolve, reject) {
+            let conn;
+
+            try {
+                conn = await pool.getConnection();
+                let result = await conn.query("SELECT * FROM splan.permissions WHERE userId = ?", [userId]);
+                if(result.length == 1){
+                    let uResult = result[0];
+                    let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);
+
+                    if(uResult["users"] == 2){
+                        permissions.usersAdmin = true;
+                        permissions.users = true;
+                    }else if(uResult["users"] == 1){
+                        permissions.users = true;
+                    }
+
+                    if(uResult["replacementLessons"] == 2){
+                        permissions.replacementLessonsAdmin = true;
+                        permissions.replacementLessons = true;
+                    }else if(uResult["replacementLessons"] == 1){
+                        permissions.replacementLessons = true;
+                    }
+
+                    if(uResult["announcements"] == 2){
+                        permissions.announcementsAdmin = true;
+                        permissions.announcements = true;
+                    }else if(uResult["announcements"] == 1){
+                        permissions.announcementsAdmin = true;
+                    }
+
+                    if(uResult["timeTable"] == 2){
+                        permissions.timeTableAdmin = true;
+                        permissions.timeTable = true;
+                    }else if(uResult["timeTable"] == 1){
+                        permissions.timeTable = true;
+                    }
+
+                    if(uResult["moodle"] == 2){
+                        permissions.moodleAdmin = true;
+                        permissions.moodle = true;
+                    }else if(uResult["moodle"] == 1){
+                        permissions.moodle = true;
+                    }
+
+                    if(uResult["globalAdmin"] == 1){
+                        permissions = new Permissions(true, true, true, true, true, true, true, true, true, true, true);
+                    }
+                    resolve(permissions);
+                }
+            }catch (e) {
+                console.log(e);
+            }  finally {
+                if (conn) await conn.end();
+            }
+        });
     }
 }
-
 export class UserFilter {
     username: string;
     firstName: string;

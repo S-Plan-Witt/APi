@@ -6,15 +6,14 @@ import mySQL from  "mariadb";
 //++ Logger
 import { format, transports } from 'winston';
 import winston from 'winston';
-require('winston-daily-rotate-file');
+import 'winston-daily-rotate-file';
 
 const { combine, timestamp, printf } = format;
 
 
 //Create all 6 hours a new file
-// @ts-ignore
 const rotateFile = new (winston.transports.DailyRotateFile)({
-    filename: 'log/splan/splan-%DATE%.log',
+    filename: 'log/%DATE%.log',
     datePattern: 'YYYY-MM-DD-HH',
     maxSize: '20m',
     level: 'silly',
@@ -44,7 +43,7 @@ const logger = winston.loggers.get('main');
 
 //-- Logger
 logger.log({
-    level: 'debug',
+    level: 'silly',
     label: 'Express',
     message: 'Logger init success'
 });
@@ -53,6 +52,7 @@ logger.log({
 import * as dot from 'dotenv';
 
 dot.config({path:"./.env"});
+//console.log(process.env);
 
 logger.log({
     level: 'debug',
@@ -61,8 +61,11 @@ logger.log({
 });
 //-- ENV
 
-let sqlPort : any;
-sqlPort = process.env.SQL_PORT;
+let sqlPort : number = 3306;
+if(process.env.SQL_PORT != undefined){
+    sqlPort = parseInt(process.env.SQL_PORT);
+}
+
 
 //++ Mysql Pool
 global["mySQLPool"] = mySQL.createPool({
@@ -70,42 +73,76 @@ global["mySQLPool"] = mySQL.createPool({
     port: sqlPort,
     user: process.env.SQL_USER,
     password: process.env.SQL_PASS,
-    connectionLimit: 20,
+    connectionLimit: 30,
     collation: "latin1_german2_ci"
 });
+
 logger.log({
     level: 'debug',
     label: 'Express',
     message: 'MySql Connected'
 });
 
-//-- Mysql
-
 //Webservice
-import express from "express";
-//Request data parser
+import express, {NextFunction, Request, Response} from "express";
 import bodyParser from "body-parser";
-//Auth File
 import {Jwt} from './classes/jwt';
-//Users File
-import {User,Student,Teacher,Parent, UserFilter} from './classes/user';
-//ReplacementLessons
-//Timetable
+import {Permissions, Teacher, User, UserFilter} from './classes/user';
 import {Course} from './classes/timeTable';
-
-import {Exams,Exam,Supervisors,RoomLink,RoomLinks} from './classes/exams';
-
 import {Telegram} from './classes/telegram';
-import {Database} from './classes/database';
-
 import {PushNotifications, PushTelegram} from './classes/pushNotifications';
+import {Ldap} from "./classes/ldap";
+/*
+(async () => {
+    let user : User = await User.getUserById(1630)
+    console.log(user)
+    await user.enableMoodleAccount();
+    //user = await User.getUserById(1630)
+    //user.disableMoodleAccount()
+})();
+
+ */
+
+
+
+
 
 //Creating Web-Server
 const app = express();
+if(process.env.APIDOC == "true"){
+    const expressSwagger = require('express-swagger-generator')(app);
+
+    let options = {
+        swaggerDefinition: {
+            info: {
+                description: 'SIKS',
+                title: 'SIKS',
+                version: '1.0.2',
+            },
+            host: 'localhost:3000',
+            basePath: '',
+            produces: [
+                "application/json"
+            ],
+            schemes: ['http','https'],
+            securityDefinitions: {
+                JWT: {
+                    type: 'apiKey',
+                    in: 'header',
+                    name: 'Authorization',
+                    description: "",
+                }
+            }
+        },
+        basedir: __dirname, //app absolute path
+        files: ['./router/*.js'] //Path to the API handle folder
+    };
+    expressSwagger(options)
+}
 
 
 //Setting headers for WI
-const header = function (req : any, res : any, next : any) {
+const header = (req : Request, res : Response, next : NextFunction) => {
     res.set({
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Allow-Origin' : process.env.ORIGIN,
@@ -115,7 +152,7 @@ const header = function (req : any, res : any, next : any) {
     next();
 };
 
-let reqLogger = function (req : any, res : any, next : any) {
+let reqLogger = (req : Request, res : Response, next : NextFunction) => {
     let token = req.headers['x-access-token'] || req.headers['authorization'];
     logger.log({
         level: 'debug',
@@ -125,11 +162,10 @@ let reqLogger = function (req : any, res : any, next : any) {
     next();
 };
 
-
 const TGBot = new PushTelegram();
-TGBot.startTelegramBot();
-
-
+if(process.env.TGBot != "false"){
+    TGBot.startTelegramBot();
+}
 
 
 //++ HTTP
@@ -144,63 +180,17 @@ app.use(bodyParser.json());
 app.use(Jwt.checkToken);
 
 /*
-Send status 200 OK if options from JS are requestsd
+Send status 200 OK if options from JS are requested
  */
-app.options('*', async (req: any, res: any) => {
-
+app.options('*', (req: Request, res: Response) => {
     res.sendStatus(200);
 });
 
 //++++ Router
-app.use("/users", require('./router/usersRouter').router);
-app.use("/user", require('./router/userRouter').router);
-app.use("/timetable", require('./router/timeTableRouter').router);
-app.use("/exams", require('./router/examRouter').router);
-app.use("/announcements", require('./router/announcementRouter').router);
-app.use("/timetable", require('./router/timeTableRouter').router);
-app.use("/replacementLessons", require('./router/replacementLessonRouter').router);
+app.use("/", require('./router/mainRouter').router);
 
 
 //---- Router
-/**
- * Payload from Request with min one key of firstname, lastname, birthdate
- * Gives all matching users back
- */
-app.post('/students/find', async function (req: any, res: any) {
-    //Validate if requesting user is admin
-    if(!req.decoded.admin){
-        logger.log({
-            level: 'debug',
-            label: 'Express',
-            message: 'No permissions : /students/find'
-        });
-        return res.sendStatus(401);
-    }
-
-    let filter = new UserFilter("","","","");
-
-    if(req.body.hasOwnProperty("firstname")){
-        filter.firstName = req.body.firstname;
-    }
-    if(req.body.hasOwnProperty("lastname")){
-        filter.lastName = req.body.lastname;
-    }
-    if(req.body.hasOwnProperty("birthday")){
-        filter.birthday = req.body.birthday;
-    }
-
-    try {
-        let users = await User.find(filter);
-        await res.json(users);
-    } catch (e){
-        logger.log({
-            level: 'warn',
-            label: 'Express',
-            message: 'Error while executing callback : /students/find : ' + e
-        });
-        res.sendStatus(500);
-    }
-});
 
 /**
  * Deletes all existing Courses for req. user and adds supplied ones.
@@ -208,8 +198,8 @@ app.post('/students/find', async function (req: any, res: any) {
  * Payload from Request with courses array
  * returns SC 200
  */
-app.post('/students/:username/courses', async function(req: any, res: any) {
-    if(!req.decoded.admin){
+app.post('/students/:username/courses', async (req: Request, res: Response) => {
+    if(!req.decoded.permissions.usersAdmin){
         logger.log({
             level: 'debug',
             label: 'Express',
@@ -218,22 +208,13 @@ app.post('/students/:username/courses', async function(req: any, res: any) {
         return res.sendStatus(401);
     }
 
-    //Convert username to lowerCase
-    //TODO not null req.
-    let user = await User.getUserByUsername(req.params.username.toLowerCase());
-
-
     try {
-        //Delete Courses for user from database
-        await user.deleteCourses();
-        //Added Courses to Database. Supplied by request payload
+        await req.user.deleteCourses();
         let courses = [];
         for (const courseData of req.body){
             courses.push(new Course(courseData["grade"],courseData["subject"], courseData["group"], courseData["exams"]));
         }
-
-
-        await user.addCourse(courses);
+        await req.user.addCourse(courses);
         res.sendStatus(200);
     } catch(e){
         //TODO add logger
@@ -245,8 +226,8 @@ app.post('/students/:username/courses', async function(req: any, res: any) {
 /**
  * Returns all Students from LDAP
  */
-app.get('/students/ldap/', async function(req: any, res: any){
-    if(!req.decoded.admin){
+app.get('/students/ldap/', async (req: Request, res: Response) => {
+    if(!req.decoded.permissions.users){
         logger.log({
             level: 'debug',
             label: 'Express',
@@ -266,7 +247,7 @@ app.get('/students/ldap/', async function(req: any, res: any){
 
 //------------ACCESSTOKEN MGM
 
-app.get('/jwt/all', async (req: any, res: any) => {
+app.get('/jwt/all', async (req: Request, res: Response) => {
     if(!req.decoded.admin){
         return res.sendStatus(401);
     }
@@ -275,7 +256,7 @@ app.get('/jwt/all', async (req: any, res: any) => {
     res.json(tokens);
 });
 /*
-app.get('/jwt/user/:user', function(req: any, res: any){
+app.get('/jwt/user/:user', function(req: Request, res: Response){
     if(!req.decoded.admin){
         return res.sendStatus(401);
     }
@@ -290,7 +271,7 @@ app.get('/jwt/user/:user', function(req: any, res: any){
 /*
 
 
-app.delete('/jwt', async function(req: any, res: any){
+app.delete('/jwt', async function(req: Request, res: Response){
     if(!req.decoded.admin){
         //TODO add logger
         return res.sendStatus(401);
@@ -308,7 +289,7 @@ app.delete('/jwt', async function(req: any, res: any){
 });
 */
 /*
-app.delete('/jwt/token/:token', function(req: any, res: any){
+app.delete('/jwt/token/:token', function(req: Request, res: Response){
     if(!req.decoded.admin){
         //TODO add logger
         return res.sendStatus(401);
@@ -328,7 +309,7 @@ app.delete('/jwt/token/:token', function(req: any, res: any){
 
  */
 /*
-app.post('/aufsichten', async function(req: any, res: any){
+app.post('/aufsichten', async function(req: Request, res: Response){
     if(!req.decoded.admin){
         return res.sendStatus(401);
     }
@@ -343,7 +324,7 @@ app.post('/aufsichten', async function(req: any, res: any){
 
 
 
-app.put('/aufsichten/id/:id', async function(req: any, res: any){
+app.put('/aufsichten/id/:id', async function(req: Request, res: Response){
     if(!req.decoded.admin){
         return res.sendStatus(401);
     }
@@ -354,7 +335,7 @@ app.put('/aufsichten/id/:id', async function(req: any, res: any){
     res.sendStatus(200);
 });
 
-app.get('/aufsichten', async function (req: any, res: any){
+app.get('/aufsichten', async function (req: Request, res: Response){
     if(!req.decoded.admin){
         return res.sendStatus(401);
     }
@@ -363,7 +344,7 @@ app.get('/aufsichten', async function (req: any, res: any){
     await res.json(rows);
 });
 
-app.delete('/aufsichten/id/:id', async function (req: any, res: any){
+app.delete('/aufsichten/id/:id', async function (req: Request, res: Response){
     if(!req.decoded.admin){
         return res.sendStatus(401);
     }
@@ -379,17 +360,15 @@ app.delete('/aufsichten/id/:id', async function (req: any, res: any){
 });
  */
 
-app.get('/telegram/confirm/:token', async function (req: any, res: any){
+app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     let token = req.params.token;
-    let username = req.decoded.username;
     try{
         let tgId: number;
         tgId = await Telegram.validateRequestToken(token);
-        let user = await User.getUserByUsername(username);
-        await user.addDevice(tgId.toString(), "TG");
+        await req.user.addDevice(tgId.toString(), "TG");
         await Telegram.revokeRequest(token);
         let pushNot = new PushNotifications();
-        await pushNot.send("TG", tgId, "Connected to user", username);
+        await pushNot.send("TG", tgId, "Connected to user", req.user.username);
         res.sendStatus(200);
     }catch(e){
         console.log(e);
@@ -398,7 +377,7 @@ app.get('/telegram/confirm/:token', async function (req: any, res: any){
     }
 });
 /*
-app.get('/webcal/:id', async (req: any, res: any) => {
+app.get('/webcal/:id', async (req: Request, res: Response) => {
     let user;
     try{
         user = await User.getUserByCalToken(req.params.id);
@@ -435,13 +414,52 @@ app.get('/webcal/:id', async (req: any, res: any) => {
 
  */
 
+/**
+ *
+ */
+async function clearDB(){
+    let tablesToTruncate = ["data_exams","data_exam_supervisors","users_mails","permissions","student_courses","totp","moodle_mapping","token_calendar","preAuth_Token","data_announcements","data_courses","jwt_Token","devices","lessons_teacher","data_vertretungen","data_lessons","data_aufsichten","telegramLinks","data_entschuldigungen","users","data_exam_rooms"];
+    let pool = global.mySQLPool;
+    let conn;
+
+    try {
+        conn = await pool.getConnection();
+        for(let i = 0; i < tablesToTruncate.length; i++) {
+            let tableName = tablesToTruncate[i];
+            let result = await conn.query(`DELETE FROM splan.${tableName}`);
+            console.log(result);
+        }
+    }catch (e) {
+        console.log(e);
+    } finally {
+        if (conn) conn.end();
+    }
+
+}
+
+//clearDB();
+
+(async () => {
+    let teachers: Teacher[] = await Ldap.loadTeacher()
+    for (const teacherkey in teachers) {
+        let teacher = teachers[teacherkey];
+        console.log(teacher)
+        try {
+            await teacher.createToDB();
+        }catch (e) {
+            console.log(e)
+        }
+
+    }
+})();
+
 
 /**
  * start webserver to serve requests
  */
 app.listen(process.env.PORT, () => {
     logger.log({
-        level: 'debug',
+        level: 'silly',
         label: 'Express',
         message: 'Listening on port: ' + process.env.PORT
     });

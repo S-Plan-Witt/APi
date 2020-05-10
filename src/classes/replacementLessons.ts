@@ -2,7 +2,7 @@ import winston from 'winston';
 const logger = winston.loggers.get('main');
 //Create Database connection pool for requests
 import {ApiGlobal} from "../types/global";
-import {Course} from "./timeTable";
+import {Course, Lesson} from "./timeTable";
 declare const global: ApiGlobal;
 let pool = global["mySQLPool"];
 
@@ -13,7 +13,7 @@ export class ReplacementLessons {
      * @returns {Promise<unknown>}
      */
     static getByCourse(course: Course) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
                 let data: any = [];
@@ -252,5 +252,28 @@ export class ReplacementLessons {
                 await conn.end();
             }
         });
+    }
+}
+
+export class ReplacementLesson {
+    id: number;
+    course: Course;
+    lesson: Lesson;
+    newTeacher: string;
+    newRoom: string;
+    newSubject: string;
+    info: string;
+    date: string;
+
+    constructor(id: number, course: Course, lesson: Lesson, newTeacher: string, newRoom: string, newSubject: string, info: string, date: string) {
+        this.id = id;
+        this.course = course;
+        this.lesson = lesson;
+        this.newTeacher = newTeacher;
+        this.newRoom = newRoom;
+        this.newSubject = newSubject;
+        this.info = info;
+        this.date = date;
+
     }
 }

@@ -11,20 +11,21 @@ let pool = global["mySQLPool"];
 
 export class Exams {
 
-    static getAll(){
-        return new Promise(async function (resolve, reject) {
+    static getAll(): Promise<Exam[]> {
+        return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT `splan`.`data_klausuren`.*, `splan`.`data_exam_rooms`.room   FROM `splan`.`data_klausuren` " +
-                    "LEFT JOIN `splan`.`data_exam_rooms` ON `splan`.`data_klausuren`.`roomLink` = `splan`.`data_exam_rooms`.`iddata_exam_rooms`");
+                let exams: Exam[] = [];
+                let rows = await conn.query("SELECT `splan`.`data_exams`.*, `splan`.`data_exam_rooms`.room   FROM `splan`.`data_exams` LEFT JOIN `splan`.`data_exam_rooms` ON `splan`.`data_exams`.`roomLink` = `splan`.`data_exam_rooms`.`iddata_exam_rooms`");
                 for (let row in rows) {
                     if(rows.hasOwnProperty(row)){
                         let date = new Date(rows[row]["date"]);
+                        let element = rows[row];
                         rows[row]["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                        rows[row]["supervisors"] = await Supervisors.getByRoomLink(rows[row]["roomLink"]);
+                        exams.push(new Exam(element["visibleOnDisplay"], element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"],element["students"], await RoomLinks.getById(element["roomLink"]), element["iddata_klausuren"],element["uniqueIdentifier"]))
                     }
                 }
-                resolve(rows);
+                resolve(exams);
             } catch (err) {
                 logger.log({
                     level: 'error',
@@ -38,24 +39,22 @@ export class Exams {
         });
     }
 
-
-
     /**
      * @param course {Course}
      * @returns {Promise<Exam[]>}
      */
     static getByCourse(course: Course): Promise<Exam[]> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
-                //TODO convert To Exam
                 let data: Exam[] = [];
-                const rows = await conn.query("SELECT * FROM `splan`.`data_klausuren` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
-                rows.forEach((element:any) => {
+                const rows = await conn.query("SELECT * FROM `splan`.`data_exams` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
+                for (let i = 0; i < rows.length; i++) {
+                    let element = rows[i];
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Exam(element["date"], element["from"], element["to"], course, element["teacher"], element["students"], element["roomLink"], element["visibleOnDisplay"], element["iddata_klausuren"]));
-                });
+                    data.push(new Exam(element["visibleOnDisplay"], element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"],element["students"], await RoomLinks.getById(element["roomLink"]), element["iddata_klausuren"],element["uniqueIdentifier"]))
+                }
                 resolve(data);
             } catch (e) {
                 logger.log({
@@ -71,16 +70,17 @@ export class Exams {
     }
 
     static getByTeacher(teacher: string): Promise<Exam[]>{
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
                 let data: Exam[] = [];
-                const rows = await conn.query("SELECT * FROM `splan`.`data_klausuren` WHERE `teacher`= ?", [teacher]);
-                rows.forEach((element: any) => {
+                const rows = await conn.query("SELECT * FROM `splan`.`data_exams` WHERE `teacher`= ?", [teacher]);
+                for (let i = 0; i < rows.length; i++) {
+                    let element = rows[i];
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Exam(element["date"], element["from"], element["to"], new Course(element["grade"], element["subject"], element["group"]), element["teacher"], element["students"], element["roomLink"], element["visibleOnDisplay"], element["iddata_klausuren"]));
-                });
+                    data.push(new Exam(element["visibleOnDisplay"], element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"],element["students"], await RoomLinks.getById(element["roomLink"]), element["iddata_klausuren"],element["uniqueIdentifier"]))
+                }
                 resolve(data);
             } catch (e) {
                 //TODO add logger
@@ -93,17 +93,17 @@ export class Exams {
     }
 
     static getByRoomLink(roomLinkId: number): Promise<Exam[]>{
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
                 let data: Exam[] = [];
-                const rows = await conn.query("SELECT * FROM splan.data_klausuren where roomLink = ?;", [roomLinkId]);
+                const rows = await conn.query("SELECT * FROM splan.data_exams where roomLink = ?;", [roomLinkId]);
                 for(let row in rows){
                     let date = new Date(rows[row]["date"]);
                     rows[row]["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
                     let element = rows[row];
-                    data.push(new Exam(element["date"], element["from"], element["to"], new Course(element["grade"], element["subject"], element["group"]), element["teacher"], element["students"],element["roomLink"], element["visibleOnDisplay"], element["iddata_klausuren"]));
+                    data.push(new Exam(element["visibleOnDisplay"], element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"],element["students"], await RoomLinks.getById(element["roomLink"]), element["iddata_klausuren"],element["uniqueIdentifier"]))
                 }
                 resolve(data);
             } catch (e) {
@@ -122,8 +122,8 @@ export class Exams {
 
 export class RoomLinks {
 
-    static getRoomLinks(date: string,room: string){
-        return new Promise(async function (resolve, reject) {
+    static getRoomLinks(date: string, room: string): Promise<RoomLink[]>{
+        return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
                 let roomLinks: RoomLink[] = [];
@@ -147,13 +147,19 @@ export class RoomLinks {
         });
     }
 
+    static getById(id: number): Promise<RoomLink> {
+        return new Promise(async (resolve, reject) => {
+            resolve(new RoomLink("T","t","t","s"));
+        });
+    }
+
 
     /**
      *
      * @param roomLink {RoomLink}
      */
-    static add(roomLink: RoomLink){
-        return new Promise(async function (resolve, reject) {
+    static add(roomLink: RoomLink): Promise<never>{
+        return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
                 await conn.query("INSERT INTO splan.data_exam_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [roomLink.room, roomLink.from, roomLink.to, roomLink.date]);
@@ -173,12 +179,13 @@ export class RoomLinks {
 }
 
 export class Supervisors {
-    static getByRoomLink(id: number): Promise<any[]>{
-        return new Promise(async function (resolve, reject) {
+    static getByRoomLink(id: number): Promise<Supervisor[]>{
+        return new Promise(async (resolve, reject) =>{
             let conn;
             try {
                 conn = await pool.getConnection();
                 let data: Supervisor[] = [];
+                //TODO Add Supervisor object
                 const rows = await conn.query("SELECT * FROM `splan`.`data_exam_supervisors` LEFT JOIN `splan`.`users` ON `splan`.`data_exam_supervisors`.`TeacherId` = `splan`.`users`.`idusers` WHERE `RoomLink`= ?", [id]);
                 rows.forEach((element: any) => {
                     data.push(element);
@@ -197,11 +204,8 @@ export class Supervisors {
         });
     }
 
-    static getById(id: number){
-        if(id === undefined){
-            return ;
-        }
-        return new Promise(async function (resolve, reject) {
+    static getById(id: number): Promise<Supervisor>{
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
@@ -228,11 +232,8 @@ export class Supervisors {
         });
     }
 
-    static getByTeacherUsername(username: string){
-        if(username === undefined){
-            return ;
-        }
-        return new Promise(async function (resolve, reject) {
+    static getByTeacherUsername(username: string): Promise<Supervisor[]>{
+        return new Promise(async (resolve, reject) =>{
             let conn;
             try {
                 conn = await pool.getConnection();
@@ -274,26 +275,31 @@ export class Exam {
     to: string;
     teacher: string;
     students: number;
-    room: any;
+    roomLink: RoomLink;
+    room: string;
     id: number;
+    uniqueIdentifier: string;
 
-    constructor(date = "", from = "", to = "", course: Course, teacher = "", students = 0, room = "", display = false, id = 0) {
-        this.course = course;
+
+    constructor(display: boolean, date: string, course: Course, from: string, to: string, teacher: string, students: number, roomLink: RoomLink, id: number, uniqueIdentifier: string) {
+        this.display = display;
         this.date = date;
+        this.course = course;
         this.from = from;
         this.to = to;
         this.teacher = teacher;
         this.students = students;
-        this.room = room;
-        this.display = display;
+        this.roomLink = roomLink;
         this.id = id;
+        this.uniqueIdentifier = uniqueIdentifier;
+        this.room = "";
     }
 
     /**
      *
      * @returns {Promise<boolean>}
      */
-    save(){
+    save(): Promise<boolean>{
         let date        = this.date;
         let from        = this.from;
         let to          = this.to;
@@ -306,7 +312,7 @@ export class Exam {
         let room        = this.room;
         let id          = this.id;
 
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let avilRoomLinks: any = await RoomLinks.getRoomLinks(date, room);
             if(avilRoomLinks.length == 0){
                 await RoomLinks.add(new RoomLink(room, from, to, date));
@@ -323,15 +329,15 @@ export class Exam {
 
                 let uniqueIdentifier = grade + '-' + group + '-' + subject + '-' + date;
 
-                let rows = await conn.query('SELECT * FROM splan.data_klausuren WHERE uniqueIdentifier=?', [uniqueIdentifier]);
+                let rows = await conn.query('SELECT * FROM splan.data_exams WHERE uniqueIdentifier=?', [uniqueIdentifier]);
                 if(rows.length > 0 && id == null){
                     reject("row exists");
                     return ;
                 }
                 if(id != null ){
-                    await conn.query("UPDATE `splan`.`data_klausuren` SET `date` = ?, `subject` = ?, `grade` = ?, `group` = ?, `visibleOnDisplay` = ?, `from` = ?, `to` = ?, `teacher` = ?,`students` = ? WHERE (`iddata_klausuren` = ?);", [date, subject, grade, group,  show, from, to, teacher, students, id]);
+                    await conn.query("UPDATE `splan`.`data_exams` SET `date` = ?, `subject` = ?, `grade` = ?, `group` = ?, `visibleOnDisplay` = ?, `from` = ?, `to` = ?, `teacher` = ?,`students` = ? WHERE (`iddata_klausuren` = ?);", [date, subject, grade, group,  show, from, to, teacher, students, id]);
                 }else {
-                    await conn.query("INSERT INTO splan.data_klausuren (date, subject, grade, `group`, visibleOnDisplay, `from`, `to`, teacher, students, roomLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [date,subject, grade , group, show, from, to, teacher, students, linkId]);
+                    await conn.query("INSERT INTO splan.data_exams (date, subject, grade, `group`, visibleOnDisplay, `from`, `to`, teacher, students, roomLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [date,subject, grade , group, show, from, to, teacher, students, linkId]);
                 }
                 resolve(true);
             } catch (e) {
@@ -348,13 +354,13 @@ export class Exam {
     }
 
 
-    delete(){
+    delete(): Promise<never>{
         let id = this.id;
 
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
-                await conn.query("DELETE FROM `splan`.`data_klausuren` WHERE (`iddata_klausuren` = ?);",[id]);
+                await conn.query("DELETE FROM `splan`.`data_exams` WHERE (`iddata_klausuren` = ?);",[id]);
                 logger.log({
                     level: 'silly',
                     label: 'exams',
@@ -374,21 +380,30 @@ export class Exam {
         });
     }
 }
-
+/**
+ * @typedef RoomLink
+ * @property {string} date.required
+ * @property {string} from.required
+ * @property {string} to.required
+ * @property {string} room.required
+ * @property {string} id
+ */
 export class RoomLink {
     room: any;
     from: any;
     to: any;
     date: any;
+    id: number;
 
     constructor(room: any, from: any, to: any, date: any) {
         this.room = room;
         this.from = from;
         this.to = to;
         this.date = date;
+        this.id = 0
     }
 }
 
 export class Supervisor extends User{
-
+    //TODO add Supervisor class arguemtns
 }

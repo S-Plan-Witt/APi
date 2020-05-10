@@ -91,6 +91,8 @@ export class Totp {
                 reject();
             }catch (e) {
                 reject(e);
+            } finally {
+                if(conn) await conn.end();
             }
         });
     }
@@ -111,6 +113,8 @@ export class Totp {
                 resolve();
             }catch (e) {
                 reject(e);
+            } finally {
+                if (conn) await conn.end();
             }
         });
     }

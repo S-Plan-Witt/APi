@@ -1,8 +1,8 @@
 {
-  "name": "api-typescript",
+  "name": "siks",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "build/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc"
@@ -14,14 +14,13 @@
     "body-parser": "^1.19.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "firebase-admin": "^8.9.2",
+    "firebase-admin": "^8.11.0",
     "jsonwebtoken": "^8.5.1",
     "ldapjs": "^1.0.2",
     "mariadb": "^2.1.5",
     "node-gyp": "^5.0.5",
-    "package.json": "^2.0.1",
     "speakeasy": "^2.0.0",
-    "telegraf": "^3.36.0",
+    "telegraf": "^3.38.0",
     "telegram-typings": "^4.0.0-beta",
     "typescript": "^3.8.3",
     "web-push": "^3.4.3",
@@ -29,11 +28,13 @@
     "winston-daily-rotate-file": "^4.4.2"
   },
   "devDependencies": {
+    "@types/express": "^4.17.6",
     "@types/jsonwebtoken": "^8.3.9",
     "@types/ldapjs": "^1.0.7",
+    "@types/node": "^13.13.5",
     "@types/speakeasy": "^2.0.5",
     "@types/web-push": "^3.3.0",
-    "@types/express": "^4.17.6",
-    "@types/node": "^13.11.1"
+    "express-swagger-generator": "^1.1.17",
+    "nodemon": "^2.0.3"
   }
 }

@@ -35,7 +35,8 @@ create table if not exists data_courses
     grade          varchar(45) not null,
     subject        varchar(45) not null,
     `group`        varchar(45) not null,
-    coursename     varchar(45) as (concat(`grade`, '/', `subject`, '-', `group`))
+    coursename     varchar(45) as (concat(`grade`, '/', `subject`, '-', `group`)),
+    teacher        varchar(15) null
 );
 
 create table if not exists data_entschuldigungen
@@ -146,13 +147,6 @@ create table if not exists lessons_teacher
 )
     collate = latin1_german2_ci;
 
-create table if not exists moodle_usermgm
-(
-    idmoodle_usermgm int auto_increment
-        primary key
-)
-    collate = latin1_german2_ci;
-
 create table if not exists preAuth_Token
 (
     idpreAuth_Token int auto_increment
@@ -195,6 +189,7 @@ create table if not exists users
     lastlogon   varchar(45)      null,
     displayname varchar(45)      null,
     active      int(2) default 1 null,
+    twoFactor   int    default 0 null,
     constraint users_username_uindex
         unique (username)
 )
@@ -224,6 +219,16 @@ create index FK_RoomLink_idx
 create index FK_UserID_idx
     on data_exam_supervisors (TeacherId);
 
+create table if not exists moodle_mapping
+(
+    idmoodle_mapping int auto_increment
+        primary key,
+    userid           int not null,
+    moodleid         int not null,
+    constraint moodle_mapping_users_idusers_fk
+        foreign key (userid) references users (idusers)
+);
+
 create table if not exists student_courses
 (
     idstudent_courses int auto_increment
@@ -238,14 +243,39 @@ create table if not exists student_courses
 )
     collate = latin1_german2_ci;
 
+create table if not exists totp
+(
+    id_totp  int auto_increment
+        primary key,
+    user_id  int                                not null,
+    totp_key varchar(100)                       not null,
+    verified int(1)   default 0                 not null,
+    alias    varchar(45)                        null,
+    added    datetime default CURRENT_TIMESTAMP null,
+    constraint totp_key_UNIQUE
+        unique (totp_key),
+    constraint totp_user_fk
+        foreign key (user_id) references users (idusers)
+);
+
+create index totp_user_fk_idx
+    on totp (user_id);
+
 create table if not exists users_mails
 (
     idusers_mails int auto_increment
         primary key,
-    user          varchar(45) not null,
-    mail          varchar(45) not null,
-    added         varchar(45) null,
-    confirmed     varchar(45) null
+    mail          varchar(45)                        not null,
+    added         datetime default CURRENT_TIMESTAMP null,
+    confirmed     int      default 0                 null,
+    token         varchar(50)                        null,
+    userid        int                                null,
+    constraint users_mails_mail_uindex
+        unique (mail),
+    constraint users_mails_token_uindex
+        unique (token),
+    constraint users_mails_users_idusers_fk
+        foreign key (userid) references users (idusers)
 )
     collate = latin1_german2_ci;
 
@@ -269,3 +299,4 @@ create table if not exists users_teachers
         primary key
 )
     collate = utf8mb4_bin;
+

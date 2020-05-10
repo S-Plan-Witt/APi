@@ -3,7 +3,7 @@ import {Course} from "../classes/timeTable";
 import express from 'express';
 import winston from 'winston';
 import {Announcements,Announcement} from '../classes/announcements';
-import {User,Student,Teacher,Parent, UserFilter}   from '../classes/user';
+import {User}   from '../classes/user';
 import {PushNotifications}          from '../classes/pushNotifications';
 const logger = winston.loggers.get('main');
 export let router = express.Router();
@@ -19,8 +19,17 @@ router.use((req, res, next) =>{
     return res.sendStatus(401);
 });
 
-router.post('/', async function(req,res){
+/**
+ * Lists all Announcements
+ * @route POST /announcements/
+ * @group Announcements - Management functions for Announcements
+ * @param {Announcement.model} Announcement.body.required
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 
+router.post('/', async function(req,res){
 
     let body = req.body;
     let author = req.decoded.username;
@@ -29,13 +38,12 @@ router.post('/', async function(req,res){
 
 
         if(!req.decoded.admin){
-            let user = await User.getUserByUsername(req.decoded.username);
-            if(!user.isTeacherOf(course)){
+            if(!req.user.isTeacherOf(course)){
                 return res.sendStatus(401);
             }
         }
 
-        let announcement = new Announcement(course,author,body["content"],body["date"]);
+        let announcement = new Announcement(course, author, body["content"], body["date"]);
         await announcement.create();
 
         let devices = await User.getStudentDevicesByCourse(course);
@@ -54,17 +62,30 @@ router.post('/', async function(req,res){
         res.sendStatus(500);
     }
 });
-
+/**
+ * Lists all Announcements
+ * @route GET /announcements/
+ * @group Announcements - Management functions for Announcements
+ * @returns {Array.<Announcement>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.get('/', async function (req,res){
 
-    let rows = await Announcements.getAll();
-    await res.json(rows);
+    await res.json(await Announcements.getAll());
 });
 
-//TODO jDoc
+/**
+ * Updates Announcement {id}
+ * @route PUT /announcements/id/{id}
+ * @group Announcements - Management functions for Announcements
+ * @returns {Error} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.put('/id/:id', async function(req,res){
     let body = req.body;
-    let id = parseInt(req.params.id);
+    let id: number = parseInt(req.params.id);
     let announcement: Announcement = await Announcements.getById(id);
 
     announcement.course = new Course(body["course"]["grade"], body["course"]["subject"], body["course"]["group"],null);
@@ -80,7 +101,14 @@ router.put('/id/:id', async function(req,res){
     res.sendStatus(200);
 });
 
-//TODO jDoc
+/**
+ * Returns Announcement {id}
+ * @route GET /announcements/id/{id}
+ * @group Announcements - Management functions for Announcements
+ * @returns {Error} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.get('/id/:id', async function(req,res){
     let id = parseInt(req.params.id);
     let announcement = await Announcements.getById(id);
@@ -88,10 +116,14 @@ router.get('/id/:id', async function(req,res){
     res.json(announcement)
 });
 
-//TODO jDoc
-
-
-//TODO jDoc
+/**
+ * Deletes Announcement {id}
+ * @route DELETE /announcements/id/{id}
+ * @group Announcements - Management functions for Announcements
+ * @returns {Error} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.delete('/id/:id', async function (req,res){
 
     try {
@@ -99,8 +131,7 @@ router.delete('/id/:id', async function (req,res){
         let announcement: Announcement = await Announcements.getById(id);
 
         if(!req.decoded.admin){
-            let user: User = await User.getUserByUsername(req.decoded.username);
-            if(!user.isTeacherOf(announcement.course)){
+            if(!req.user.isTeacherOf(announcement.course)){
                 return res.sendStatus(401);
             }
         }
@@ -110,10 +141,10 @@ router.delete('/id/:id', async function (req,res){
         let push = new PushNotifications();
         push.sendBulk(devices,"Aushang: " + announcement.course.subject," Entfernt Datum: " + announcement.date);
 
-        await res.sendStatus(200);
+        res.sendStatus(200);
     }catch (e) {
         //TODO add logger
         console.log(e);
-        await res.sendStatus(500);
+        res.sendStatus(500);
     }
 });

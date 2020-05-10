@@ -3,35 +3,44 @@ import {Jwt} from '../classes/jwt';
 import {ReplacementLessons} from '../classes/replacementLessons';
 import {Announcements} from '../classes/announcements';
 import {Exam, Exams, Supervisors} from '../classes/exams';
-import express from 'express';
-import winston from 'winston';
+import express, {Request, Response} from 'express';
+import winston, {Logger} from 'winston';
 import {User}   from '../classes/user';
 import {Totp} from '../classes/totp';
+import {Ldap} from "../classes/ldap";
 
-const logger = winston.loggers.get('main');
+const logger: Logger = winston.loggers.get('main');
 export let router = express.Router();
 
+
 /**
- * Information Path
- * Returns Json with links to userinformations
+ * Return the current user
+ * @route POST /user/
+ * @group User - Operations about logged in user
+ * @returns {User.model} 200
+ * @returns {Error} 401 - Wrong Creds
  */
 router.get('/', async function(req,res){
-
     try {
-        let username = req.decoded.username;
-        let user = await User.getUserByUsername(username);
-        await res.json(user);
+        await res.json(req.user);
     } catch (e) {
         await res.sendStatus(500)
     }
 });
+
+
 /**
- * Request Api-accesstoken by supplying authentication information
- * Supply JSON. w. username, password
- * Supply PreAuthToken
- * Return Accesskey and usertype as Json
+ * Return the JWT to access the Api
+ * @sum Login
+ * @route POST /user/login
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @param {LoginRequest.model} LoginRequest.body.required - username
+ * @returns {LoginResponse.model} 200
+ * @returns {Error} 602 - missing secondFactor
+ * @returns {Error} 401 - Wrong Creds
  */
-router.post('/login', async function (req, res) {
+router.post('/login', async function (req: Request, res: Response) {
 
     let username = req.body.username;
     let password = req.body.password;
@@ -64,25 +73,38 @@ router.post('/login', async function (req, res) {
         res.sendStatus(601);
         return;
     }
-    let user;
+    let user: User | null = null;
     try {
         user = await User.getUserByUsername(username);
     }catch (e) {
-        res.sendStatus(602);
-        return ;
+        //TODO User not in DB
+    }
+    if(user == null){
+        try {
+            user = await Ldap.getUserByUsername(username);
+            await User.createUserFromLdap(username);
+            user = await User.getUserByUsername(username);
+            console.log(user)
+        }catch (e) {
+            console.log(e);
+            res.status(602);
+            res.send("User not available")
+            return;
+        }
     }
 
     try{
-
         await user.isActive();
-
         if(!preauth){
             await user.verifyPassword(password);
             if(user.secondFactor === 1){
                 if(req.body.hasOwnProperty("secondFactor")){
                     let code = req.body["secondFactor"];
                     try {
-                        await Totp.verifyUserCode(code, user.id);
+                        if (user.id != null) {
+                            await Totp.verifyUserCode(code, user.id);
+                        }
+                        console.log("ERROR")
                     }catch (e) {
                         res.sendStatus(401);
                         logger.log({
@@ -122,23 +144,26 @@ router.post('/login', async function (req, res) {
 });
 
 /**
- * Get courses for current user
- * Returns Json Array with courses
+ * List all courses for the user
+ * @route GET /user/courses
+ * @group User - Operations about logged in user
+ * @returns {Array.<Course>} 200
+ * @returns {Error} 602 - missing secondFactor
+ * @returns {Error} 401 - Wrong JWT
+ * @security JWT
  */
-router.get('/courses',  async function (req, res) {
-    let username = req.decoded.username;
+router.get('/courses',  async function (req: Request, res: Response) {
+    let user = req.user;
     let courses;
     try{
         if(req.decoded.userType === "student"){
             //Get userId for user
-            let user = await User.getUserByUsername(username);
             //Get courses for user
             courses = user.courses;
             await res.json(courses);
         }else if(req.decoded.userType === "teacher"){
             //Get courses for user
-            let user = await User.getUserByUsername(username);
-            courses = await user.courses;
+            courses = user.courses;
             await res.json(courses);
         }else{
             logger.log({
@@ -160,33 +185,38 @@ router.get('/courses',  async function (req, res) {
 });
 
 /**
- * Get lessons for current user
- * Returns Json Array with lessons for user
+ * List all lessons for the user
+ * @route GET /user/lessons
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @returns {Array.<Lesson>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/lessons',  async function (req, res) {
+router.get('/lessons',  async function (req: Request, res: Response) {
     // => Array containing all lesson for user
     let response: any = [];
-    let username = req.decoded.username;
 
     try{
-        let user = await User.getUserByUsername(username);
-        let courses = user.courses;
-        for(const course of courses){
-            try{
-                //Get lesson for course as array
-                let lessons: any = await TimeTable.getLessonsByCourse(course);
-                lessons.forEach((lesson:any) => {
-                    //Add lesson to response array
-                    response.push(lesson);
-                });
-            } catch(e){
-                console.log(e);
-                logger.log({
-                    level: 'error',
-                    label: 'Express',
-                    message: 'Routing: /user/lessons : processinf courses: ' + JSON.stringify(e)
-                });
-                //TODO add handler
+        let courses = req.user.courses;
+        if(courses != null){
+            for(const course of courses){
+                try{
+                    //Get lesson for course as array
+                    let lessons: any = await TimeTable.getLessonsByCourse(course);
+                    lessons.forEach((lesson:any) => {
+                        //Add lesson to response array
+                        response.push(lesson);
+                    });
+                } catch(e){
+                    console.log(e);
+                    logger.log({
+                        level: 'error',
+                        label: 'Express',
+                        message: 'Routing: /user/lessons : processinf courses: ' + JSON.stringify(e)
+                    });
+                    //TODO add handler
+                }
             }
         }
         res.json(response);
@@ -201,11 +231,15 @@ router.get('/lessons',  async function (req, res) {
 });
 
 /**
- * Get replacement lessons for current user
- * Returns Json array with replacement lessons
+ * List all replacement lessons for the user
+ * @route GET /user/lessons
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @returns {Array.<ReplacementLesson>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/replacementlessons',  async function (req, res) {
-    let username = req.decoded.username;
+router.get('/replacementlessons',  async function (req: Request, res: Response) {
 
     //Generate date of today
     let today = new Date();
@@ -225,16 +259,12 @@ router.get('/replacementlessons',  async function (req, res) {
     try {
         let courses;
         let response: any = [];
-        if(req.decoded.userType === "student"){
-            let user = await User.getUserByUsername(username);
-            courses = user.courses;
-        }else if(req.decoded.userType === "teacher"){
-            let user = await User.getUserByUsername(username);
-            courses = user.courses;
+        if(req.decoded.userType === "student" || req.decoded.userType === "teacher"){
+            courses = req.user.courses;
         }else{
             //TODO add logger
             //TODO corr. status code
-            res.sendStatus(401);
+            res.sendStatus(503);
             return;
         }
 
@@ -248,7 +278,7 @@ router.get('/replacementlessons',  async function (req, res) {
         }
         if(req.decoded.userType === "teacher"){
             //Get replacement lessons hold by teacher
-            let data: any = await ReplacementLessons.getByTeacher(username, dateToday, dateEnd);
+            let data: any = await ReplacementLessons.getByTeacher(req.user.username, dateToday, dateEnd);
             console.log(data)
             data.forEach((replacementLesson: any) => {
                 response.push(replacementLesson);
@@ -263,11 +293,17 @@ router.get('/replacementlessons',  async function (req, res) {
     }
 });
 
-//TODO jDoc
-router.get('/announcements',  async function (req, res) {
-    let username = req.decoded.username;
-    let user = await User.getUserByUsername(username);
-    let courses = user.courses;
+/**
+ * Lists all Announcements for the user
+ * @route GET /user/announcements
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @returns {Array.<Announcement>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
+router.get('/announcements',  async (req: Request, res: Response) => {
+    let courses = req.user.courses;
     let response: any = [];
     for(const course of courses){
         try{
@@ -286,17 +322,20 @@ router.get('/announcements',  async function (req, res) {
 });
 
 /**
- * Get exams for current user
- * Returns Json array with exams (containing necessary information)
+ * Lists all exams for the user or if teacher, for his courses
+ * @route GET /user/exams
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @returns {Array.<Exam>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/exams',  async function (req, res) {
-    let username = req.decoded.username;
+router.get('/exams',  async function (req: Request, res: Response) {
     try{
         let response: Exam[] = [];
-        console.log(req.decoded.userType)
+        console.log("UT:" + req.decoded.userType)
         if(req.decoded.userType === "student"){
-            let user = await User.getUserByUsername(username);
-            let courses = user.courses;
+            let courses = req.user.courses;
 
             for(const course of courses){
                 try{
@@ -307,7 +346,7 @@ router.get('/exams',  async function (req, res) {
                         data.forEach(exam => {
                             response.push(exam);
                         });
-                    }else if (user.type === 'teacher'){
+                    }else if (req.user.type === 'teacher'){
                         //Get exams by course
                         let data: Exam[] = await Exams.getByCourse(course);
                         data.forEach(exam => {
@@ -322,7 +361,7 @@ router.get('/exams',  async function (req, res) {
             }
 
         }else if(req.decoded.userType === "teacher"){
-            response = await Exams.getByTeacher(username);
+            response = await Exams.getByTeacher(req.user.username);
         }
         //TODO add else
         res.json(response);
@@ -333,12 +372,19 @@ router.get('/exams',  async function (req, res) {
     }
 });
 
-
-router.get('/supervisors',  async function (req, res) {
-    let username = req.decoded.username;
+/**
+ * only for teachers - returns all supervisor blocks
+ * @route GET /user/supervisors
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @returns {Array.<Supervisor>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
+router.get('/supervisors',  async function (req: Request, res: Response) {
+    let username = req.user.username;
     try{
         let data = await Supervisors.getByTeacherUsername(username);
-
         res.json(data);
     }catch(e){
         //TODO add logger
@@ -348,13 +394,17 @@ router.get('/supervisors',  async function (req, res) {
 });
 
 /**
- * Get all push devices for user
- * Returns Json array with all devices
+ * Lists all devices for the user
+ * @route GET /user/devices
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @returns {Array.<Device>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.get('/devices', async function (req, res) {
+router.get('/devices', async function (req: Request, res: Response) {
     try {
-        let user: User = await User.getUserByUsername(req.decoded.username);
-        let data = await user.devices;
+        let data = await req.user.devices;
         res.json(data);
     } catch(e){
         //TODO add logger
@@ -364,17 +414,20 @@ router.get('/devices', async function (req, res) {
 });
 
 /**
- * Add device for user
+ * Adds a new device to the user
+ * @route POST /user/devices
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @param {Device.model} Device.body
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.post('/devices', async function(req, res){
-    let username = req.decoded.username;
+router.post('/devices', async function(req: Request, res: Response){
     let deviceId = req.body.deviceId;
     let platform = req.body.plattform;
 
     try {
-        let user = await User.getUserByUsername(username);
-
-        if(await user.addDevice(deviceId, platform)){
+        if(await req.user.addDevice(deviceId, platform)){
             res.sendStatus(200);
         }else{
             res.sendStatus(200);
@@ -387,9 +440,15 @@ router.post('/devices', async function(req, res){
 });
 
 /**
- * Delete user push device by id
+ * Removes a device from the user account
+ * @route DELETE /user/devices/deviceId/{id}
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
  */
-router.delete('/devices/deviceId/:id', async function (req, res) {
+router.delete('/devices/deviceId/:id', async function (req: Request, res: Response) {
     //TODO not null req.
     let deviceId = req.params.id;
     try {
@@ -404,26 +463,21 @@ router.delete('/devices/deviceId/:id', async function (req, res) {
 
 });
 
-/**
- * Delete user push device by id
- */
-router.delete('/devices/deviceId/', async function (req, res) {
-    //TODO . != [""]
-    let deviceId = req.body.deviceId;
-    try {
-        await User.removeDevice(deviceId);
-        res.sendStatus(200)
-    } catch(e){
-        //TODO add logger
-        res.sendStatus(500)
-    }
-});
-
 router.get('/auth/totp', async function (req,res) {
 
     res.sendStatus(200);
 });
 
+/**
+ * Submits a new totp key for secondFactor auth
+ * @route POST /user/auth/totp
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @param {TotpAddRequest.model} TotpAddRequest.body.require
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.post('/auth/totp', async function (req,res) {
     if(req.body.hasOwnProperty("password") && req.body.hasOwnProperty("key")){
         let user;
@@ -445,7 +499,9 @@ router.post('/auth/totp', async function (req,res) {
         try {
             let key = req.body["key"];
             let alias = req.body["alias"];
-            tokenId = await Totp.saveTokenForUser(key, user.id, alias);
+            if(user.id != null){
+                tokenId = await Totp.saveTokenForUser(key, user.id, alias)
+            }
         } catch (e) {
 
         }
@@ -455,6 +511,16 @@ router.post('/auth/totp', async function (req,res) {
     }
 });
 
+/**
+ * Verifys the given key with the correct totp code
+ * @route POST /user/auth/totp/verify
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @param {TotpVerifyRequest.model} TotpVerifyRequest.body.require
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.post('/auth/totp/verify', async function (req,res) {
     if(req.body.hasOwnProperty("keyId") && req.body.hasOwnProperty("code")){
         try {
@@ -471,9 +537,20 @@ router.post('/auth/totp/verify', async function (req,res) {
     }
 });
 
+/**
+ * Delets the totp device specified by id
+ * @route DELETE /user/auth/totp/id/{id}
+ * @group User - Operations about logged in user
+ * @consumes application/json
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.delete('/auth/totp/id/:id', async function (req,res) {
     try {
-        await Totp.removeById(parseInt(req.params.id), req.user.id);
+        if(req.user.id != null){
+            await Totp.removeById(parseInt(req.params.id), req.user.id);
+        }
         res.sendStatus(200)
     }catch (e) {
         console.log(e);

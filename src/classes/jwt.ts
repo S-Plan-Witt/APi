@@ -3,7 +3,7 @@
 import jwt from 'jsonwebtoken';
 //Filesystem
 import fs    from 'fs';
-import {User} from './user';
+import {Permissions, User} from './user';
 
 import De from "../types/custom";
 
@@ -12,6 +12,7 @@ const logger = winston.loggers.get('main');
 
 //Create Database connection pool for requests
 import {ApiGlobal} from "../types/global";
+import {NextFunction, Request, Response} from "express";
 declare const global: ApiGlobal;
 let pool = global["mySQLPool"];
 //Load signing and validation keys
@@ -24,7 +25,7 @@ const authFreePaths = [
 ];
 
 const admins = [
-    'wittnil1611'
+    1630
 ];
 
 
@@ -33,11 +34,11 @@ export class Jwt {
 	 *
 	 * @param id {number}
 	 */
-	static verifyId (id: number){
-		return new Promise(async function (resolve, reject) {
+	static verifyId (id: number): Promise<never>{
+		return new Promise(async (resolve, reject) => {
 			let conn = await pool.getConnection();
 			try {
-				let rows = await conn.query("SELECT * FROM " + process.env.SQL_DB + ".`jwt_Token` WHERE `tokenIdentifier`= ?", [id]);
+				let rows = await conn.query("SELECT * FROM splan.`jwt_Token` WHERE `tokenIdentifier`= ?", [id]);
 				if(rows.length === 1){
 					resolve();
 				}else {
@@ -54,12 +55,12 @@ export class Jwt {
 		});
 	}
 
-	static saveToken(username: string, tokenId: string){
-		return new Promise(async function (resolve, reject) {
+	static saveToken(userId: number, tokenId: string): Promise<never>{
+		return new Promise(async (resolve, reject) => {
 			let conn;
 			try {
 				conn = await pool.getConnection();
-				await conn.query("INSERT INTO `" + process.env.SQL_DB + "`.`jwt_Token` (`tokenIdentifier`, `userid`) VALUES (?, ?);", [tokenId, username]);
+				await conn.query("INSERT INTO `splan`.`jwt_Token` (`tokenIdentifier`, `userid`) VALUES (?, ?);", [tokenId, userId]);
 				await conn.end();
 				resolve();
 
@@ -71,14 +72,14 @@ export class Jwt {
 
 	}
 
-	static createJWT (username: string, userType: any, sessionId: string) {
-		return new Promise(async function (resolve, reject) {
+	static createJWT (userId: number, userType: any, sessionId: string):Promise<string> {
+		return new Promise(async (resolve, reject) => {
 			let payload: any = {};
-			payload.username = username;
+			payload.userId = userId;
 			payload.session = sessionId;
 			payload.userType = userType;
 			try {
-				await Jwt.saveToken(username, sessionId);
+				await Jwt.saveToken(userId, sessionId);
 				let token = jwt.sign(payload, privateKey, {algorithm: 'RS256'});
 				resolve(token);
 			} catch (e) {
@@ -88,7 +89,7 @@ export class Jwt {
 	}
 
 
-	static async checkToken (req: any, res:any, next:any) {
+	static async checkToken (req: Request, res: Response, next: NextFunction) {
 		if(authFreePaths.includes(req.path)){
 			logger.log({
 				level: 'silly',
@@ -102,8 +103,9 @@ export class Jwt {
 			next();
 		}else{
 			//get auth header information containing auth token
-			let token = req.headers['x-access-token'] || req.headers['authorization'];
-			if (token) {
+			let token: string | string[] | undefined = req.headers['x-access-token'] || req.headers['authorization'];
+
+			if (typeof token == "string") {
 				//Strip down token if it contains type
 				if (token.startsWith('Bearer ')) {
 					token = token.slice(7, token.length);
@@ -111,17 +113,22 @@ export class Jwt {
 				//Verify Token signature with local key
 				try {
 					let decoded: any = jwt.verify(token, publicKey);
-					await Jwt.verifyId(decoded.session);
+					if(typeof decoded == 'object'){
+						await Jwt.verifyId(decoded.session);
 
-					req.decoded = decoded;
-					req.user = await User.getUserByUsername(req.decoded.username);
-					//TODO add permissions management
-					req.decoded.admin = admins.indexOf(req.decoded.username) >= 0;
-					req.decoded.permissions = {};
-					req.decoded.permissions.all = admins.indexOf(req.decoded.username) >= 0;
+						req.decoded = decoded;
+						req.user = await User.getUserById(req.decoded.userId);
+						req.decoded.permissions = req.user.permissions;
+						//req.decoded.permissions.all = admins.indexOf(req.decoded.username) >= 0;
+						next();
+					}else {
+						console.log("JWT decode error");
+						console.log(token);
+						res.sendStatus(500);
+					}
 
-					next();
 				}catch (e) {
+
 					logger.log({
 						level: 'warn',
 						label: 'JWT',
@@ -137,12 +144,12 @@ export class Jwt {
 
 	}
 
-	static revokeById(tokenId: number){
+	static revokeById(tokenId: number): Promise<never>{
 		//Delete token from DB
-		return new Promise(async function (resolve, reject) {
+		return new Promise(async (resolve, reject) => {
 			let conn = await pool.getConnection();
 			try {
-				await conn.query("DELETE From " + process.env.SQL_DB + ".`jwt_Token` where `tokenIdentifier`=?", [tokenId]);
+				await conn.query(`DELETE FROM splan.jwt_Token where tokenIdentifier=?`, [tokenId]);
 				logger.log({
 					level: 'silly',
 					label: 'JWT',
@@ -166,7 +173,7 @@ export class Jwt {
 		return new Promise(async function (resolve, reject) {
 			let conn = await pool.getConnection();
 			try {
-				let rows = await conn.query("SELECT * FROM " + process.env.SQL_DB + ".`jwt_Token` WHERE `userid`=?", [username]);
+				let rows = await conn.query(`SELECT * FROM splan.jwt_Token WHERE userid=?`, [username]);
 				resolve(rows);
 			}catch (e) {
 				logger.log({
@@ -186,7 +193,7 @@ export class Jwt {
 		return new Promise(async function (resolve, reject) {
 			let conn = await pool.getConnection();
 			try {
-				let rows = await conn.query("SELECT * FROM " + process.env.SQL_DB + ".`jwt_Token`");
+				let rows = await conn.query("SELECT * FROM splan.`jwt_Token`");
 				resolve(rows);
 			}catch (e) {
 				logger.log({
@@ -206,7 +213,7 @@ export class Jwt {
 		return new Promise(async function (resolve, reject) {
 			let conn = await pool.getConnection();
 			try {
-				await conn.query("DELETE From " + process.env.SQL_DB + ".`jwt_Token` where `userid`=?", [username]);
+				await conn.query("DELETE From splan.`jwt_Token` where `userid`=?", [username]);
 				logger.log({
 					level: 'silly',
 					label: 'JWT',
@@ -230,7 +237,7 @@ export class Jwt {
 		return new Promise(async function (resolve, reject) {
 			let conn = await pool.getConnection();
 			try {
-				let rows = await conn.query("SELECT * FROM " + process.env.SQL_DB + ".`preAuth_Token` WHERE `token` = ?", [token]);
+				let rows = await conn.query("SELECT * FROM splan.`preAuth_Token` WHERE `token` = ?", [token]);
 				if (rows.length === 1) {
 					let username = rows[0].username;
 					resolve(username);
@@ -255,6 +262,3 @@ export class Jwt {
 		});
 	}
 }
-
-module.exports.Jwt = Jwt;
-module.exports.CJwt = Jwt;

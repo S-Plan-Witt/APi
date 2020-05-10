@@ -8,7 +8,15 @@ import {Exams,Exam,Supervisors, Supervisor} from '../classes/exams';
 const logger = winston.loggers.get('main');
 export let router = express.Router();
 
-
+/**
+ * Adds a new Exam
+ * @route POST /exams/
+ * @group Exams - Management functions for Exams
+ * @param {Exam.model} Exam.body.required
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.post('/', async function(req,res){
     if(!req.decoded.admin){
         return res.sendStatus(401);
@@ -19,7 +27,7 @@ router.post('/', async function(req,res){
 
         for (let i = 0; i < body.length; i++) {
             let element = body[i];
-            let exam = new Exam(element["date"], element["from"], element["to"],new Course(element["grade"], element["subject"], element["group"]), element["teacher"], element["students"], element["room"],false,element["id"]);
+            let exam = new Exam(false, element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"], element["students"], element["room"],element["id"],"");
             await exam.save();
         }
         res.sendStatus(200);
@@ -33,6 +41,15 @@ router.post('/', async function(req,res){
     }
 });
 
+/**
+ * Returns all Exams
+ * @route GET /exams/
+ * @group Exams - Management functions for Exams
+ * @param {Exam.model} Exam.body.required
+ * @returns {Array.<Exam>} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.get('/', async function (req,res){
     if(!req.decoded.admin){
         return res.sendStatus(401);
@@ -42,6 +59,15 @@ router.get('/', async function (req,res){
     await res.json(rows);
 });
 
+/**
+ * Updates a Exam
+ * @route PUT /exams/{id}
+ * @group Exams - Management functions for Exams
+ * @param {Exam.model} Exam.body.required
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.put('/:id', async function (req,res){
     if(!req.decoded.admin){
         return res.sendStatus(401);
@@ -52,6 +78,15 @@ router.put('/:id', async function (req,res){
     res.sendStatus(605);
 });
 
+/**
+ * Deletes an Exam
+ * @route DELETE /exams/{id}
+ * @group Exams - Management functions for Exams
+ * @param {Exam.model} Exam.body.required
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
 router.delete('/id/:id', async function (req,res){
     if(!req.decoded.admin){
         return res.sendStatus(401);
@@ -61,6 +96,7 @@ router.delete('/id/:id', async function (req,res){
     res.sendStatus(605);
 });
 
+//TODO determine correct router for endpoint
 router.get('/exams/supervisors/:id', async function (req,res){
     if(!req.decoded.admin){
         return res.sendStatus(401);

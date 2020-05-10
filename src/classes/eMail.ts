@@ -5,11 +5,9 @@ declare const global: ApiGlobal;
 let pool = global["mySQLPool"];
 
 export class SendGrid {
+    static createMailConfirmation (userId: number,mail: string): Promise<never> {
 
-
-    static createMailConfirmation (userId: number,mail: string) {
-
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             let conn;
             try {
@@ -19,7 +17,8 @@ export class SendGrid {
 
                 if(rows.length >0){
                     if(rows[0].userid == userId){
-                        await conn.query("UPDATE splan.users_mails SET token = ?",[token]);
+                        //TODO add where clause
+                        //await conn.query("UPDATE splan.users_mails SET token = ?",[token]);
                     }else {
                         reject("assigned to other user");
                     }

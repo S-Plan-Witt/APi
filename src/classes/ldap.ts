@@ -2,29 +2,27 @@ import ldap, {Client, LDAPResult, SearchOptions} from 'ldapjs';
 import winston from 'winston';
 const logger = winston.loggers.get('main');
 
-import {User,Student,Teacher,Parent, UserFilter} from './user';
+import {User, Student, Teacher, Parent, UserFilter, Permissions} from './user';
 import {url} from "inspector";
+import {Course} from "./timeTable";
 let urlLdap: string;
 if(process.env.LDAP_HOST !== undefined){
     urlLdap = process.env.LDAP_HOST;
 }
-console.log(process.env.LDAP_HOST);
-console.log(process.env.LDAP_USER);
-console.log(process.env.LDAP_PASS);
 
 export class Ldap {
 
     /**
      * authenticates service user to work in forest
      */
-    static bindLDAP(){
-        return new Promise(function (resolve, reject) {
+    static bindLDAP(): Promise<Client>{
+        return new Promise((resolve, reject) => {
             let ldapClient = ldap.createClient({
                 url: urlLdap
             });
 
             // @ts-ignore
-            ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, function(err) {
+            ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err) => {
                 if(err){
                     reject("BindFailed");
                     logger.log({
@@ -48,7 +46,7 @@ export class Ldap {
      * Get all Teachers
      * @returns Promise {[user]}
      */
-    static loadTeacher(){
+    static loadTeacher(): Promise<Teacher[]>{
         return new Promise(async function (resolve, reject) {
             let ldapClient: any = await Ldap.bindLDAP();
             //set filter criteria
@@ -74,9 +72,7 @@ export class Ldap {
                         //console.log('entry: ' + JSON.stringify(entry.object));
                         //Clean object
                         let obj = entry.object;
-                        delete (obj.controls);
-                        delete (obj.dn);
-                        users.push(obj);
+                        users.push(new Teacher(obj['givenName'], obj['sn'], obj['sAMAccountName'], obj['displayName'],undefined ));
                     });
                     res.on('searchReference', function (referral: any) {
                         //TODO add logger
@@ -106,9 +102,9 @@ export class Ldap {
      *
      * @param username
      * @param password
-     * @returns {Promise<unknown>}
+     * @returns {Promise<number>}
      */
-    static checkPassword(username: string, password: string){
+    static checkPassword(username: string, password: string): Promise<number>{
         return new Promise(function (resolve, reject) {
             if (password === "") {
                 reject();
@@ -224,13 +220,13 @@ export class Ldap {
         let birthDate = filter.birthday;
         return new Promise(async function (resolve, reject) {
 
-            if (firstName == null) {
+            if (firstName == "") {
                 firstName = "*";
             }
-            if (lastName == null) {
+            if (lastName == "") {
                 lastName = "*";
             }
-            if (birthDate == null) {
+            if (birthDate == "") {
                 birthDate = "*";
             }
 
@@ -241,7 +237,7 @@ export class Ldap {
             };
             let ldapClient: any = await Ldap.bindLDAP();
 
-            ldapClient.search(process.env.LDAP_ROOT, opts, function (err: any, res: any) {
+            ldapClient.search(process.env.LDAP_ROOT, opts, function (err: Error, res: any) {
                 if (err) {
                     logger.log({
                         level: 'warn',
@@ -250,7 +246,7 @@ export class Ldap {
                     });
                     reject(err)
                 } else {
-                    let users: any = [];
+                    let users: User[] = [];
                     res.on('searchEntry', function (entry: any) {
                         logger.log({
                             level: 'silly',
@@ -258,9 +254,11 @@ export class Ldap {
                             message: 'Got entry : ' + JSON.stringify(entry.object)
                         });
                         let obj = entry.object;
-                        delete (obj.controls);
-                        delete (obj.dn);
-                        users.push(obj);
+                        let dn = obj["dn"].toString().split(",");
+                        let grade = dn[1].substr(3, (dn[1].length -1 ));
+                        if(grade != '_Removed') {
+                            users.push(new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "", [], true, null, null, null, Permissions.getDefault()));
+                        }
                     });
                     res.on('searchReference', function (referral: any) {
                         logger.log({
@@ -315,13 +313,15 @@ export class Ldap {
                     });
                     reject(err)
                 } else {
-                    let users: any = [];
+                    let users: User[] = [];
                     res.on('searchEntry', function (entry: any) {
                         //TODO add logger
                         let obj = entry.object;
-                        delete (obj.controls);
-                        delete (obj.dn);
-                        users.push(obj);
+                        let dn = obj["dn"].toString().split(",");
+                        let grade = dn[1].substr(3, (dn[1].length -1 ));
+                        if(grade != '_Removed') {
+                            users.push(new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "", [], true, null, null, null, Permissions.getDefault()));
+                        }
                     });
                     res.on('searchReference', function (referral: any) {
                         logger.log({
@@ -358,12 +358,12 @@ export class Ldap {
         });
     }
 
-    static getAllStudents(){
+    static getAllStudents(): Promise<Student[]>{
         return new Promise(async function (resolve, reject) {
             let opts = {
                 filter: '(objectClass=user)',
                 scope: 'sub',
-                attributes: ['sn', 'givenname', 'samaccountname', 'displayName'],
+                attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'info', 'dn'],
                 paged: true
             };
             let ldapClient: any = await Ldap.bindLDAP();
@@ -377,7 +377,7 @@ export class Ldap {
                     });
                     reject(err)
                 } else {
-                    let users: any = [];
+                    let users: Student[] = [];
                     res.on('searchEntry', function (entry: any) {
                         logger.log({
                             level: 'silly',
@@ -385,9 +385,11 @@ export class Ldap {
                             message: 'Got entry : ' + JSON.stringify(entry.object)
                         });
                         let obj = entry.object;
-                        delete (obj.controls);
-                        delete (obj.dn);
-                        users.push(obj);
+                        let dn = obj["dn"].toString().split(",");
+                        let grade = dn[1].substr(3, (dn[1].length -1 ));
+                        if(grade != '_Removed'){
+                            users.push(new Student(obj["givenName"], obj["lastname"], obj["displayName"], obj["sAMAccountName"],0,grade, obj["info"]));
+                        }
                     });
                     res.on('searchReference', function (referral: any) {
                         logger.log({
@@ -410,6 +412,7 @@ export class Ldap {
                             message: 'Got status : ' + result.status
                         });
                         //console.log('status: ' + result.status);
+
                         resolve(users);
                         ldapClient.unbind();
                         ldapClient.destroy();

@@ -12,20 +12,8 @@ declare global {
         admin?: boolean,
         session: string,
         userType: string,
-        username: string,
+        userId: number,
         permissions: Permissions
     }
-    namespace winston {
-        export interface Transports {
-            DailyRotateFile: any
-        }
 
-    }
-}
-
-
-
-
-export interface Test {
-    test: string
 }

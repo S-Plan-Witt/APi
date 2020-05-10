@@ -12,9 +12,10 @@ export class Announcements {
     /**
      * Retrieves all Announcements to corresponding course from the database
      * @param course {Course}
+     * @returns {Promise<Announcement[]>}
      */
-    static getByCourse(course: Course): Promise<Announcement[]>{
-        return new Promise(async function (resolve, reject) {
+    static getByCourse(course: Course): Promise<Announcement[]> {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
@@ -23,7 +24,7 @@ export class Announcements {
                 rows.forEach((element: any) => {
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Announcement(course,element["author"],element["content"] ,element["date"], element["iddata_announcements"]));
+                    data.push(new Announcement(course, element["author"], element["content"], element["date"], element["iddata_announcements"]));
 
                 });
                 resolve(data);
@@ -40,8 +41,8 @@ export class Announcements {
      * Retrieves all Announcements from the Database
      * @returns {Promise<Announcement[]>}
      */
-    static getAll(){
-        return new Promise(async function (resolve, reject) {
+    static getAll(): Promise<Announcement[]> {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
@@ -50,7 +51,7 @@ export class Announcements {
                 rows.forEach((element: any) => {
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Announcement(new Course(element["grade"],element["subject"],element["group"]),element["author"],element["content"] ,element["date"], element["iddata_announcements"]));
+                    data.push(new Announcement(new Course(element["grade"], element["subject"], element["group"]), element["author"], element["content"], element["date"], element["iddata_announcements"]));
                 });
                 resolve(data);
             }catch (e) {
@@ -71,8 +72,8 @@ export class Announcements {
      * @param id
      * @returns {Promise<Announcement>}
      */
-    static getById(id: number): Promise<Announcement>{
-        return new Promise(async function (resolve, reject) {
+    static getById(id: number): Promise<Announcement> {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
@@ -104,6 +105,14 @@ export class Announcements {
 
 }
 
+/**
+ * @typedef Announcement
+ * @property {Course.model} course.required
+ * @property {string} author.required
+ * @property {string} content.required
+ * @property {string} date.required
+ * @property {string} id
+ */
 
 export class Announcement {
     course: Course;
@@ -117,10 +126,10 @@ export class Announcement {
      * @param course {Course}
      * @param author {String}
      * @param content {String}
-     * @param date
-     * @param id
+     * @param date {String}
+     * @param id {number}
      */
-    constructor(course: Course,author = "", content = "",date = "", id = 0) {
+    constructor(course: Course, author: string, content: string, date: string, id: any = null) {
         this.id = id;
         this.course = course;
         this.author = author;
@@ -132,7 +141,7 @@ export class Announcement {
      * Submits the Announcement to the Database
      * @returns {Promise<boolean>}
      */
-    create(){
+    create(): Promise<boolean>{
         let content = this.content;
         let author = this.author;
         let editor = author;
@@ -140,13 +149,13 @@ export class Announcement {
         let date = this.date;
 
 
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
                 await conn.query("INSERT INTO `splan`.`data_announcements` (`content`, `shownOnDisplay`, `displayColor`, `displayOrder`, `author`, `editedBy`, `grade`, `subject`, `group`, `date`) VALUES (?, '1', 'red', '1', ?, ?, ?, ?, ?, ?)", [content, author, editor, course.grade, course.subject, course.group, date]);
                 resolve(true);
-            }catch (e) {
+            } catch (e) {
                 logger.log({
                     level: 'error',
                     label: 'Announcement',
@@ -163,20 +172,20 @@ export class Announcement {
      * Submits the updated Announcement to the Database
      * @returns {Promise<boolean>}
      */
-    update(){
+    update(): Promise<boolean> {
         let content = this.content;
         let editor = this.author;
         let course = this.course;
         let date = this.date;
         let id = "1";
 
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
                 await conn.query("UPDATE `splan`.`data_announcements` SET `content` = ?, `edited` = CURRENT_TIMESTAMP, `editedBy` = ?, `grade` = ?, `subject` = ?, `group` = ?, `date` = ? WHERE iddata_announcements = ?", [content, editor, course.grade, course.subject, course.group, date, id]);
                 resolve(true);
-            }catch (e) {
+            } catch (e) {
                 logger.log({
                     level: 'error',
                     label: 'Announcement',
@@ -194,15 +203,15 @@ export class Announcement {
      * Deletes the Announcement from the Database
      * @returns {Promise<boolean>}
      */
-    delete(){
+    delete(): Promise<boolean> {
         let id = this.id;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
                 await conn.query("DELETE FROM `splan`.`data_announcements` WHERE iddata_announcements = ?", [id]);
                 resolve(true);
-            }catch (e) {
+            } catch (e) {
                 logger.log({
                     level: 'error',
                     label: 'Announcement',
@@ -215,8 +224,3 @@ export class Announcement {
         });
     }
 }
-
-
-//EXPORTS
-module.exports.Announcement =  Announcement;
-module.exports.Announcements =  Announcements;
