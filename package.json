@@ -10,11 +10,10 @@
   "author": "Nils Witt",
   "license": "GnuPG v3.0",
   "dependencies": {
-    "@sendgrid/mail": "^6.5.4",
     "body-parser": "^1.19.0",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "firebase-admin": "^8.11.0",
+    "firebase-admin": "^8.12.1",
     "jsonwebtoken": "^8.5.1",
     "ldapjs": "^1.0.2",
     "mariadb": "^2.1.5",
@@ -23,7 +22,7 @@
     "telegraf": "^3.38.0",
     "telegram-typings": "^4.0.0-beta",
     "typescript": "^3.8.3",
-    "web-push": "^3.4.3",
+    "web-push": "^3.4.4",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.2"
   },
