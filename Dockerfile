@@ -30,7 +30,6 @@ ENV VAPID_MAIL="mailto:"
 ENV GOOGLE_APPLICATION_CREDENTIALS="/usr/src/splan/keys/fcm_key.json"
 
 COPY build/ ./
-COPY keys/ ./keys/
 
 CMD ["node","index.js"]
 EXPOSE 3000
