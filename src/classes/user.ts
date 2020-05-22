@@ -306,18 +306,17 @@ export class User {
                     const rows = await conn.query("SELECT * FROM splan.student_courses WHERE `user_id`= ?;", [userId]);
                     await conn.end();
                     rows.forEach((row: any) => {
-                        courses.push(new Course(row.grade,row.subject,row.group, row.exams));
+                        let exams = false;
+                        if(row.displayKlausuren == 1){
+                            exams = true;
+                        }
+                        courses.push(new Course(row.grade,row.subject,row.group, exams));
                     });
                 }else if(userType == "teacher"){
-                    const rows = await conn.query("SELECT * FROM splan.data_courses WHERE `teacher` LIKE ?;", ['%'+username+'%']);
+                    const rows = await conn.query("SELECT * FROM splan.data_courses WHERE `teacherId` = ?;", [userId]);
                     await conn.end();
                     rows.forEach((row: any) => {
-                        courses.push({
-                            "subject": row.subject,
-                            "grade": row.grade,
-                            "group": row.group,
-                            "exams":""
-                        });
+                        courses.push(new Course(row.grade, row.subject, row.group, false, row.iddata_courses, row.teacherId));
                     });
                 }
                 logger.log({
