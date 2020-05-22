@@ -18,9 +18,6 @@ export let router = express.Router();
  * @security JWT
  */
 router.post('/', async function(req,res){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
 
     try {
         let body = req.body;
@@ -56,9 +53,6 @@ router.post('/', async function(req,res){
  * @security JWT
  */
 router.get('/', async function (req,res){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
 
     let rows = await Exams.getAll();
     await res.json(rows);
@@ -74,9 +68,6 @@ router.get('/', async function (req,res){
  * @security JWT
  */
 router.put('/:id', async function (req,res){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
     let id = req.params.id;
 
     //TODO add exam update

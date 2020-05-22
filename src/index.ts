@@ -438,7 +438,7 @@ async function clearDB(){
 }
 
 //clearDB();
-
+/*
 (async () => {
     let teachers: Teacher[] = await Ldap.loadTeacher()
     for (const teacherkey in teachers) {
@@ -452,6 +452,8 @@ async function clearDB(){
 
     }
 })();
+
+ */
 
 
 /**

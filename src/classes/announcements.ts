@@ -77,19 +77,15 @@ export class Announcements {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let data: Announcement[] = [];
-                const rows = await conn.query("SELECT * FROM `splan`.`data_announcements` WHERE iddata_announcements = ?", [id]);
-                rows.forEach((element: any) => {
-                    let date = new Date(element["date"]);
-                    element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Announcement(new Course(element["grade"], element["subject"], element["group"]), element["author"], element["content"], element["date"], element["iddata_announcements"]));
-                });
-                if(data.length == 1){
-                    resolve(data[0]);
+                let rows = await conn.query("SELECT * FROM `splan`.`data_announcements` WHERE iddata_announcements = ?", [id]);
+                if(rows.length == 1){
+                    let row = rows[0];
+                    let date = new Date(row["date"]);
+                    row["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
+                    resolve(new Announcement(new Course(row["grade"], row["subject"], row["group"]), row["author"], row["content"], row["date"], row["iddata_announcements"]));
                 }else {
                     reject("no row");
                 }
-
             }catch (e) {
                 logger.log({
                     level: 'error',

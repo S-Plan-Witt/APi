@@ -13,7 +13,7 @@ export class Database {
         let db = process.env.SQL_DB;
         return new Promise(async function (resolve, reject) {
             try {
-                exec('mysql -h '+ host + ' -P '+ port + ' -u ' + user + ' --password='+ password + ' ' + db + ' < setup.sql', (err, stdout, stderr) => {
+                exec('mysql -h '+ host + ' -P '+ port + ' -u ' + user + ' --password='+ password + ' ' + db + ' < setup.sql', (err) => {
                     if (err) {
                         console.error(`exec error: ${err}`);
                         reject("Error: " + err);
