@@ -17,7 +17,7 @@ export class ReplacementLessons {
             let conn = await pool.getConnection();
             try {
                 let data: any = [];
-                let rows = await conn.query("SELECT * FROM `splan`.`data_replacementlessons` WHERE `lessonId`= (SELECT idlessons FROM splan.data_lessons WHERE courseId = (SELECT iddata_courses FROM splan.data_courses WHERE `grade`= ? AND `subject`= ? AND `group`= ?))", [course.grade, course.subject, course.group]);
+                let rows = await conn.query("SELECT data_replacementlessons.iddata_vertretungen, data_replacementlessons.date, data_replacementlessons.subject AS replacmentSubject, data_replacementlessons.room, data_replacementlessons.info, data_replacementlessons.lessonId, data_replacementlessons.teacherId AS replacementTeacherId, data_replacementlessons.replacementId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename, data_courses.teacher, data_courses.teacherId FROM splan.data_replacementlessons LEFT JOIN splan.data_lessons ON data_replacementlessons.lessonId = data_lessons.idlessons LEFT JOIN splan.data_courses ON data_lessons.courseId = data_courses.iddata_courses WHERE data_courses.grade = ? AND data_courses.subject = ? AND  data_courses.`group` = ?", [course.grade, course.subject, course.group]);
                 rows.forEach((replacementLesson: any) => {
                     let date = new Date(replacementLesson["date"]);
                     replacementLesson["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
