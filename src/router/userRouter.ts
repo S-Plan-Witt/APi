@@ -8,6 +8,7 @@ import winston, {Logger} from 'winston';
 import {User}   from '../classes/user';
 import {Totp} from '../classes/totp';
 import {Ldap} from "../classes/ldap";
+import assert from "assert";
 
 const logger: Logger = winston.loggers.get('main');
 export let router = express.Router();
@@ -278,7 +279,8 @@ router.get('/replacementlessons',  async function (req: Request, res: Response) 
         }
         if(req.decoded.userType === "teacher"){
             //Get replacement lessons hold by teacher
-            let data: any = await ReplacementLessons.getByTeacher(req.user.username, dateToday, dateEnd);
+            assert(req.user.id != null)
+            let data: any = await ReplacementLessons.getByTeacher(req.user.id, dateToday, dateEnd);
             console.log(data)
             data.forEach((replacementLesson: any) => {
                 response.push(replacementLesson);
