@@ -16,13 +16,87 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let lessons: Lesson[] = [];
-                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE (`grade`=? && `subject`=? && `group`=?)", [course.grade, course.subject, course.group]);
+                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE courseId = ?", [course.id]);
                 rows.forEach((row: any) => {
-                    lessons.push(new Lesson(new Course(row["grade"], row["subject"], row["group"],null),row["teacher"], row["lesson"], row["weekday"], row["room"]));
+                    lessons.push(new Lesson(new Course(row["grade"], row["subject"], row["group"],false),row["teacher"], row["lesson"], row["weekday"], row["room"]));
                 });
                 resolve(lessons);
             } catch (e) {
                 //TODO add logger
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+
+        });
+    }
+
+    static getLessonById(id: number): Promise<Lesson> {
+        return new Promise(async function (resolve, reject) {
+            let conn;
+            try {
+                conn = await pool.getConnection();
+                let lessons: Lesson[] = [];
+                let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_lessons.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM splan.data_lessons LEFT JOIN splan.data_courses ON data_lessons.courseId = data_courses.iddata_courses WHERE `idlessons`=?", [id.toString()]);
+                if(rows.length == 1){
+                    let row = rows[0];
+                    resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"],false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["teacherId"]))
+                }else {
+                    reject();
+                }
+            } catch (e) {
+                //TODO add logger
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+
+        });
+    }
+    /**
+     * Get all lessons by course
+     * @param course {course}
+     * @returns Promise {[lesson]}
+     */
+    static getLessonsByCourseAndLesson(course: Course,lessonNum: number): Promise<Lesson> {
+        return new Promise(async function (resolve, reject) {
+            let conn;
+            try {
+                conn = await pool.getConnection();
+                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE (`courseId`=? && `lesson`=? )", [course.id, lessonNum]);
+                if(rows.length == 1){
+                    let row = rows[0];
+                    resolve(new Lesson(course, row["lesson"], row["weekday"], row["room"],parseInt(row["idlessons"])));
+                }else {
+                    reject("No lesson"+ lessonNum);
+                }
+            } catch (e) {
+                //TODO add logger
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+
+        });
+    }
+    /**
+     * Get all Lessons
+     * @returns Promise {[Lesson]}
+     */
+    static getAllLessons(): Promise<Lesson[]> {
+        return new Promise(async function (resolve, reject) {
+            let conn;
+            try {
+                conn = await pool.getConnection();
+                let lessons: Lesson[] = [];
+                let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_lessons.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM splan.data_lessons LEFT JOIN splan.data_courses ON data_lessons.courseId = data_courses.iddata_courses");
+                for (let i = 0; i < rows.length; i++) {
+                    let row = rows[i];
+                    console.log(row)
+                    lessons.push(new Lesson(new Course(row["grade"], row["subject"], row["group"],false, row["iddata_courses"]), row["lesson"], row["weekday"], row["room"],row["idlessons"]));
+                }
+                resolve(lessons);
+            } catch (e) {
                 reject(e);
             } finally {
                 await conn.end();
@@ -36,19 +110,28 @@ export class TimeTable {
      * @param lesson {Lesson}
      * @returns Promise
      */
-    static addLesson(lesson: any){
+    static addLesson(lesson: Lesson){
         return new Promise(async (resolve, reject) =>{
             let conn = await pool.getConnection();
             try{
-                let subject 		= lesson.subject;
-                let grade 			= lesson.grade;
-                let group 			= lesson.group;
-                let teacher 		= lesson.teacher;
-                let lessonNumber 	= lesson.lesson;
-                let day 			= lesson.day;
-                let room 			= lesson.room;
-                await conn.query("INSERT INTO `splan`.`data_lessons` (`subject`, `teacher`, `grade`, `group`, `room`, `lesson`, `weekday`) VALUES (?, ?, ?, ?, ?, ?, ?);",[subject, teacher, grade, group, room, lessonNumber, day]);
+                await conn.query("INSERT INTO `splan`.`data_lessons` (`courseId`, `room`, `lesson`, weekday) VALUES (?, ?, ?, ?);",[lesson.course.id, lesson.room, lesson.lessonNumber, lesson.day]);
                 resolve();
+            }catch(e){
+                //TODO add logger
+                reject(e);
+            }finally{
+                await conn.end();
+            }
+        });
+    }
+
+    static addCourse(course: Course) : Promise<Course>{
+        return new Promise(async (resolve, reject) =>{
+            let conn = await pool.getConnection();
+            try{
+                let result = await conn.query("INSERT INTO `splan`.`data_courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);",[course.grade, course.subject, course.group, course.teacherId]);
+                course.id = result.insertId;
+                resolve(course);
             }catch(e){
                 //TODO add logger
                 reject(e);
@@ -60,18 +143,18 @@ export class TimeTable {
 
     /**
      *
-     * @param teacher
+     * @param teacherId
      * @param weekday
      * @param lesson
-     * @returns {Promise<unknown>}
+     * @returns {Promise<Course[]>}
      */
-    static getCourseByTeacherDayLesson(teacher: any, weekday: any, lesson: any){
+    static getCourseByTeacherDayLesson(teacherId: number, weekday: any, lesson: any): Promise<Course[]>{
         return new Promise(async (resolve, reject) =>{
             let conn;
             try {
                 conn = await pool.getConnection();
                 let lessons: any = [];
-                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE (`teacher`=? && `lesson`=? && `weekday`=?)", [teacher, lesson, weekday]);
+                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE (`teacherId`=? && `lesson`=? && `weekday`=?)", [teacherId, lesson, weekday]);
                 rows.forEach((lesson:any) => {
                     lessons.push(lesson);
                 });
@@ -85,16 +168,57 @@ export class TimeTable {
         });
     }
 
-    /**
-     *
-     * @returns {Promise<unknown>}
-     */
-    static getAllCourses(){
+    static getCourseByFields(subject: string, grade: string, group: string): Promise<Course>{
         return new Promise(async (resolve, reject) =>{
             let conn;
             try {
                 conn = await pool.getConnection();
-                let courses: any = [];
+                let lessons: any = [];
+                let rows = await conn.query("SELECT * FROM splan.data_courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
+                if (rows.length != 1) {
+                    reject()
+                } else {
+                    resolve(new Course(rows[0]["grade"],rows[0]["subject"],rows[0]["group"], false, rows[0]["iddata_courses"]));
+                }
+            } catch (e) {
+                //TODO add logger
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+    static getCourseById(id: number): Promise<Course>{
+        return new Promise(async (resolve, reject) =>{
+            let conn;
+            try {
+                conn = await pool.getConnection();
+                let lessons: any = [];
+                let rows = await conn.query("SELECT * FROM splan.data_courses WHERE (iddata_courses=?)", [id]);
+                if (rows.length != 1) {
+                    reject()
+                } else {
+                    resolve(new Course(rows[0]["grade"],rows[0]["subject"],rows[0]["group"], false, rows[0]["iddata_courses"]));
+                }
+            } catch (e) {
+                //TODO add logger
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    /**
+     *
+     * @returns {Promise<unknown>}
+     */
+    static getAllCourses(): Promise<Course[]>{
+        return new Promise(async (resolve, reject) =>{
+            let conn;
+            try {
+                conn = await pool.getConnection();
+                let courses: Course[] = [];
                 let rows = await conn.query("SELECT * FROM splan.data_courses ORDER BY grade, subject, `group`");
                 rows.forEach((lesson: any) => {
                     courses.push(lesson);
@@ -119,9 +243,14 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let courses: any = [];
-                let rows = await conn.query('SELECT `subject`,`grade`,`group`, `teacher` FROM splan.data_lessons');
-                rows.forEach((course: any )=> {
-                    let conName = course["grade"] + "/" + course["subject"] + "-" + course["group"];
+                let rows = await conn.query('SELECT `teacherId` FROM splan.data_lessons');
+                rows.forEach((course: any)=> {
+                    let conName: string;
+                    if(course["grade"] == course["group"]){
+                        conName = course["grade"] + "/" + course["subject"];
+                    }else {
+                        conName = course["grade"] + "/" + course["subject"] + "-" + course["group"];
+                    }
                     courses[conName] = course;
                 });
                 await conn.query('TRUNCATE TABLE splan.data_courses');
@@ -145,25 +274,25 @@ export class TimeTable {
 
 export class Lesson {
     course: Course;
-    teacher: string;
-    lesson: number;
+    lessonNumber: number;
     day: number;
     room: string;
+    id: number | null;
 
     /**
      *
      * @param course {Course}
-     * @param teacher {string}
      * @param lesson {number}
      * @param day {number}
      * @param room {string}
+     * @param id
      */
-    constructor(course: Course, teacher: string, lesson: number, day: number, room: string) {
+    constructor(course: Course, lesson: number, day: number, room: string, id: number | null) {
         this.course = course;
-        this.teacher = teacher;
-        this.lesson = lesson;
+        this.lessonNumber = lesson;
         this.day = day;
         this.room = room;
+        this.id = id;
     }
 }
 
@@ -172,7 +301,9 @@ export class Course {
     grade: any;
     subject: any;
     group: any;
-    exams: any;
+    exams: boolean;
+    id: number | null;
+    teacherId: number | null;
 
     /**
      *
@@ -180,11 +311,15 @@ export class Course {
      * @param subject {String}
      * @param group {String}
      * @param exams {String}
+     * @param id
+     * @param teacherId
      */
-    constructor(grade = null, subject = null, group = null, exams = null) {
+    constructor(grade: string | null = null, subject: string | null = null, group: string | null = null, exams = false, id: number | null = null, teacherId: number | null = null) {
         this.grade = grade;
         this.subject = subject;
         this.group = group;
         this.exams = exams;
+        this.id = id;
+        this.teacherId = teacherId;
     }
 }
