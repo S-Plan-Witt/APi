@@ -84,7 +84,7 @@ logger.log({
 });
 
 //Webservice
-import express, {NextFunction, Request, Response} from "express";
+import express, {NextFunction, Request, Response, Express} from "express";
 import bodyParser from "body-parser";
 import {Jwt} from './classes/jwt';
 import {Permissions, Teacher, User, UserFilter} from './classes/user';
@@ -173,8 +173,8 @@ app.use(header);
 app.use(reqLogger);
 
 //add parser to webServer for json payload
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.json({limit: '50mb'}));
+//app.use(express.urlencoded({limit: '50mb'}));
 
 //Validation of request auth tokens 
 app.use(Jwt.checkToken);
