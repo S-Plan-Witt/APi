@@ -26,9 +26,14 @@ router.post('/', async function(req,res){
         let body = req.body;
 
         for (let i = 0; i < body.length; i++) {
-            let element = body[i];
-            let exam = new Exam(false, element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"], element["students"], element["room"],element["id"],"");
-            await exam.save();
+            try {
+                let element = body[i];
+                let exam = new Exam(false, element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"], element["students"], null, element["id"], "");
+                exam.room = element["room"];
+                await exam.save();
+            } catch (e) {
+                console.log(e);
+            }
         }
         res.sendStatus(200);
     } catch (e) {
