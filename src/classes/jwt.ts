@@ -3,9 +3,7 @@
 import jwt from 'jsonwebtoken';
 //Filesystem
 import fs    from 'fs';
-import {Permissions, User} from './user';
-
-import De from "../types/custom";
+import {User} from './user';
 
 import winston from 'winston';
 const logger = winston.loggers.get('main');
@@ -23,11 +21,6 @@ const publicKey = fs.readFileSync('./keys/jwtRS256.key.pub');
 const authFreePaths = [
     '/user/login',
 ];
-
-const admins = [
-    1630
-];
-
 
 export class Jwt {
 	/**
@@ -119,7 +112,6 @@ export class Jwt {
 						req.decoded = decoded;
 						req.user = await User.getUserById(req.decoded.userId);
 						req.decoded.permissions = req.user.permissions;
-						//req.decoded.permissions.all = admins.indexOf(req.decoded.username) >= 0;
 						next();
 					}else {
 						console.log("JWT decode error");
