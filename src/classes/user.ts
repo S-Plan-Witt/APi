@@ -103,13 +103,23 @@ export class User {
                 rows = await conn.query("SELECT * FROM splan.users WHERE `username`= ?", [username]);
                 await conn.end();
                 if (rows.length > 0) {
+                    logger.log({
+                        level: 'silly',
+                        label: 'User',
+                        message: 'Class: User; Function: getUserByUsername('+ username + '): found'
+                    });
                     let loadedUser: User = await User.fromSqlUser(rows[0]);
+                    logger.log({
+                        level: 'silly',
+                        label: 'User',
+                        message: 'Class: User; Function: getUserByUsername('+ username + '): loaded'
+                    });
                     resolve(loadedUser);
                 } else {
                     logger.log({
                         level: 'error',
                         label: 'User',
-                        message: 'Class: User; Function: getUserByUsername: no user found'
+                        message: 'Class: User; Function: getUserByUsername('+ username + '): no user found'
                     });
                     reject("User not found");
                 }
@@ -117,7 +127,7 @@ export class User {
                 logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getUserByUsername: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getUserByUsername('+ username + '): ' + JSON.stringify(e)
                 });
                 conn.end();
                 reject(e);
@@ -310,6 +320,11 @@ export class User {
                         });
                     });
                 }
+                logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: User; Function: getCourses: loaded'
+                });
                 resolve(courses);
             } catch (e) {
                 await conn.end();
@@ -333,7 +348,11 @@ export class User {
                 rows.forEach((row: any) => {
                     mails.push(new EMail(userId, row["mail"],row["confirmed"], row["added"]));
                 });
-
+                logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: User; Function: getMails: loaded'
+                });
                 resolve(mails);
             } catch (e) {
                 await conn.end();
@@ -547,21 +566,31 @@ export class User {
      * @returns Promise({devices})
      * @param userId
      */
-    static getDevices(userId: number): any {
+    static getDevices(userId: number): Promise<any> {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                const rows = await conn.query("SELECT * FROM splan.devices WHERE `userID`= ?;", [userId]);
+                let rows = await conn.query("SELECT * FROM splan.devices WHERE `userID`= ?;", [userId]);
                 let devices: any = [];
                 rows.forEach((row: any) => {
                     //TODO [""]
                     if (row.deviceID != null) {
                         devices.push({"device": row.deviceID, "platform": row.plattform});
                     }
+
+                });
+                logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: User; Function: getDevices: loaded'
                 });
                 resolve(devices);
             } catch (e) {
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getDevices: ' + JSON.stringify(e)
+                });
                 reject(e);
             } finally {
                 await conn.end()
@@ -899,6 +928,16 @@ export class Permissions {
                     if(uResult["globalAdmin"] == 1){
                         permissions = new Permissions(true, true, true, true, true, true, true, true, true, true, true);
                     }
+                    logger.log({
+                        level: 'silly',
+                        label: 'Permissions',
+                        message: 'Class: Permissions; Function: getByUID: loaded'
+                    });
+                    resolve(permissions);
+                }else {
+                    //TODO error
+                    let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);
+
                     resolve(permissions);
                 }
             }catch (e) {
