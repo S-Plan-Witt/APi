@@ -1,6 +1,6 @@
 import {TimeTable} from '../classes/timeTable';
 import {Jwt} from '../classes/jwt';
-import {ReplacementLessons} from '../classes/replacementLessons';
+import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLessons';
 import {Announcements} from '../classes/announcements';
 import {Exam, Exams, Supervisors} from '../classes/exams';
 import express, {Request, Response} from 'express';
@@ -269,24 +269,23 @@ router.get('/replacementlessons',  async function (req: Request, res: Response) 
             res.sendStatus(503);
             return;
         }
-        console.log(courses)
 
         for(const course of courses){
             //Get replacement lessons with today and today + 6 days
             let data: any = await ReplacementLessons.getByCourse(course);
-            console.log(data)
-            data.forEach((replacementLesson: any) => {
+            data.forEach((replacementLesson: ReplacementLesson) => {
                 //Add replacement lesson to all replacement lessons
-                response.push(replacementLesson);
+                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, info: replacementLesson.info, date: replacementLesson.date}
+                response.push(dataset);
             });
         }
         if(req.decoded.userType === "teacher"){
             //Get replacement lessons hold by teacher
             assert(req.user.id != null)
             let data: any = await ReplacementLessons.getByTeacher(req.user.id, dateToday, dateEnd);
-            console.log(data)
             data.forEach((replacementLesson: any) => {
-                response.push(replacementLesson);
+                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, info: replacementLesson.info, date: replacementLesson.date}
+                response.push(dataset);
             });
         }
 
