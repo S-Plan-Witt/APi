@@ -101,7 +101,6 @@ export class User {
             try {
                 let rows: any[];
                 rows = await conn.query("SELECT * FROM splan.users WHERE `username`= ?", [username]);
-                await conn.end();
                 if (rows.length > 0) {
                     logger.log({
                         level: 'silly',
@@ -129,8 +128,9 @@ export class User {
                     label: 'User',
                     message: 'Class: User; Function: getUserByUsername('+ username + '): ' + JSON.stringify(e)
                 });
-                conn.end();
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
@@ -141,7 +141,6 @@ export class User {
             try {
                 let rows: any[];
                 rows = await conn.query("SELECT * FROM splan.users LEFT JOIN splan.moodle_mapping ON users.idusers = moodle_mapping.userid WHERE `idusers`= ?", [id]);
-                await conn.end();
                 if (rows.length > 0) {
                     let loadedUser = await User.fromSqlUser(rows[0]);
                     resolve(loadedUser);
@@ -155,8 +154,9 @@ export class User {
                     label: 'User',
                     message: 'Class: User; Function: getUserById: ' + JSON.stringify(e)
                 });
-                conn.end();
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
@@ -314,7 +314,6 @@ export class User {
                     });
                 }else if(userType == "teacher"){
                     const rows = await conn.query("SELECT * FROM splan.data_courses WHERE `teacherId` = ?;", [userId]);
-                    await conn.end();
                     rows.forEach((row: any) => {
                         courses.push(new Course(row.grade, row.subject, row.group, false, row.iddata_courses, row.teacherId));
                     });
@@ -326,13 +325,14 @@ export class User {
                 });
                 resolve(courses);
             } catch (e) {
-                await conn.end();
                 logger.log({
                     level: 'error',
                     label: 'User',
                     message: 'Class: User; Function: getCourses: ' + JSON.stringify(e)
                 });
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
@@ -343,7 +343,6 @@ export class User {
             try {
                 let mails: EMail[] = [];
                 const rows = await conn.query("SELECT * FROM splan.users_mails WHERE `userid`= ?;", [userId]);
-                await conn.end();
                 rows.forEach((row: any) => {
                     mails.push(new EMail(userId, row["mail"],row["confirmed"], row["added"]));
                 });
@@ -354,13 +353,14 @@ export class User {
                 });
                 resolve(mails);
             } catch (e) {
-                await conn.end();
                 logger.log({
                     level: 'error',
                     label: 'User',
                     message: 'Class: User; Function: getEmails: ' + JSON.stringify(e)
                 });
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
@@ -792,6 +792,8 @@ export class User {
                     resolve(muid);
                 }catch (e) {
                     console.log(e);
+                } finally {
+                    await conn.end();
                 }
             }
         });
@@ -808,6 +810,7 @@ export class User {
 
                     conn = await pool.getConnection();
                     let result = await conn.query("DELETE FROM `splan`.`moodle_mapping` WHERE `userid` = ?",[uid]);
+                    await conn.end();
                     console.log(result);
                     resolve(mUID);
                 }catch (e) {
