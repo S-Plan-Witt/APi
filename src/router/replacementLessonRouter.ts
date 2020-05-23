@@ -43,13 +43,7 @@ router.post('/', async function (req,res){
      */
     for(let i= 0; i < req.body.length;i++){
         let postDataSet: any = req.body[i];
-        if(postDataSet.hasOwnProperty("lessonId")){
-            console.log(postDataSet.lessonId)
-        }else if(postDataSet.hasOwnProperty("lesson")){
 
-        }
-
-        console.log(postDataSet)
         let replacementLesson: ReplacementLesson | undefined = undefined;
         let course: Course = await TimeTable.getCourseByFields(postDataSet["course"]["subject"],postDataSet["course"]["grade"],postDataSet["course"]["group"]);
         let teacher: User | null = null;
@@ -64,12 +58,13 @@ router.post('/', async function (req,res){
                         teacherId = teacher.id;
                     }
                 }
-                replacementLesson = new ReplacementLesson(null, course,await TimeTable.getLessonsByCourseAndLesson(course,postDataSet["lessonNumber"]), teacherId, postDataSet["room"], postDataSet["subject"], postDataSet["info"], postDataSet["date"]);
+                let date = new Date(postDataSet["date"]);
+                let weekday = date.getDay();
+                replacementLesson = new ReplacementLesson(null, course,await TimeTable.getLessonsByCourseAndLessonAndDay(course,postDataSet["lessonNumber"], weekday), teacherId, postDataSet["room"], postDataSet["subject"], postDataSet["info"], postDataSet["date"]);
             } catch (e) {
                 console.log(e)
             }
         }
-        console.log(replacementLesson)
         try {
             assert(replacementLesson != null, "RL null")
             let status = await ReplacementLessons.add(replacementLesson);
@@ -96,7 +91,7 @@ router.post('/', async function (req,res){
             logger.log({
                 level: 'warn',
                 label: 'ReplacementLessons',
-                message: 'Error while processing post ' + e
+                message: 'Error while processing post ' + e + '; at: ' + JSON.stringify(postDataSet)
             });
             //add handler
         }

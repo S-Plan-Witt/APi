@@ -1,6 +1,7 @@
 import winston from 'winston';
 const logger = winston.loggers.get('main');
 import {ApiGlobal} from "../types/global";
+import assert from "assert";
 declare const global: ApiGlobal;
 let pool = global["mySQLPool"];
 
@@ -16,9 +17,10 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let lessons: Lesson[] = [];
+                assert(course.id != null);
                 let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE courseId = ?", [course.id]);
                 rows.forEach((row: any) => {
-                    lessons.push(new Lesson(new Course(row["grade"], row["subject"], row["group"],false),row["teacher"], row["lesson"], row["weekday"], row["room"]));
+                    lessons.push(new Lesson(course, row["lesson"], row["weekday"], row["room"], row["idlessons"]));
                 });
                 resolve(lessons);
             } catch (e) {
@@ -56,19 +58,21 @@ export class TimeTable {
     /**
      * Get all lessons by course
      * @param course {course}
+     * @param lessonNum
+     * @param weekday
      * @returns Promise {[lesson]}
      */
-    static getLessonsByCourseAndLesson(course: Course,lessonNum: number): Promise<Lesson> {
+    static getLessonsByCourseAndLessonAndDay(course: Course,lessonNum: number, weekday: number): Promise<Lesson> {
         return new Promise(async function (resolve, reject) {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE (`courseId`=? && `lesson`=? )", [course.id, lessonNum]);
+                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE `courseId`=? && `lesson`=? AND weekday = ?", [course.id, lessonNum, weekday]);
                 if(rows.length == 1){
                     let row = rows[0];
                     resolve(new Lesson(course, row["lesson"], row["weekday"], row["room"],parseInt(row["idlessons"])));
                 }else {
-                    reject("No lesson"+ lessonNum);
+                    reject("No lesson: "+ lessonNum + "; " + course.grade + "/" + course.subject + "-" + course.group);
                 }
             } catch (e) {
                 //TODO add logger

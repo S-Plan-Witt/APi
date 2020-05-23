@@ -205,6 +205,7 @@ router.get('/lessons',  async function (req: Request, res: Response) {
                 try{
                     //Get lesson for course as array
                     let lessons: any = await TimeTable.getLessonsByCourse(course);
+                    console.log(lessons)
                     lessons.forEach((lesson:any) => {
                         //Add lesson to response array
                         response.push(lesson);
@@ -268,10 +269,12 @@ router.get('/replacementlessons',  async function (req: Request, res: Response) 
             res.sendStatus(503);
             return;
         }
+        console.log(courses)
 
         for(const course of courses){
             //Get replacement lessons with today and today + 6 days
             let data: any = await ReplacementLessons.getByCourse(course);
+            console.log(data)
             data.forEach((replacementLesson: any) => {
                 //Add replacement lesson to all replacement lessons
                 response.push(replacementLesson);

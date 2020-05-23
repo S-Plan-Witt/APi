@@ -303,14 +303,14 @@ export class User {
             try {
                 let courses: Course[] = [];
                 if(userType == "student"){
-                    const rows = await conn.query("SELECT * FROM splan.student_courses WHERE `user_id`= ?;", [userId]);
+                    const rows = await conn.query("SELECT student_courses.subject, student_courses.grade, student_courses.`group`, student_courses.displayKlausuren, iddata_courses FROM splan.student_courses LEFT JOIN splan.data_courses ON student_courses.`group` = data_courses.`group` AND student_courses.subject = data_courses.subject AND student_courses.grade = data_courses.grade WHERE `user_id`= ?;", [userId]);
                     await conn.end();
                     rows.forEach((row: any) => {
                         let exams = false;
                         if(row.displayKlausuren == 1){
                             exams = true;
                         }
-                        courses.push(new Course(row.grade,row.subject,row.group, exams));
+                        courses.push(new Course(row.grade,row.subject,row.group, exams, row.iddata_courses));
                     });
                 }else if(userType == "teacher"){
                     const rows = await conn.query("SELECT * FROM splan.data_courses WHERE `teacherId` = ?;", [userId]);
