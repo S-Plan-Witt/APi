@@ -284,7 +284,7 @@ router.get('/replacementlessons',  async function (req: Request, res: Response) 
             assert(req.user.id != null)
             let data: any = await ReplacementLessons.getByTeacher(req.user.id, dateToday, dateEnd);
             data.forEach((replacementLesson: any) => {
-                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, info: replacementLesson.info, date: replacementLesson.date}
+                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject,teacherId: replacementLesson.teacherId, info: replacementLesson.info, date: replacementLesson.date}
                 response.push(dataset);
             });
         }
