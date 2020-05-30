@@ -15,7 +15,7 @@ export class Exams {
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT `splan`.`data_exams`.*, `splan`.`data_exam_rooms`.room   FROM `splan`.`data_exams` LEFT JOIN `splan`.`data_exam_rooms` ON `splan`.`data_exams`.`roomLink` = `splan`.`data_exam_rooms`.`iddata_exam_rooms`");
+                let rows = await conn.query("SELECT `data_exams`.*, `data_exam_rooms`.room   FROM `data_exams` LEFT JOIN `data_exam_rooms` ON `data_exams`.`roomLink` = `data_exam_rooms`.`iddata_exam_rooms`");
                 resolve(await this.sqlRowToArray(rows));
             } catch (err) {
                 logger.log({
@@ -38,7 +38,7 @@ export class Exams {
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM `splan`.`data_exams` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
+                let rows = await conn.query("SELECT * FROM `data_exams` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
                 logger.log({
@@ -57,7 +57,7 @@ export class Exams {
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM `splan`.`data_exams` WHERE `teacher`= ?", [teacher]);
+                let rows = await conn.query("SELECT * FROM `data_exams` WHERE `teacher`= ?", [teacher]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
                 //TODO add logger
@@ -86,7 +86,7 @@ export class Exams {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let rows = await conn.query("SELECT * FROM splan.data_exams where roomLink = ?;", [roomLinkId]);
+                let rows = await conn.query("SELECT * FROM data_exams where roomLink = ?;", [roomLinkId]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
                 logger.log({
@@ -109,7 +109,7 @@ export class RoomLinks {
             let conn = await pool.getConnection();
             try {
                 let roomLinks: RoomLink[] = [];
-                let rows = await conn.query("SELECT * FROM `splan`.`data_exam_rooms` WHERE `date`= ? AND `room`= ? ", [date, room]);
+                let rows = await conn.query("SELECT * FROM `data_exam_rooms` WHERE `date`= ? AND `room`= ? ", [date, room]);
                 rows.forEach((element: any) => {
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
@@ -134,7 +134,7 @@ export class RoomLinks {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let result = await conn.query("SELECT * FROM splan.data_exam_rooms WHERE iddata_exam_rooms = ?", [id]);
+                let result = await conn.query("SELECT * FROM data_exam_rooms WHERE iddata_exam_rooms = ?", [id]);
                 if(result.length == 1){
                     let row = result[0];
                     let date = new Date(row["date"]);
@@ -146,8 +146,9 @@ export class RoomLinks {
 
             }catch (e) {
 
+            } finally {
+                await conn.end();
             }
-
         });
     }
 
@@ -160,7 +161,7 @@ export class RoomLinks {
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
-                await conn.query("INSERT INTO splan.data_exam_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [roomLink.room, roomLink.from, roomLink.to, roomLink.date]);
+                await conn.query("INSERT INTO data_exam_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [roomLink.room, roomLink.from, roomLink.to, roomLink.date]);
                 resolve();
             } catch (e) {
                 logger.log({
@@ -184,7 +185,7 @@ export class Supervisors {
                 conn = await pool.getConnection();
                 let data: Supervisor[] = [];
                 //TODO Add Supervisor object
-                let rows = await conn.query("SELECT * FROM `splan`.`data_exam_supervisors` LEFT JOIN `splan`.`users` ON `splan`.`data_exam_supervisors`.`TeacherId` = `splan`.`users`.`idusers` WHERE `RoomLink`= ?", [id]);
+                let rows = await conn.query("SELECT * FROM `data_exam_supervisors` LEFT JOIN `users` ON `data_exam_supervisors`.`TeacherId` = `users`.`idusers` WHERE `RoomLink`= ?", [id]);
                 rows.forEach((element: any) => {
                     data.push(element);
                 });
@@ -207,7 +208,7 @@ export class Supervisors {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let rows = await conn.query("SELECT `splan`.`data_exam_supervisors`.*,`splan`.`users`.*, `splan`.`data_exam_rooms`.`room`, `splan`.`data_exam_rooms`.`date` FROM `splan`.`data_exam_supervisors` LEFT JOIN `splan`.`users` ON `splan`.`data_exam_supervisors`.`TeacherId` = `splan`.`users`.`idusers` LEFT JOIN `splan`.`data_exam_rooms` ON `splan`.`data_exam_supervisors`.`RoomLink` = `splan`.`data_exam_rooms`.`iddata_exam_rooms` WHERE `supervisorId`= ?", [id]);
+                let rows = await conn.query("SELECT `data_exam_supervisors`.*,`users`.*, `data_exam_rooms`.`room`, `data_exam_rooms`.`date` FROM `data_exam_supervisors` LEFT JOIN `users` ON `data_exam_supervisors`.`TeacherId` = `users`.`idusers` LEFT JOIN `data_exam_rooms` ON `data_exam_supervisors`.`RoomLink` = `data_exam_rooms`.`iddata_exam_rooms` WHERE `supervisorId`= ?", [id]);
                 if(rows.length > 0){
                     let date = new Date(rows[0]["date"]);
                     rows[0]["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
@@ -235,7 +236,7 @@ export class Supervisors {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let rows = await conn.query("SELECT `splan`.`data_exam_supervisors`.*, `splan`.`data_exam_rooms`.`room`, `splan`.`data_exam_rooms`.`date` FROM `splan`.`data_exam_supervisors` LEFT JOIN `splan`.`users` ON `splan`.`data_exam_supervisors`.`TeacherId` = `splan`.`users`.`idusers` LEFT JOIN `splan`.`data_exam_rooms` ON `splan`.`data_exam_supervisors`.`RoomLink` = `splan`.`data_exam_rooms`.`iddata_exam_rooms` WHERE `TeacherId`= (SELECT idusers FROM splan.users WHERE users.username = ?)", [username]);
+                let rows = await conn.query("SELECT `data_exam_supervisors`.*, `data_exam_rooms`.`room`, `data_exam_rooms`.`date` FROM `data_exam_supervisors` LEFT JOIN `users` ON `data_exam_supervisors`.`TeacherId` = `users`.`idusers` LEFT JOIN `data_exam_rooms` ON `data_exam_supervisors`.`RoomLink` = `data_exam_rooms`.`iddata_exam_rooms` WHERE `TeacherId`= (SELECT idusers FROM users WHERE users.username = ?)", [username]);
                 if(rows.length > 0){
                     let data = [];
                     for (let i = 0; i < rows.length; i++) {
@@ -327,16 +328,16 @@ export class Exam {
 
                 let uniqueIdentifier = grade + '-' + group + '-' + subject + '-' + date;
 
-                let rows = await conn.query('SELECT * FROM splan.data_exams WHERE uniqueIdentifier=?', [uniqueIdentifier]);
+                let rows = await conn.query('SELECT * FROM data_exams WHERE uniqueIdentifier=?', [uniqueIdentifier]);
                 if(rows.length > 0 && id == null){
                     reject("row exists");
                     return ;
                 }
                 let res;
                 if(id != null ){
-                    res = await conn.query("UPDATE `splan`.`data_exams` SET `date` = ?, `subject` = ?, `grade` = ?, `group` = ?, `visibleOnDisplay` = ?, `from` = ?, `to` = ?, `teacher` = ?,`students` = ? WHERE (`iddata_klausuren` = ?);", [date, subject, grade, group,  show, from, to, teacher, students, id]);
+                    res = await conn.query("UPDATE `data_exams` SET `date` = ?, `subject` = ?, `grade` = ?, `group` = ?, `visibleOnDisplay` = ?, `from` = ?, `to` = ?, `teacher` = ?,`students` = ? WHERE (`iddata_klausuren` = ?);", [date, subject, grade, group,  show, from, to, teacher, students, id]);
                 }else {
-                    res = await conn.query("INSERT INTO splan.data_exams (date, subject, grade, `group`, visibleOnDisplay, `from`, `to`, teacher, students, roomLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [date,subject, grade , group, show, from, to, teacher, students, linkId]);
+                    res = await conn.query("INSERT INTO data_exams (date, subject, grade, `group`, visibleOnDisplay, `from`, `to`, teacher, students, roomLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [date,subject, grade , group, show, from, to, teacher, students, linkId]);
                 }
                 resolve(res);
             } catch (e) {
@@ -359,7 +360,7 @@ export class Exam {
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
-                await conn.query("DELETE FROM `splan`.`data_exams` WHERE (`iddata_klausuren` = ?);",[id]);
+                await conn.query("DELETE FROM `data_exams` WHERE (`iddata_klausuren` = ?);",[id]);
                 logger.log({
                     level: 'silly',
                     label: 'exams',

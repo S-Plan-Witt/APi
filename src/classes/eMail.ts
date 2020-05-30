@@ -13,7 +13,7 @@ export class SendGrid {
             try {
                 conn = await pool.getConnection();
 
-                let rows = await conn.query("SELECT * FROM splan.users_mails WHERE mail = ?",[mail]);
+                let rows = await conn.query("SELECT * FROM users_mails WHERE mail = ?",[mail]);
 
                 if(rows.length >0){
                     if(rows[0].userid == userId){
@@ -23,7 +23,7 @@ export class SendGrid {
                         reject("assigned to other user");
                     }
                 }else {
-                    await conn.query("INSERT INTO splan.users_mails (mail, token, userid) VALUES (?, ?, ?)",[mail, token, userId]);
+                    await conn.query("INSERT INTO users_mails (mail, token, userid) VALUES (?, ?, ?)",[mail, token, userId]);
                 }
 
                 await conn.end();
@@ -78,6 +78,8 @@ export class SendGrid {
                 //TODO add logger
                 if (conn) await conn.end();
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }

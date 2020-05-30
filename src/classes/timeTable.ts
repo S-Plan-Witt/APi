@@ -18,7 +18,7 @@ export class TimeTable {
                 conn = await pool.getConnection();
                 let lessons: Lesson[] = [];
                 assert(course.id != null);
-                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE courseId = ?", [course.id]);
+                let rows = await conn.query("SELECT * FROM data_lessons WHERE courseId = ?", [course.id]);
                 rows.forEach((row: any) => {
                     lessons.push(new Lesson(course, row["lesson"], row["weekday"], row["room"], row["idlessons"]));
                 });
@@ -38,11 +38,10 @@ export class TimeTable {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let lessons: Lesson[] = [];
-                let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_lessons.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM splan.data_lessons LEFT JOIN splan.data_courses ON data_lessons.courseId = data_courses.iddata_courses WHERE `idlessons`=?", [id.toString()]);
+                let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_lessons.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM data_lessons LEFT JOIN data_courses ON data_lessons.courseId = data_courses.iddata_courses WHERE `idlessons`=?", [id.toString()]);
                 if(rows.length == 1){
                     let row = rows[0];
-                    resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"],false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["teacherId"]))
+                    resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"],false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["idlessons"]))
                 }else {
                     reject();
                 }
@@ -67,7 +66,7 @@ export class TimeTable {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE `courseId`=? && `lesson`=? AND weekday = ?", [course.id, lessonNum, weekday]);
+                let rows = await conn.query("SELECT * FROM data_lessons WHERE `courseId`=? && `lesson`=? AND weekday = ?", [course.id, lessonNum, weekday]);
                 if(rows.length == 1){
                     let row = rows[0];
                     resolve(new Lesson(course, row["lesson"], row["weekday"], row["room"],parseInt(row["idlessons"])));
@@ -93,7 +92,7 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let lessons: Lesson[] = [];
-                let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_lessons.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM splan.data_lessons LEFT JOIN splan.data_courses ON data_lessons.courseId = data_courses.iddata_courses");
+                let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_lessons.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM data_lessons LEFT JOIN data_courses ON data_lessons.courseId = data_courses.iddata_courses");
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
                     console.log(row)
@@ -118,7 +117,7 @@ export class TimeTable {
         return new Promise(async (resolve, reject) =>{
             let conn = await pool.getConnection();
             try{
-                await conn.query("INSERT INTO `splan`.`data_lessons` (`courseId`, `room`, `lesson`, weekday) VALUES (?, ?, ?, ?);",[lesson.course.id, lesson.room, lesson.lessonNumber, lesson.day]);
+                await conn.query("INSERT INTO `data_lessons` (`courseId`, `room`, `lesson`, weekday) VALUES (?, ?, ?, ?);",[lesson.course.id, lesson.room, lesson.lessonNumber, lesson.day]);
                 resolve();
             }catch(e){
                 //TODO add logger
@@ -133,7 +132,7 @@ export class TimeTable {
         return new Promise(async (resolve, reject) =>{
             let conn = await pool.getConnection();
             try{
-                let result = await conn.query("INSERT INTO `splan`.`data_courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);",[course.grade, course.subject, course.group, course.teacherId]);
+                let result = await conn.query("INSERT INTO `data_courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);",[course.grade, course.subject, course.group, course.teacherId]);
                 course.id = result.insertId;
                 resolve(course);
             }catch(e){
@@ -158,7 +157,7 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let lessons: any = [];
-                let rows = await conn.query("SELECT * FROM splan.data_lessons WHERE (`teacherId`=? && `lesson`=? && `weekday`=?)", [teacherId, lesson, weekday]);
+                let rows = await conn.query("SELECT * FROM data_lessons WHERE (`teacherId`=? && `lesson`=? && `weekday`=?)", [teacherId, lesson, weekday]);
                 rows.forEach((lesson:any) => {
                     lessons.push(lesson);
                 });
@@ -178,7 +177,7 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let lessons: any = [];
-                let rows = await conn.query("SELECT * FROM splan.data_courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
+                let rows = await conn.query("SELECT * FROM data_courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
                 if (rows.length != 1) {
                     reject()
                 } else {
@@ -198,7 +197,7 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let lessons: any = [];
-                let rows = await conn.query("SELECT * FROM splan.data_courses WHERE (iddata_courses=?)", [id]);
+                let rows = await conn.query("SELECT * FROM data_courses WHERE (iddata_courses=?)", [id]);
                 if (rows.length != 1) {
                     reject()
                 } else {
@@ -223,7 +222,7 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let courses: Course[] = [];
-                let rows = await conn.query("SELECT * FROM splan.data_courses ORDER BY grade, subject, `group`");
+                let rows = await conn.query("SELECT * FROM data_courses ORDER BY grade, subject, `group`");
                 rows.forEach((lesson: any) => {
                     courses.push(lesson);
                 });
@@ -247,7 +246,7 @@ export class TimeTable {
             try {
                 conn = await pool.getConnection();
                 let courses: any = [];
-                let rows = await conn.query('SELECT `teacherId` FROM splan.data_lessons');
+                let rows = await conn.query('SELECT `teacherId` FROM data_lessons');
                 rows.forEach((course: any)=> {
                     let conName: string;
                     if(course["grade"] == course["group"]){
@@ -257,11 +256,11 @@ export class TimeTable {
                     }
                     courses[conName] = course;
                 });
-                await conn.query('TRUNCATE TABLE splan.data_courses');
+                await conn.query("TRUNCATE TABLE data_courses");
                 for (let courseId in courses){
                     let course = courses[courseId];
                     console.log(course)
-                    rows = await conn.query('INSERT INTO splan.data_courses (grade, subject, `group`, `teacher`) VALUES (?, ?, ?, ?)', [course["grade"], course["subject"], course["group"], course["teacher"]]);
+                    rows = await conn.query('INSERT INTO data_courses (grade, subject, `group`, `teacher`) VALUES (?, ?, ?, ?)', [course["grade"], course["subject"], course["group"], course["teacher"]]);
                 }
                 resolve();
             } catch (e) {

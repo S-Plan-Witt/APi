@@ -259,7 +259,7 @@ export class PushWebPush {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                await conn.query("DELETE FROM `splan`.`devices` WHERE (`deviceID` LIKE ?);", ['%' + endpoint + '%']);
+                await conn.query("DELETE FROM `devices` WHERE (`deviceID` LIKE ?);", ['%' + endpoint + '%']);
                 //TODO add logger
                 resolve();
             } catch (e) {

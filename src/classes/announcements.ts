@@ -20,7 +20,7 @@ export class Announcements {
             try {
                 conn = await pool.getConnection();
                 let data: Announcement[] = [];
-                const rows = await conn.query("SELECT * FROM `splan`.`data_announcements` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
+                const rows = await conn.query("SELECT * FROM `data_announcements` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
                 rows.forEach((element: any) => {
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
@@ -47,7 +47,7 @@ export class Announcements {
             try {
                 conn = await pool.getConnection();
                 let data: Announcement[] = [];
-                const rows = await conn.query("SELECT * FROM `splan`.`data_announcements`");
+                const rows = await conn.query("SELECT * FROM `data_announcements`");
                 rows.forEach((element: any) => {
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
@@ -77,7 +77,7 @@ export class Announcements {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let rows = await conn.query("SELECT * FROM `splan`.`data_announcements` WHERE iddata_announcements = ?", [id]);
+                let rows = await conn.query("SELECT * FROM `data_announcements` WHERE iddata_announcements = ?", [id]);
                 if(rows.length == 1){
                     let row = rows[0];
                     let date = new Date(row["date"]);
@@ -149,7 +149,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await pool.getConnection();
-                await conn.query("INSERT INTO `splan`.`data_announcements` (`content`, `shownOnDisplay`, `displayColor`, `displayOrder`, `author`, `editedBy`, `grade`, `subject`, `group`, `date`) VALUES (?, '1', 'red', '1', ?, ?, ?, ?, ?, ?)", [content, author, editor, course.grade, course.subject, course.group, date]);
+                await conn.query("INSERT INTO `data_announcements` (`content`, `shownOnDisplay`, `displayColor`, `displayOrder`, `author`, `editedBy`, `grade`, `subject`, `group`, `date`) VALUES (?, '1', 'red', '1', ?, ?, ?, ?, ?, ?)", [content, author, editor, course.grade, course.subject, course.group, date]);
                 resolve(true);
             } catch (e) {
                 logger.log({
@@ -179,7 +179,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await pool.getConnection();
-                await conn.query("UPDATE `splan`.`data_announcements` SET `content` = ?, `edited` = CURRENT_TIMESTAMP, `editedBy` = ?, `grade` = ?, `subject` = ?, `group` = ?, `date` = ? WHERE iddata_announcements = ?", [content, editor, course.grade, course.subject, course.group, date, id]);
+                await conn.query("UPDATE `data_announcements` SET `content` = ?, `edited` = CURRENT_TIMESTAMP, `editedBy` = ?, `grade` = ?, `subject` = ?, `group` = ?, `date` = ? WHERE iddata_announcements = ?", [content, editor, course.grade, course.subject, course.group, date, id]);
                 resolve(true);
             } catch (e) {
                 logger.log({
@@ -205,7 +205,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await pool.getConnection();
-                await conn.query("DELETE FROM `splan`.`data_announcements` WHERE iddata_announcements = ?", [id]);
+                await conn.query("DELETE FROM `data_announcements` WHERE iddata_announcements = ?", [id]);
                 resolve(true);
             } catch (e) {
                 logger.log({

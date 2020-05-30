@@ -31,7 +31,7 @@ export class Jwt {
 		return new Promise(async (resolve, reject) => {
 			let conn = await pool.getConnection();
 			try {
-				let rows = await conn.query("SELECT * FROM splan.`jwt_Token` WHERE `tokenIdentifier`= ?", [id]);
+				let rows = await conn.query("SELECT * FROM `jwt_Token` WHERE `tokenIdentifier`= ?", [id]);
 				if(rows.length === 1){
 					resolve();
 				}else {
@@ -53,7 +53,7 @@ export class Jwt {
 			let conn;
 			try {
 				conn = await pool.getConnection();
-				await conn.query("INSERT INTO `splan`.`jwt_Token` (`tokenIdentifier`, `userid`) VALUES (?, ?);", [tokenId, userId]);
+				await conn.query("INSERT INTO `jwt_Token` (`tokenIdentifier`, `userid`) VALUES (?, ?);", [tokenId, userId]);
 				await conn.end();
 				resolve();
 
@@ -141,7 +141,7 @@ export class Jwt {
 		return new Promise(async (resolve, reject) => {
 			let conn = await pool.getConnection();
 			try {
-				await conn.query(`DELETE FROM splan.jwt_Token where tokenIdentifier=?`, [tokenId]);
+				await conn.query(`DELETE FROM jwt_Token where tokenIdentifier=?`, [tokenId]);
 				logger.log({
 					level: 'silly',
 					label: 'JWT',
@@ -165,7 +165,7 @@ export class Jwt {
 		return new Promise(async function (resolve, reject) {
 			let conn = await pool.getConnection();
 			try {
-				let rows = await conn.query(`SELECT * FROM splan.jwt_Token WHERE userid=?`, [username]);
+				let rows = await conn.query(`SELECT * FROM jwt_Token WHERE userid=?`, [username]);
 				resolve(rows);
 			}catch (e) {
 				logger.log({
@@ -185,7 +185,7 @@ export class Jwt {
 		return new Promise(async function (resolve, reject) {
 			let conn = await pool.getConnection();
 			try {
-				let rows = await conn.query("SELECT * FROM splan.`jwt_Token`");
+				let rows = await conn.query("SELECT * FROM `jwt_Token`");
 				resolve(rows);
 			}catch (e) {
 				logger.log({
@@ -205,7 +205,7 @@ export class Jwt {
 		return new Promise(async function (resolve, reject) {
 			let conn = await pool.getConnection();
 			try {
-				await conn.query("DELETE From splan.`jwt_Token` where `userid`=?", [username]);
+				await conn.query("DELETE From `jwt_Token` where `userid`=?", [username]);
 				logger.log({
 					level: 'silly',
 					label: 'JWT',
@@ -229,7 +229,7 @@ export class Jwt {
 		return new Promise(async function (resolve, reject) {
 			let conn = await pool.getConnection();
 			try {
-				let rows = await conn.query("SELECT * FROM splan.`preAuth_Token` WHERE `token` = ?", [token]);
+				let rows = await conn.query("SELECT * FROM `preAuth_Token` WHERE `token` = ?", [token]);
 				if (rows.length === 1) {
 					let username = rows[0].username;
 					resolve(username);

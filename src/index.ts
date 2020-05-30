@@ -74,7 +74,8 @@ global["mySQLPool"] = mySQL.createPool({
     user: process.env.SQL_USER,
     password: process.env.SQL_PASS,
     connectionLimit: 30,
-    collation: "latin1_german2_ci"
+    collation: "latin1_german2_ci",
+    database: process.env.SQL_DB
 });
 
 logger.log({
@@ -426,7 +427,7 @@ async function clearDB(){
         conn = await pool.getConnection();
         for(let i = 0; i < tablesToTruncate.length; i++) {
             let tableName = tablesToTruncate[i];
-            let result = await conn.query(`DELETE FROM splan.${tableName}`);
+            let result = await conn.query(`DELETE FROM ${tableName}`);
             console.log(result);
         }
     }catch (e) {
