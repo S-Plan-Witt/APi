@@ -176,7 +176,6 @@ export class TimeTable {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let lessons: any = [];
                 let rows = await conn.query("SELECT * FROM data_courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
                 if (rows.length != 1) {
                     reject()

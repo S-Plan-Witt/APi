@@ -43,15 +43,14 @@ router.post('/lessons', async function (req,res){
         try {
             let course: Course | undefined = undefined;
             try {
-                course = await TimeTable.getCourseByFields(lessonDataSet["subject"], lessonDataSet["grade"], lessonDataSet["group"]);
+                course = await TimeTable.getCourseByFields(lessonDataSet["course"]["subject"], lessonDataSet["course"]["grade"], lessonDataSet["course"]["group"]);
             } catch (e) {
                 console.log(e)
             }
             if(course == undefined){
-                course = await TimeTable.addCourse(new Course(lessonDataSet["grade"], lessonDataSet["subject"], lessonDataSet["group"]))
+                course = await TimeTable.addCourse(new Course(lessonDataSet["course"]["grade"], lessonDataSet["course"]["subject"], lessonDataSet["course"]["group"]))
             }
-            console.log(course)
-            let lesson: Lesson = new Lesson(course,lessonDataSet["lesson"], lessonDataSet["day"], lessonDataSet["room"], null);
+            let lesson: Lesson = new Lesson(course,lessonDataSet["lessonNumber"], lessonDataSet["day"], lessonDataSet["room"], null);
             try {
                 await TimeTable.addLesson(lesson);
             }catch (e) {
