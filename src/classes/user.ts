@@ -79,8 +79,7 @@ export class User {
             try {
                 conn = await pool.getConnection();
                 let result = await conn.query("INSERT INTO users ( username, firstname, lastname, type, displayname) VALUES (?, ?, ?, ?, ?)",[username, firstName, lastName, type, displayName]);
-                console.log(result);
-                resolve();
+                resolve(result);
             } catch (e) {
                 logger.log({
                     level: 'error',
