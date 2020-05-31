@@ -1,6 +1,6 @@
 import express, {Request, Response} from 'express';
 import winston from 'winston';
-import { User, UserFilter } from '../classes/user';
+import {Teacher, User, UserFilter} from '../classes/user';
 import { Ldap }   from '../classes/ldap';
 import {Course} from "../classes/timeTable";
 
@@ -260,5 +260,39 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
     }else {
         res.send("user not found")
     }
+});
 
+
+/**
+ * Loads all teachers from AD Server
+ * @route POST /users/teacher/reload
+ * @group Users - Operations about all users
+ * @returns {object} 200
+ * @returns {Error} 401 - Wrong Creds
+ * @security JWT
+ */
+router.get('/teacher/reload', async (req: Request, res: Response) => {
+    if(!req.decoded.permissions.usersAdmin){
+        logger.log({
+            level: 'debug',
+            label: 'Express',
+            message: 'No permissions : /students/'+ req.params.username + '/courses'
+        });
+        return res.sendStatus(401);
+    }
+    let teachers: Teacher[] = await Ldap.loadTeacher()
+    for (const teacherKey in teachers) {
+        let teacher = teachers[teacherKey];
+        try {
+            await teacher.createToDB();
+        }catch (e) {
+            console.log(e)
+            logger.log({
+                level: 'error',
+                label: 'Users',
+                message: 'UserRouter->/teacher/reload: ' + JSON.stringify(e)
+            });
+        }
+    }
+    res.sendStatus(200);
 });
