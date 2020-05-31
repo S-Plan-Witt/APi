@@ -276,7 +276,7 @@ export class Ldap {
                         let grade = dn[1].substr(3, (dn[1].length -1 ));
                         if(grade != '_Removed') {
                             let newUser = new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "", [], true, null, null, null, Permissions.getDefault());
-                            newUser.displayName = obj["displayname"];
+                            newUser.displayName = obj["displayName"];
                             users.push(newUser);
                         }
                     });
