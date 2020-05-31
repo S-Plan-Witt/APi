@@ -63,12 +63,27 @@ export class Ldap {
                     });
                     reject(err)
                 } else {
-                    let users: any = [];
+                    let users: User[] = [];
                     res.on('error', ldapErrorHandler);
                     res.on('end', () => {
                         resolve(users);
                         ldapClient.unbind();
                         ldapClient.destroy();
+                    });
+                    res.on('searchEntry', function (entry: any) {
+                        logger.log({
+                            level: 'silly',
+                            label: 'LDAP',
+                            message: 'Got entry : ' + JSON.stringify(entry.object)
+                        });
+                        let obj = entry.object;
+                        let dn = obj["dn"].toString().split(",");
+                        let grade = dn[1].substr(3, (dn[1].length -1 ));
+                        if(grade != '_Removed') {
+                            let user: User = new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "teacher", [], true, null, null, null, Permissions.getDefault());
+                            user.displayName = obj["displayName"];
+                            users.push(user);
+                        }
                     });
                 }
             });
