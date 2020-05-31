@@ -461,7 +461,6 @@ export class User {
             try {
                 for (const course of courses) {
                     try {
-                        console.log(course);
                         await conn.query("INSERT INTO `student_courses` (`subject`, `user_id`, `grade`, `group`,`displayKlausuren`) VALUES (?, ?, ?, ?, ?)", [course.subject, userId, course.grade, course.group, course.exams]);
                     } catch (e) {
                         logger.log({

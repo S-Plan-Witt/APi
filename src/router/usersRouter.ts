@@ -231,26 +231,23 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
         return res.sendStatus(401);
     }
     let user: User | null = null;
-
     try {
         user = await User.getUserByUsername(req.params.username);
     }catch (e) {
         console.log(e);
     }
-    console.log(user);
     if(user == null){
         await User.createUserFromLdap(req.params.username);
         user = await User.getUserByUsername(req.params.username);
     }
-    console.log(user);
     if(user != null){
         try {
-            await req.user.deleteCourses();
+            await user.deleteCourses();
             let courses = [];
             for (const courseData of req.body){
                 courses.push(new Course(courseData["grade"],courseData["subject"], courseData["group"], courseData["exams"]));
             }
-            await req.user.addCourse(courses);
+            await user.addCourse(courses);
             res.sendStatus(200);
         } catch(e){
             //TODO add logger
