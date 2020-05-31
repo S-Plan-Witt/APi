@@ -8,6 +8,7 @@ before_install:
   - npm install
   - npx tsc
   - docker build -t nilswitt/siks-backend:"$DOCKER_TAG" .
+  - docker tag nilswitt/siks-backend:"$DOCKER_TAG" nilswitt/siks-backend:"$TRAVIS_COMMIT"
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   - docker push nilswitt/siks-backend
 
