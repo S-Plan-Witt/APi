@@ -9,12 +9,9 @@ const logger = winston.loggers.get('main');
 export let router = express.Router();
 
 router.use((req, res, next) =>{
-    if(req.decoded.admin){
+    if(req.decoded.permissions.announcements){
         next();
         return ;
-    }else if(req.decoded.userType == 'teacher'){
-        next();
-        return;
     }
     return res.sendStatus(401);
 });
@@ -30,7 +27,9 @@ router.use((req, res, next) =>{
  */
 
 router.post('/', async function(req,res){
-
+    if(!req.decoded.permissions.announcementsAdmin){
+        return res.sendStatus(401);
+    }
     let body = req.body;
     let author = req.decoded.userId.toString();
     try {
@@ -84,6 +83,9 @@ router.get('/', async function (req,res){
  * @security JWT
  */
 router.put('/id/:id', async function(req,res){
+    if(!req.decoded.permissions.announcementsAdmin){
+        return res.sendStatus(401);
+    }
     let body = req.body;
     let id: number = parseInt(req.params.id);
     let announcement: Announcement = await Announcements.getById(id);
@@ -125,7 +127,9 @@ router.get('/id/:id', async function(req,res){
  * @security JWT
  */
 router.delete('/id/:id', async function (req,res){
-
+    if(!req.decoded.permissions.announcementsAdmin){
+        return res.sendStatus(401);
+    }
     try {
         let id = parseInt(req.params.id);
         let announcement: Announcement = await Announcements.getById(id);
