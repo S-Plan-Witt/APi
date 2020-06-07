@@ -87,9 +87,13 @@ router.post('/login', async function (req: Request, res: Response) {
             user = await User.getUserByUsername(username);
             console.log(user)
         }catch (e) {
-            console.log(e);
-            res.status(602);
-            res.send("User not available")
+            res.sendStatus(401);
+            logger.log({
+                level: 'error',
+                label: 'User',
+                message: ' Login: /user/login : user not found ('+ username +') e:' + JSON.stringify(e)
+            });
+            //res.send("User not available")
             return;
         }
     }
