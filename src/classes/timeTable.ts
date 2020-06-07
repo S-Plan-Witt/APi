@@ -258,7 +258,6 @@ export class TimeTable {
                 await conn.query("TRUNCATE TABLE data_courses");
                 for (let courseId in courses){
                     let course = courses[courseId];
-                    console.log(course)
                     rows = await conn.query('INSERT INTO data_courses (grade, subject, `group`, `teacher`) VALUES (?, ?, ?, ?)', [course["grade"], course["subject"], course["group"], course["teacher"]]);
                 }
                 resolve();
