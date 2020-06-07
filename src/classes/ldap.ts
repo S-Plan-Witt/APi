@@ -345,7 +345,7 @@ export class Ldap {
                         let dn = obj["dn"].toString().split(",");
                         let grade = dn[1].substr(3, (dn[1].length -1 ));
                         if(grade != '_Removed'){
-                            users.push(new Student(obj["givenName"], obj["lastname"], obj["displayName"], obj["sAMAccountName"],0,grade, obj["info"]));
+                            users.push(new Student(obj["givenName"], obj["sn"], obj["displayName"], obj["sAMAccountName"],0,grade, obj["info"]));
                         }
                     });
                     res.on('error', ldapErrorHandler);
