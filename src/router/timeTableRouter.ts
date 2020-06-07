@@ -2,6 +2,7 @@ import express, {Request, Response} from 'express';
 import winston from 'winston';
 
 import {Lesson, TimeTable, Course} from '../classes/timeTable';
+import {User} from "../classes/user";
 
 const logger = winston.loggers.get('main');
 export let router = express.Router();
@@ -48,7 +49,15 @@ router.post('/lessons', async function (req,res){
                 console.log(e)
             }
             if(course == undefined){
-                course = await TimeTable.addCourse(new Course(lessonDataSet["course"]["grade"], lessonDataSet["course"]["subject"], lessonDataSet["course"]["group"]))
+                let teacherId: number | null = null;
+                try {
+                    let teacher: User = await User.getUserByUsername(lessonDataSet["teacher"]);
+                    teacherId = teacher.id;
+                } catch (e) {
+                    console.log("Teacher error:" + e)
+                }
+
+                course = await TimeTable.addCourse(new Course(lessonDataSet["course"]["grade"], lessonDataSet["course"]["subject"], lessonDataSet["course"]["group"],false,null, teacherId))
             }
             let lesson: Lesson = new Lesson(course,lessonDataSet["lessonNumber"], lessonDataSet["day"], lessonDataSet["room"], null);
             try {
