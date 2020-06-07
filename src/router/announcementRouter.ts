@@ -1,4 +1,4 @@
-import {Course} from "../classes/timeTable";
+import {Course, TimeTable} from "../classes/timeTable";
 
 import express from 'express';
 import winston from 'winston';
@@ -27,14 +27,10 @@ router.use((req, res, next) =>{
  */
 
 router.post('/', async function(req,res){
-    if(!req.decoded.permissions.announcementsAdmin){
-        return res.sendStatus(401);
-    }
     let body = req.body;
-    let author = req.decoded.userId.toString();
     try {
-        let course = new Course(body["course"]["grade"],body["course"]["subject"],body["course"]["group"],false);
-
+        let course = await TimeTable.getCourseByFields(body["course"]["subject"],body["course"]["grade"],body["course"]["group"])
+        console.log(course);
 
         if(!req.decoded.admin){
             if(!req.user.isTeacherOf(course)){
@@ -42,7 +38,7 @@ router.post('/', async function(req,res){
             }
         }
 
-        let announcement = new Announcement(course, author, body["content"], body["date"]);
+        let announcement = new Announcement(course, req.decoded.userId,req.decoded.userId, body["content"], body["date"], null);
         await announcement.create();
 
         let devices = await User.getStudentDevicesByCourse(course);

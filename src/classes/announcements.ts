@@ -1,4 +1,4 @@
-import {Course} from "./timeTable";
+import {Course, TimeTable} from "./timeTable";
 
 import winston from 'winston';
 const logger = winston.loggers.get('main');
@@ -11,8 +11,8 @@ export class Announcements {
 
     /**
      * Retrieves all Announcements to corresponding course from the database
-     * @param course {Course}
      * @returns {Promise<Announcement[]>}
+     * @param course
      */
     static getByCourse(course: Course): Promise<Announcement[]> {
         return new Promise(async (resolve, reject) => {
@@ -20,12 +20,12 @@ export class Announcements {
             try {
                 conn = await pool.getConnection();
                 let data: Announcement[] = [];
-                const rows = await conn.query("SELECT * FROM `data_announcements` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
+
+                const rows = await conn.query("SELECT * FROM `data_announcements` WHERE `courseId`= ? ", [course.id]);
                 rows.forEach((element: any) => {
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Announcement(course, element["author"], element["content"], element["date"], element["iddata_announcements"]));
-
+                    data.push(new Announcement(course, element["authorId"],element["editorId"], element["content"], element["date"], element["iddata_announcements"]));
                 });
                 resolve(data);
             }catch (e) {
@@ -48,11 +48,12 @@ export class Announcements {
                 conn = await pool.getConnection();
                 let data: Announcement[] = [];
                 const rows = await conn.query("SELECT * FROM `data_announcements`");
-                rows.forEach((element: any) => {
-                    let date = new Date(element["date"]);
-                    element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Announcement(new Course(element["grade"], element["subject"], element["group"]), element["author"], element["content"], element["date"], element["iddata_announcements"]));
-                });
+                for (let i = 0; i < rows.length; i++) {
+                    let row = rows[i];
+                    let date = new Date(row["date"]);
+                    row["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
+                    data.push(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"],row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
+                }
                 resolve(data);
             }catch (e) {
                 logger.log({
@@ -82,7 +83,7 @@ export class Announcements {
                     let row = rows[0];
                     let date = new Date(row["date"]);
                     row["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    resolve(new Announcement(new Course(row["grade"], row["subject"], row["group"]), row["author"], row["content"], row["date"], row["iddata_announcements"]));
+                    resolve(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"],row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
                 }else {
                     reject("no row");
                 }
@@ -112,25 +113,30 @@ export class Announcements {
 
 export class Announcement {
     course: Course;
-    author: string;
+    authorId: number;
+    editorId: number;
     content: string;
     date: string;
-    id: number;
+    id: number | null;
 
     /**
      * Constructor
      * @param course {Course}
-     * @param author {String}
+     * @param authorId
+     * @param editorId
      * @param content {String}
      * @param date {String}
      * @param id {number}
      */
-    constructor(course: Course, author: string, content: string, date: string, id: any = null) {
-        this.id = id;
+
+
+    constructor(course: Course, authorId: number, editorId: number, content: string, date: string, id: number | null) {
         this.course = course;
-        this.author = author;
+        this.authorId = authorId;
+        this.editorId = editorId;
         this.content = content;
         this.date = date;
+        this.id = id;
     }
 
     /**
@@ -139,9 +145,9 @@ export class Announcement {
      */
     create(): Promise<boolean>{
         let content = this.content;
-        let author = this.author;
-        let editor = author;
-        let course = this.course;
+        let authorId = this.authorId;
+        let editorId = authorId;
+        let courseId = this.course.id;
         let date = this.date;
 
 
@@ -149,7 +155,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await pool.getConnection();
-                await conn.query("INSERT INTO `data_announcements` (`content`, `shownOnDisplay`, `displayColor`, `displayOrder`, `author`, `editedBy`, `grade`, `subject`, `group`, `date`) VALUES (?, '1', 'red', '1', ?, ?, ?, ?, ?, ?)", [content, author, editor, course.grade, course.subject, course.group, date]);
+                let res = await conn.query("INSERT INTO `splan`.`data_announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`) VALUES (?, ?, ?, ?, ?)", [content,date,authorId,editorId,courseId]);
                 resolve(true);
             } catch (e) {
                 logger.log({
@@ -170,16 +176,15 @@ export class Announcement {
      */
     update(): Promise<boolean> {
         let content = this.content;
-        let editor = this.author;
-        let course = this.course;
+        let editorId = this.editorId;
         let date = this.date;
-        let id = "1";
+        let id = this.id;
 
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await pool.getConnection();
-                await conn.query("UPDATE `data_announcements` SET `content` = ?, `edited` = CURRENT_TIMESTAMP, `editedBy` = ?, `grade` = ?, `subject` = ?, `group` = ?, `date` = ? WHERE iddata_announcements = ?", [content, editor, course.grade, course.subject, course.group, date, id]);
+                await conn.query("UPDATE `data_announcements` SET `content` = ?, `edited` = CURRENT_TIMESTAMP, `editorId` = ?, `date` = ? WHERE iddata_announcements = ?", [content, editorId, date, id]);
                 resolve(true);
             } catch (e) {
                 logger.log({
@@ -192,7 +197,6 @@ export class Announcement {
                 await conn.end();
             }
         });
-
     }
 
     /**
