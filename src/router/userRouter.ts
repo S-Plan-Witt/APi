@@ -1,7 +1,7 @@
 import {TimeTable} from '../classes/timeTable';
 import {Jwt} from '../classes/jwt';
 import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLessons';
-import {Announcements} from '../classes/announcements';
+import {Announcement, Announcements} from '../classes/announcements';
 import {Exam, Exams, Supervisors} from '../classes/exams';
 import express, {Request, Response} from 'express';
 import winston, {Logger} from 'winston';
@@ -312,9 +312,11 @@ router.get('/announcements',  async (req: Request, res: Response) => {
     for(const course of courses){
         try{
             let data: Announcements[] = await Announcements.getByCourse(course);
-            data.forEach(element => {
-                response.push(element)
-            });
+            for (let i = 0; i < data.length; i++) {
+                let announcement: any = data[i];
+                response.push({courseId: announcement.course.id, authorId: announcement.authorId, editorId: announcement.editorId, date: announcement.date, id: announcement.id, content: announcement.content})
+            }
+
         } catch(e){
             //TODO add logger
             //TODO add handler
