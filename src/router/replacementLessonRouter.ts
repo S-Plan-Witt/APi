@@ -28,7 +28,11 @@ router.post('/', async function (req,res){
         let course: Course = await TimeTable.getCourseByFields(postDataSet["course"]["subject"],postDataSet["course"]["grade"],postDataSet["course"]["group"]);
         let teacher: User | null = null;
         if(postDataSet["teacher"] != "---"){
-            teacher = await User.getUserByUsername(postDataSet["teacher"]);
+            try {
+                teacher = await User.getUserByUsername(postDataSet["teacher"]);
+            }catch (e) {
+                console.log("TNF")
+            }
         }
         if (teacher == null || teacher.id != null){
             try {
