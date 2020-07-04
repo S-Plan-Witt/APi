@@ -15,27 +15,32 @@ export class Ldap {
      */
     static bindLDAP(): Promise<Client>{
         return new Promise((resolve, reject) => {
-            let ldapClient = ldap.createClient({
-                url: urlLdap
-            });
-            if(process.env.LDAP_PASS != null){
-                ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err : Error | null) => {
-                    if(err){
-                        reject("BindFailed");
-                        logger.log({
-                            level: 'error',
-                            label: 'LDAP',
-                            message: 'bind failed: ' + err
-                        });
-                    }else{
-                        resolve(ldapClient);
-                        logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'bind successful control connection'
-                        });
-                    }
+            if(process.env.LDAP === "true") {
+                let ldapClient = ldap.createClient({
+                    url: urlLdap
                 });
+                if (process.env.LDAP_PASS != null) {
+                    console.log(process.env.LDAP)
+                    ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err: Error | null) => {
+                        if (err) {
+                            reject("BindFailed");
+                            logger.log({
+                                level: 'error',
+                                label: 'LDAP',
+                                message: 'bind failed: ' + err
+                            });
+                        } else {
+                            resolve(ldapClient);
+                            logger.log({
+                                level: 'silly',
+                                label: 'LDAP',
+                                message: 'bind successful control connection'
+                            });
+                        }
+                    });
+                }
+            } else {
+                reject("LDAP disabled")
             }
         });
     }
@@ -378,10 +383,17 @@ function ldapErrorHandler(err: Error) {
 
 
 setTimeout(async () => {
-    let ldapClient: any = await Ldap.bindLDAP();
-    ldapClient.unbind();
-    ldapClient.destroy();
+    try {
+        let ldapClient: Client = await Ldap.bindLDAP();
+        ldapClient.unbind();
+        ldapClient.destroy();
+    }catch (e) {
+        console.log("LDAP init failed: " + JSON.stringify(e))
+    }
+
 },100);
+
+
 
 export class LdapSearch{
 
