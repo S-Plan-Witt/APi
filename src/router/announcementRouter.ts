@@ -1,4 +1,4 @@
-import {Course} from "../classes/timeTable";
+import {Course, TimeTable} from "../classes/timeTable";
 
 import express from 'express';
 import winston from 'winston';
@@ -9,12 +9,9 @@ const logger = winston.loggers.get('main');
 export let router = express.Router();
 
 router.use((req, res, next) =>{
-    if(req.decoded.admin){
+    if(req.decoded.permissions.announcements){
         next();
         return ;
-    }else if(req.decoded.userType == 'teacher'){
-        next();
-        return;
     }
     return res.sendStatus(401);
 });
@@ -30,12 +27,10 @@ router.use((req, res, next) =>{
  */
 
 router.post('/', async function(req,res){
-
     let body = req.body;
-    let author = req.decoded.userId.toString();
     try {
-        let course = new Course(body["course"]["grade"],body["course"]["subject"],body["course"]["group"],null);
-
+        let course = await TimeTable.getCourseByFields(body["course"]["subject"],body["course"]["grade"],body["course"]["group"])
+        console.log(course);
 
         if(!req.decoded.admin){
             if(!req.user.isTeacherOf(course)){
@@ -43,7 +38,7 @@ router.post('/', async function(req,res){
             }
         }
 
-        let announcement = new Announcement(course, author, body["content"], body["date"]);
+        let announcement = new Announcement(course, req.decoded.userId,req.decoded.userId, body["content"], body["date"], null);
         await announcement.create();
 
         let devices = await User.getStudentDevicesByCourse(course);
@@ -84,11 +79,14 @@ router.get('/', async function (req,res){
  * @security JWT
  */
 router.put('/id/:id', async function(req,res){
+    if(!req.decoded.permissions.announcementsAdmin){
+        return res.sendStatus(401);
+    }
     let body = req.body;
     let id: number = parseInt(req.params.id);
     let announcement: Announcement = await Announcements.getById(id);
 
-    announcement.course = new Course(body["course"]["grade"], body["course"]["subject"], body["course"]["group"],null);
+    announcement.course = new Course(body["course"]["grade"], body["course"]["subject"], body["course"]["group"],false);
     announcement.content = body["content"];
     announcement.date = body["date"];
 
@@ -125,7 +123,9 @@ router.get('/id/:id', async function(req,res){
  * @security JWT
  */
 router.delete('/id/:id', async function (req,res){
-
+    if(!req.decoded.permissions.announcementsAdmin){
+        return res.sendStatus(401);
+    }
     try {
         let id = parseInt(req.params.id);
         let announcement: Announcement = await Announcements.getById(id);

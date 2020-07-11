@@ -74,7 +74,8 @@ global["mySQLPool"] = mySQL.createPool({
     user: process.env.SQL_USER,
     password: process.env.SQL_PASS,
     connectionLimit: 30,
-    collation: "latin1_german2_ci"
+    collation: "latin1_german2_ci",
+    database: process.env.SQL_DB
 });
 
 logger.log({
@@ -84,7 +85,7 @@ logger.log({
 });
 
 //Webservice
-import express, {NextFunction, Request, Response} from "express";
+import express, {NextFunction, Request, Response, Express} from "express";
 import bodyParser from "body-parser";
 import {Jwt} from './classes/jwt';
 import {Permissions, Teacher, User, UserFilter} from './classes/user';
@@ -173,8 +174,8 @@ app.use(header);
 app.use(reqLogger);
 
 //add parser to webServer for json payload
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+app.use(express.json({limit: '50mb'}));
+//app.use(express.urlencoded({limit: '50mb'}));
 
 //Validation of request auth tokens 
 app.use(Jwt.checkToken);
@@ -426,7 +427,7 @@ async function clearDB(){
         conn = await pool.getConnection();
         for(let i = 0; i < tablesToTruncate.length; i++) {
             let tableName = tablesToTruncate[i];
-            let result = await conn.query(`DELETE FROM splan.${tableName}`);
+            let result = await conn.query(`DELETE FROM ${tableName}`);
             console.log(result);
         }
     }catch (e) {
@@ -438,7 +439,7 @@ async function clearDB(){
 }
 
 //clearDB();
-
+/*
 (async () => {
     let teachers: Teacher[] = await Ldap.loadTeacher()
     for (const teacherkey in teachers) {
@@ -452,6 +453,8 @@ async function clearDB(){
 
     }
 })();
+
+ */
 
 
 /**

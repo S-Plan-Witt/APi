@@ -18,17 +18,19 @@ export let router = express.Router();
  * @security JWT
  */
 router.post('/', async function(req,res){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
 
     try {
         let body = req.body;
 
         for (let i = 0; i < body.length; i++) {
-            let element = body[i];
-            let exam = new Exam(false, element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"], element["students"], element["room"],element["id"],"");
-            await exam.save();
+            try {
+                let element = body[i];
+                let exam = new Exam(false, element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"], element["students"], null, element["id"], "");
+                exam.room = element["room"];
+                await exam.save();
+            } catch (e) {
+                console.log(e);
+            }
         }
         res.sendStatus(200);
     } catch (e) {
@@ -51,9 +53,6 @@ router.post('/', async function(req,res){
  * @security JWT
  */
 router.get('/', async function (req,res){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
 
     let rows = await Exams.getAll();
     await res.json(rows);
@@ -69,9 +68,6 @@ router.get('/', async function (req,res){
  * @security JWT
  */
 router.put('/:id', async function (req,res){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
     let id = req.params.id;
 
     //TODO add exam update

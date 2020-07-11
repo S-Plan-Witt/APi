@@ -1,10 +1,9 @@
 import ldap, {Client, LDAPResult, SearchOptions} from 'ldapjs';
 import winston from 'winston';
+import fs from 'fs';
 const logger = winston.loggers.get('main');
 
-import {User, Student, Teacher, Parent, UserFilter, Permissions} from './user';
-import {url} from "inspector";
-import {Course} from "./timeTable";
+import {User, Student, Teacher, UserFilter, Permissions} from './user';
 let urlLdap: string;
 if(process.env.LDAP_HOST !== undefined){
     urlLdap = process.env.LDAP_HOST;
@@ -17,28 +16,64 @@ export class Ldap {
      */
     static bindLDAP(): Promise<Client>{
         return new Promise((resolve, reject) => {
-            let ldapClient = ldap.createClient({
-                url: urlLdap
-            });
-
-            // @ts-ignore
-            ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err) => {
-                if(err){
-                    reject("BindFailed");
-                    logger.log({
-                        level: 'error',
-                        label: 'LDAP',
-                        message: 'bind failed: ' + err
-                    });
-                }else{
-                    resolve(ldapClient);
+            if(process.env.LDAP === "true") {
+                let ldapClient = ldap.createClient({
+                    url: urlLdap
+                });
+                if(process.env.LDAP_TLS === "true"){
                     logger.log({
                         level: 'silly',
                         label: 'LDAP',
-                        message: 'bind successful control connection'
+                        message: 'starting TLS'
+                    });
+                    if(typeof process.env.LDAP_CA_PATH == "string"){
+                        let opts = {
+                            ca: [fs.readFileSync(process.env.LDAP_CA_PATH).toString()]
+                        };
+                        ldapClient.starttls(opts, undefined,function(err, res) {
+                            if (process.env.LDAP_PASS != null) {
+                                ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err: Error | null) => {
+                                    if (err) {
+                                        reject("BindFailed");
+                                        logger.log({
+                                            level: 'error',
+                                            label: 'LDAP',
+                                            message: 'bind failed: ' + err
+                                        });
+                                    } else {
+                                        resolve(ldapClient);
+                                        logger.log({
+                                            level: 'silly',
+                                            label: 'LDAP',
+                                            message: 'bind successful control connection'
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }else if (process.env.LDAP_PASS != null) {
+                    ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err: Error | null) => {
+                        if (err) {
+                            reject("BindFailed");
+                            logger.log({
+                                level: 'error',
+                                label: 'LDAP',
+                                message: 'bind failed: ' + err
+                            });
+                        } else {
+                            resolve(ldapClient);
+                            logger.log({
+                                level: 'silly',
+                                label: 'LDAP',
+                                message: 'bind successful control connection'
+                            });
+                        }
                     });
                 }
-            });
+            } else {
+                reject("LDAP disabled")
+            }
         });
     }
 
@@ -65,33 +100,27 @@ export class Ldap {
                     });
                     reject(err)
                 } else {
-                    let users: any = [];
-                    //Found user
-                    res.on('searchEntry', function (entry: any) {
-                        //TODO add logger
-                        //console.log('entry: ' + JSON.stringify(entry.object));
-                        //Clean object
-                        let obj = entry.object;
-                        users.push(new Teacher(obj['givenName'], obj['sn'], obj['sAMAccountName'], obj['displayName'],undefined ));
-                    });
-                    res.on('searchReference', function (referral: any) {
-                        //TODO add logger
-                        //console.log('referral: ' + referral.uris.join());
-                    });
-                    res.on('error', function (err: Error) {
-                        logger.log({
-                            level: 'error',
-                            label: 'LDAP',
-                            message: 'Load teacher error: ' + err.message
-                        });
-                    });
-                    //Search completed
-                    res.on('end', function (result: any) {
-                        //TODO add logger
-                        //console.log('status: ' + result.status);
+                    let users: User[] = [];
+                    res.on('error', ldapErrorHandler);
+                    res.on('end', () => {
                         resolve(users);
                         ldapClient.unbind();
                         ldapClient.destroy();
+                    });
+                    res.on('searchEntry', function (entry: any) {
+                        logger.log({
+                            level: 'silly',
+                            label: 'LDAP',
+                            message: 'Got entry : ' + JSON.stringify(entry.object)
+                        });
+                        let obj = entry.object;
+                        let dn = obj["dn"].toString().split(",");
+                        let grade = dn[1].substr(3, (dn[1].length -1 ));
+                        if(grade != '_Removed') {
+                            let user: User = new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "teacher", [], true, null, null, null, Permissions.getDefault());
+                            user.displayName = obj["displayName"];
+                            users.push(user);
+                        }
                     });
                 }
             });
@@ -150,20 +179,7 @@ export class Ldap {
                                     object.type = "student";
                                     users.push(object);
                                 });
-                                res.on('searchReference', function (referral: any) {
-                                    logger.log({
-                                        level: 'silly',
-                                        label: 'LDAP',
-                                        message: 'referral: ' + referral.uris.join()
-                                    });
-                                });
-                                res.on('error', function (err: Error) {
-                                    logger.log({
-                                        level: 'error',
-                                        label: 'LDAP',
-                                        message: 'search error : ' + err.message
-                                    });
-                                });
+                                res.on('error', ldapErrorHandler);
                                 res.on('end', function (result: LDAPResult) {
                                     logger.log({
                                         level: 'silly',
@@ -260,20 +276,7 @@ export class Ldap {
                             users.push(new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "", [], true, null, null, null, Permissions.getDefault()));
                         }
                     });
-                    res.on('searchReference', function (referral: any) {
-                        logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'referral: ' + referral.uris.join()
-                        });
-                    });
-                    res.on('error', function (err: Error) {
-                        logger.log({
-                            level: 'error',
-                            label: 'LDAP',
-                            message: 'search error : ' + err.message
-                        });
-                    });
+                    res.on('error', ldapErrorHandler);
                     res.on('end', function (result: LDAPResult) {
                         logger.log({
                             level: 'silly',
@@ -315,31 +318,22 @@ export class Ldap {
                 } else {
                     let users: User[] = [];
                     res.on('searchEntry', function (entry: any) {
-                        //TODO add logger
+                        logger.log({
+                            level: 'silly',
+                            label: 'LDAP',
+                            message: 'Got entry : ' + JSON.stringify(entry.object)
+                        });
                         let obj = entry.object;
                         let dn = obj["dn"].toString().split(",");
                         let grade = dn[1].substr(3, (dn[1].length -1 ));
                         if(grade != '_Removed') {
-                            users.push(new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "", [], true, null, null, null, Permissions.getDefault()));
+                            let newUser = new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "", [], true, null, null, null, Permissions.getDefault());
+                            newUser.displayName = obj["displayName"];
+                            users.push(newUser);
                         }
                     });
-                    res.on('searchReference', function (referral: any) {
-                        logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'referral: ' + referral.uris.join()
-                        });
-                    });
-                    res.on('error', function (err :Error) {
-                        logger.log({
-                            level: 'error',
-                            label: 'LDAP',
-                            message: 'Get user by username search failed: ' + err.message
-                        });
-                    });
-                    res.on('end', function (result: LDAPResult) {
-                        //console.log('status: ' + result.status);
-
+                    res.on('error', ldapErrorHandler);
+                    res.on('end', () => {
                         logger.log({
                             level: 'silly',
                             label: 'LDAP',
@@ -388,30 +382,17 @@ export class Ldap {
                         let dn = obj["dn"].toString().split(",");
                         let grade = dn[1].substr(3, (dn[1].length -1 ));
                         if(grade != '_Removed'){
-                            users.push(new Student(obj["givenName"], obj["lastname"], obj["displayName"], obj["sAMAccountName"],0,grade, obj["info"]));
+                            users.push(new Student(obj["givenName"], obj["sn"], obj["displayName"], obj["sAMAccountName"],0,grade, obj["info"]));
                         }
                     });
-                    res.on('searchReference', function (referral: any) {
-                        logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'referral: ' + referral.uris.join()
-                        });
-                    });
-                    res.on('error', function (err: Error) {
-                        logger.log({
-                            level: 'error',
-                            label: 'LDAP',
-                            message: 'search error : ' + err.message
-                        });
-                    });
+                    res.on('error', ldapErrorHandler);
+
                     res.on('end', function (result: LDAPResult) {
                         logger.log({
                             level: 'silly',
                             label: 'LDAP',
                             message: 'Got status : ' + result.status
                         });
-                        //console.log('status: ' + result.status);
 
                         resolve(users);
                         ldapClient.unbind();
@@ -424,13 +405,27 @@ export class Ldap {
     }
 }
 
+function ldapErrorHandler(err: Error) {
+    logger.log({
+        level: 'error',
+        label: 'LDAP',
+        message: 'search error : ' + err.message
+    });
+}
 
 
 setTimeout(async () => {
-    let ldapClient: any = await Ldap.bindLDAP();
-    ldapClient.unbind();
-    ldapClient.destroy();
+    try {
+        let ldapClient: Client = await Ldap.bindLDAP();
+        ldapClient.unbind();
+        ldapClient.destroy();
+    }catch (e) {
+        console.log("LDAP init failed: " + JSON.stringify(e))
+    }
+
 },100);
+
+
 
 export class LdapSearch{
 

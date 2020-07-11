@@ -78,9 +78,8 @@ export class User {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let result = await conn.query("INSERT INTO splan.users ( username, firstname, lastname, type, displayname) VALUES (?, ?, ?, ?, ?)",[username, firstName, lastName, type, displayName]);
-                console.log(result);
-                resolve();
+                let result = await conn.query("INSERT INTO users ( username, firstname, lastname, type, displayname) VALUES (?, ?, ?, ?, ?)",[username, firstName, lastName, type, displayName]);
+                resolve(result);
             } catch (e) {
                 logger.log({
                     level: 'error',
@@ -100,16 +99,25 @@ export class User {
             let conn = await pool.getConnection();
             try {
                 let rows: any[];
-                rows = await conn.query("SELECT * FROM splan.users WHERE `username`= ?", [username]);
-                await conn.end();
+                rows = await conn.query("SELECT * FROM users WHERE `username`= ?", [username]);
                 if (rows.length > 0) {
+                    logger.log({
+                        level: 'silly',
+                        label: 'User',
+                        message: 'Class: User; Function: getUserByUsername('+ username + '): found'
+                    });
                     let loadedUser: User = await User.fromSqlUser(rows[0]);
+                    logger.log({
+                        level: 'silly',
+                        label: 'User',
+                        message: 'Class: User; Function: getUserByUsername('+ username + '): loaded'
+                    });
                     resolve(loadedUser);
                 } else {
                     logger.log({
                         level: 'error',
                         label: 'User',
-                        message: 'Class: User; Function: getUserByUsername: no user found'
+                        message: 'Class: User; Function: getUserByUsername('+ username + '): no user found'
                     });
                     reject("User not found");
                 }
@@ -117,10 +125,11 @@ export class User {
                 logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getUserByUsername: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getUserByUsername('+ username + '): ' + JSON.stringify(e)
                 });
-                conn.end();
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
@@ -130,8 +139,7 @@ export class User {
             let conn = await pool.getConnection();
             try {
                 let rows: any[];
-                rows = await conn.query("SELECT * FROM splan.users LEFT JOIN splan.moodle_mapping ON users.idusers = moodle_mapping.userid WHERE `idusers`= ?", [id]);
-                await conn.end();
+                rows = await conn.query("SELECT * FROM users LEFT JOIN moodle_mapping ON users.idusers = moodle_mapping.userid WHERE `idusers`= ?", [id]);
                 if (rows.length > 0) {
                     let loadedUser = await User.fromSqlUser(rows[0]);
                     resolve(loadedUser);
@@ -145,8 +153,9 @@ export class User {
                     label: 'User',
                     message: 'Class: User; Function: getUserById: ' + JSON.stringify(e)
                 });
-                conn.end();
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
@@ -180,7 +189,7 @@ export class User {
 
             let conn = await pool.getConnection();
             try {
-                await conn.query("INSERT INTO `splan`.`users` (`username`, `firstname`, `lastname`, `type`, `displayname`) VALUES (?, ?, ?, '1', ?);", [username.toLowerCase(), user.firstName, user.lastName, user.displayName]);
+                await conn.query("INSERT INTO `users` (`username`, `firstname`, `lastname`, `type`, `displayname`) VALUES (?, ?, ?, '1', ?);", [username.toLowerCase(), user.firstName, user.lastName, user.displayName]);
                 resolve();
             } catch (e) {
                 logger.log({
@@ -251,7 +260,7 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM splan.users WHERE username=?", [username.toLowerCase()]);
+                let rows = await conn.query("SELECT * FROM users WHERE username=?", [username.toLowerCase()]);
                 if (rows.length === 1) {
                     let type = null;
                     let row = rows[0];
@@ -293,32 +302,36 @@ export class User {
             try {
                 let courses: Course[] = [];
                 if(userType == "student"){
-                    const rows = await conn.query("SELECT * FROM splan.student_courses WHERE `user_id`= ?;", [userId]);
+                    const rows = await conn.query("SELECT student_courses.subject, student_courses.grade, student_courses.`group`, student_courses.displayKlausuren, iddata_courses FROM student_courses LEFT JOIN data_courses ON student_courses.`group` = data_courses.`group` AND student_courses.subject = data_courses.subject AND student_courses.grade = data_courses.grade WHERE `user_id`= ?;", [userId]);
                     await conn.end();
                     rows.forEach((row: any) => {
-                        courses.push(new Course(row.grade,row.subject,row.group, row.exams));
+                        let exams = false;
+                        if(row.displayKlausuren == 1){
+                            exams = true;
+                        }
+                        courses.push(new Course(row.grade,row.subject,row.group, exams, row.iddata_courses));
                     });
                 }else if(userType == "teacher"){
-                    const rows = await conn.query("SELECT * FROM splan.data_courses WHERE `teacher` LIKE ?;", ['%'+username+'%']);
-                    await conn.end();
+                    const rows = await conn.query("SELECT * FROM data_courses WHERE `teacherId` = ?;", [userId]);
                     rows.forEach((row: any) => {
-                        courses.push({
-                            "subject": row.subject,
-                            "grade": row.grade,
-                            "group": row.group,
-                            "exams":""
-                        });
+                        courses.push(new Course(row.grade, row.subject, row.group, false, row.iddata_courses, row.teacherId));
                     });
                 }
+                logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: User; Function: getCourses: loaded'
+                });
                 resolve(courses);
             } catch (e) {
-                await conn.end();
                 logger.log({
                     level: 'error',
                     label: 'User',
                     message: 'Class: User; Function: getCourses: ' + JSON.stringify(e)
                 });
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
@@ -328,21 +341,25 @@ export class User {
             let conn = await pool.getConnection();
             try {
                 let mails: EMail[] = [];
-                const rows = await conn.query("SELECT * FROM splan.users_mails WHERE `userid`= ?;", [userId]);
-                await conn.end();
+                const rows = await conn.query("SELECT * FROM users_mails WHERE `userid`= ?;", [userId]);
                 rows.forEach((row: any) => {
                     mails.push(new EMail(userId, row["mail"],row["confirmed"], row["added"]));
                 });
-
+                logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: User; Function: getMails: loaded'
+                });
                 resolve(mails);
             } catch (e) {
-                await conn.end();
                 logger.log({
                     level: 'error',
                     label: 'User',
                     message: 'Class: User; Function: getEmails: ' + JSON.stringify(e)
                 });
                 reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
@@ -353,7 +370,7 @@ export class User {
             let conn = await pool.getConnection();
             try {
                 let announcements : any = [];
-                const rows = await conn.query("SELECT * FROM splan.student_courses WHERE `user_id`= ?;", [userId]);
+                const rows = await conn.query("SELECT * FROM student_courses WHERE `user_id`= ?;", [userId]);
                 rows.forEach((row: any) => {
                     announcements.push({
                         "subject": row.subject,
@@ -387,10 +404,9 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT splan.student_courses.*, splan.devices.* FROM splan.student_courses " +
-                    "LEFT JOIN splan.devices ON student_courses.user_id = splan.devices.userID " +
-                    "WHERE (`grade`=? && `subject`=? && `group`=?)"
+                let rows = await conn.query("SELECT student_courses.*, devices.* FROM student_courses LEFT JOIN devices ON student_courses.user_id = devices.userID WHERE (`grade`=? && `subject`=? && `group`=?)"
                     , [course.grade, course.subject, course.group]);
+                //TODO update to use id
 
                 let devices: any = [];
                 rows.forEach((row: any) => {
@@ -445,8 +461,7 @@ export class User {
             try {
                 for (const course of courses) {
                     try {
-                        console.log(course);
-                        await conn.query("INSERT INTO `splan`.`student_courses` (`subject`, `user_id`, `grade`, `group`,`displayKlausuren`) VALUES (?, ?, ?, ?, ?)", [course.subject, userId, course.grade, course.group, course.exams]);
+                        await conn.query("INSERT INTO `student_courses` (`subject`, `user_id`, `grade`, `group`,`displayKlausuren`) VALUES (?, ?, ?, ?, ?)", [course.subject, userId, course.grade, course.group, course.exams]);
                     } catch (e) {
                         logger.log({
                             level: 'error',
@@ -479,10 +494,10 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM splan.users WHERE `username`= ? AND `type`= 1;", [username]);
+                let rows = await conn.query("SELECT * FROM users WHERE `username`= ? AND `type`= 1;", [username]);
                 if (rows.length !== 0) {
                     let userId = rows[0].idusers;
-                    await conn.query("DELETE FROM splan.student_courses WHERE `user_id`= ? ", [userId]);
+                    await conn.query("DELETE FROM student_courses WHERE `user_id`= ? ", [userId]);
                 }
                 resolve()
             } catch (e) {
@@ -527,7 +542,7 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM splan.users");
+                let rows = await conn.query("SELECT * FROM users");
                 resolve(rows);
             } catch (e) {
                 logger.log({
@@ -547,21 +562,31 @@ export class User {
      * @returns Promise({devices})
      * @param userId
      */
-    static getDevices(userId: number): any {
+    static getDevices(userId: number): Promise<any> {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                const rows = await conn.query("SELECT * FROM splan.devices WHERE `userID`= ?;", [userId]);
+                let rows = await conn.query("SELECT * FROM devices WHERE `userID`= ?;", [userId]);
                 let devices: any = [];
                 rows.forEach((row: any) => {
                     //TODO [""]
                     if (row.deviceID != null) {
                         devices.push({"device": row.deviceID, "platform": row.plattform});
                     }
+
+                });
+                logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: User; Function: getDevices: loaded'
                 });
                 resolve(devices);
             } catch (e) {
-                //TODO add logger
+                logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getDevices: ' + JSON.stringify(e)
+                });
                 reject(e);
             } finally {
                 await conn.end()
@@ -581,13 +606,13 @@ export class User {
             let conn = await pool.getConnection();
             try {
                 console.log(device)
-                let rows = await conn.query("SELECT * FROM splan.devices WHERE `deviceID`= ?;", [device]);
+                let rows = await conn.query("SELECT * FROM devices WHERE `deviceID`= ?;", [device]);
                 if (rows.length !== 0) {
                     //TODO add new handler
                     resolve(false);
                     return
                 }
-                await conn.query("INSERT INTO `splan`.`devices` (`userID`, `deviceID`, `plattform`) VALUES ((SELECT idusers FROM splan.users WHERE username = ?), ?, ?)", [username, device, platform]);
+                await conn.query("INSERT INTO `devices` (`userID`, `deviceID`, `plattform`) VALUES ((SELECT idusers FROM users WHERE username = ?), ?, ?)", [username, device, platform]);
                 resolve(true);
             } catch (e) {
                 reject(e);
@@ -611,7 +636,7 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                await conn.query("DELETE FROM `splan`.`devices` WHERE `deviceID` = ?", [deviceId]);
+                await conn.query("DELETE FROM `devices` WHERE `deviceID` = ?", [deviceId]);
                 resolve();
             } catch (e) {
                 //TODO add logger
@@ -631,7 +656,7 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                await conn.query("DELETE FROM `splan`.`devices` WHERE `userID` = ?", [userId]);
+                await conn.query("DELETE FROM `devices` WHERE `userID` = ?", [userId]);
                 resolve();
             } catch (e) {
                 reject(e);
@@ -652,7 +677,7 @@ export class User {
             let conn = await pool.getConnection();
             try {
                 let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                await conn.query("INSERT INTO `splan`.`preAuth_Token` (`token`, `userId`) VALUES (?, ?);", [token, userId]);
+                await conn.query("INSERT INTO `preAuth_Token` (`token`, `userId`) VALUES (?, ?);", [token, userId]);
 
                 resolve(token);
             } catch (e) {
@@ -673,7 +698,7 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM splan.token_calendar WHERE `calendar_token`= ? ", [token]);
+                let rows = await conn.query("SELECT * FROM token_calendar WHERE `calendar_token`= ? ", [token]);
                 if (rows.length === 1) {
                     resolve(await User.getUserById(rows[0].user_id));
                 } else {
@@ -693,7 +718,7 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM splan.users WHERE `type`= ? ", [type]);
+                let rows = await conn.query("SELECT * FROM users WHERE `type`= ? ", [type]);
                 resolve(rows);
             } catch (e) {
                 //TODO add logger
@@ -759,11 +784,13 @@ export class User {
                 let conn;
                 try {
                     conn = await pool.getConnection();
-                    let result = await conn.query("INSERT INTO `splan`.`moodle_mapping` (`userid`, `moodleid`) VALUES (?, ?);",[uid,muid]);
+                    let result = await conn.query("INSERT INTO `moodle_mapping` (`userid`, `moodleid`) VALUES (?, ?);",[uid,muid]);
                     console.log(result);
                     resolve(muid);
                 }catch (e) {
                     console.log(e);
+                } finally {
+                    await conn.end();
                 }
             }
         });
@@ -779,7 +806,8 @@ export class User {
                     await Moodle.deleteUserById(mUID);
 
                     conn = await pool.getConnection();
-                    let result = await conn.query("DELETE FROM `splan`.`moodle_mapping` WHERE `userid` = ?",[uid]);
+                    let result = await conn.query("DELETE FROM `moodle_mapping` WHERE `userid` = ?",[uid]);
+                    await conn.end();
                     console.log(result);
                     resolve(mUID);
                 }catch (e) {
@@ -856,7 +884,7 @@ export class Permissions {
 
             try {
                 conn = await pool.getConnection();
-                let result = await conn.query("SELECT * FROM splan.permissions WHERE userId = ?", [userId]);
+                let result = await conn.query("SELECT * FROM permissions WHERE userId = ?", [userId]);
                 if(result.length == 1){
                     let uResult = result[0];
                     let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);
@@ -899,6 +927,16 @@ export class Permissions {
                     if(uResult["globalAdmin"] == 1){
                         permissions = new Permissions(true, true, true, true, true, true, true, true, true, true, true);
                     }
+                    logger.log({
+                        level: 'silly',
+                        label: 'Permissions',
+                        message: 'Class: Permissions; Function: getByUID: loaded'
+                    });
+                    resolve(permissions);
+                }else {
+                    //TODO error
+                    let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);
+
                     resolve(permissions);
                 }
             }catch (e) {
