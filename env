@@ -8,6 +8,8 @@ ORIGIN=https://frontend.example.de
 
 
 #LDAP
+LDAP=true
+LDAP_TLS=true
 LDAP_HOST=ldap://127.0.0.1:389
 LDAP_USER=apiUser@example.de
 LDAP_PASS=pass

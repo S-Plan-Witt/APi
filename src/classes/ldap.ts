@@ -1,5 +1,6 @@
 import ldap, {Client, LDAPResult, SearchOptions} from 'ldapjs';
 import winston from 'winston';
+import fs from 'fs';
 const logger = winston.loggers.get('main');
 
 import {User, Student, Teacher, UserFilter, Permissions} from './user';
@@ -19,8 +20,39 @@ export class Ldap {
                 let ldapClient = ldap.createClient({
                     url: urlLdap
                 });
-                if (process.env.LDAP_PASS != null) {
-                    console.log(process.env.LDAP)
+                if(process.env.LDAP_TLS === "true"){
+                    logger.log({
+                        level: 'silly',
+                        label: 'LDAP',
+                        message: 'starting TLS'
+                    });
+                    if(typeof process.env.LDAP_CA_PATH == "string"){
+                        let opts = {
+                            ca: [fs.readFileSync(process.env.LDAP_CA_PATH).toString()]
+                        };
+                        ldapClient.starttls(opts, undefined,function(err, res) {
+                            if (process.env.LDAP_PASS != null) {
+                                ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err: Error | null) => {
+                                    if (err) {
+                                        reject("BindFailed");
+                                        logger.log({
+                                            level: 'error',
+                                            label: 'LDAP',
+                                            message: 'bind failed: ' + err
+                                        });
+                                    } else {
+                                        resolve(ldapClient);
+                                        logger.log({
+                                            level: 'silly',
+                                            label: 'LDAP',
+                                            message: 'bind successful control connection'
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }else if (process.env.LDAP_PASS != null) {
                     ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err: Error | null) => {
                         if (err) {
                             reject("BindFailed");
