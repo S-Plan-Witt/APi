@@ -300,55 +300,60 @@ export class Ldap {
      */
     static getUserByUsername(username: string): Promise<User> {
         return new Promise(async function (resolve, reject) {
-            let ldapClient: any = await Ldap.bindLDAP();
-            let opts = {
-                filter: '(&(objectClass=user)(samaccountname=' + username + '))',
-                scope: 'sub',
-                attributes: ['sn', 'givenname', 'samaccountname', 'displayname']
-            };
+            try {
+                let ldapClient: any = await Ldap.bindLDAP();
+                let opts = {
+                    filter: '(&(objectClass=user)(samaccountname=' + username + '))',
+                    scope: 'sub',
+                    attributes: ['sn', 'givenname', 'samaccountname', 'displayname']
+                };
 
-            ldapClient.search(process.env.LDAP_ROOT, opts, function (err: Error, res: any) {
-                if (err) {
-                    logger.log({
-                        level: 'error',
-                        label: 'LDAP',
-                        message: 'Get user by username failed: ' + err
-                    });
-                    reject(err)
-                } else {
-                    let users: User[] = [];
-                    res.on('searchEntry', function (entry: any) {
+                ldapClient.search(process.env.LDAP_ROOT, opts, function (err: Error, res: any) {
+                    if (err) {
                         logger.log({
-                            level: 'silly',
+                            level: 'error',
                             label: 'LDAP',
-                            message: 'Got entry : ' + JSON.stringify(entry.object)
+                            message: 'Get user by username failed: ' + err
                         });
-                        let obj = entry.object;
-                        let dn = obj["dn"].toString().split(",");
-                        let grade = dn[1].substr(3, (dn[1].length -1 ));
-                        if(grade != '_Removed') {
-                            let newUser = new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "", [], true, null, null, null, Permissions.getDefault());
-                            newUser.displayName = obj["displayName"];
-                            users.push(newUser);
-                        }
-                    });
-                    res.on('error', ldapErrorHandler);
-                    res.on('end', () => {
-                        logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'Get user by username result: ' + JSON.stringify(users)
+                        reject(err)
+                    } else {
+                        let users: User[] = [];
+                        res.on('searchEntry', function (entry: any) {
+                            logger.log({
+                                level: 'silly',
+                                label: 'LDAP',
+                                message: 'Got entry : ' + JSON.stringify(entry.object)
+                            });
+                            let obj = entry.object;
+                            let dn = obj["dn"].toString().split(",");
+                            let grade = dn[1].substr(3, (dn[1].length -1 ));
+                            if(grade != '_Removed') {
+                                let newUser = new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, "", [], true, null, null, null, Permissions.getDefault());
+                                newUser.displayName = obj["displayName"];
+                                users.push(newUser);
+                            }
                         });
-                        if(users.length === 1){
-                            resolve(users[0]);
-                        }else {
-                            reject("no user")
-                        }
-                        ldapClient.unbind();
-                        ldapClient.destroy();
-                    });
-                }
-            });
+                        res.on('error', ldapErrorHandler);
+                        res.on('end', () => {
+                            logger.log({
+                                level: 'silly',
+                                label: 'LDAP',
+                                message: 'Get user by username result: ' + JSON.stringify(users)
+                            });
+                            if(users.length === 1){
+                                resolve(users[0]);
+                            }else {
+                                reject("no user")
+                            }
+                            ldapClient.unbind();
+                            ldapClient.destroy();
+                        });
+                    }
+                });
+            }catch (e) {
+                reject(e);
+            }
+
         });
     }
 
@@ -420,7 +425,11 @@ setTimeout(async () => {
         ldapClient.unbind();
         ldapClient.destroy();
     }catch (e) {
-        console.log("LDAP init failed: " + JSON.stringify(e))
+        logger.log({
+            level: 'error',
+            label: 'LDAP',
+            message: "LDAP init failed: " + JSON.stringify(e)
+        });
     }
 
 },100);
