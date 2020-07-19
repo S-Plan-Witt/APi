@@ -21,7 +21,7 @@ ENV LDAP_ROOT="DC=domain,DC=local"
 ENV LDAP_STUDENTS="OU=Students"
 ENV LDAP_TEACHER="OU=Teachers"
 ENV LDAP_DOMAIN="domain"
-ENV LDAP_CA_PATH="/usr/src/splan/keys"
+ENV LDAP_CA_PATH="/usr/src/splan/keys/ldap-ca.pem"
 ENV SQL_PORT=3306
 ENV SQL_HOST="db"
 ENV SQL_USER="siks"
