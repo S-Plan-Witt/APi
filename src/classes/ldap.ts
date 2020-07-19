@@ -51,7 +51,15 @@ export class Ldap {
                                 });
                             }
                         });
+                    }else {
+                        reject("ca path error");
+                        logger.log({
+                            level: 'error',
+                            label: 'LDAP',
+                            message: 'bind failed: bad CA path'
+                        });
                     }
+
                 }else if (process.env.LDAP_PASS != null) {
                     ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err: Error | null) => {
                         if (err) {
