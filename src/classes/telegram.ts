@@ -15,7 +15,7 @@ export class Telegram {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM splan.telegramLinks WHERE `token`= ? ", [token]);
+                let rows = await conn.query("SELECT * FROM telegramLinks WHERE `token`= ? ", [token]);
                 if (rows.length === 1) {
                     resolve(rows[0].telegramId);
                 } else {
@@ -40,7 +40,7 @@ export class Telegram {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                await conn.query("DELETE FROM `splan`.`telegramLinks` WHERE (`token` = ?);", [token]);
+                await conn.query("DELETE FROM `telegramLinks` WHERE (`token` = ?);", [token]);
                 resolve();
             } catch (e) {
                 console.log(e);
@@ -61,7 +61,7 @@ export class Telegram {
             let conn = await pool.getConnection();
             try {
                 let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                await conn.query("INSERT INTO `splan`.`telegramLinks` (`telegramId`, `token`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token`=?;", [telegramId, tokenId, tokenId]);
+                await conn.query("INSERT INTO `telegramLinks` (`telegramId`, `token`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token`=?;", [telegramId, tokenId, tokenId]);
                 resolve(tokenId);
             } catch (e) {
                 //TODO add logger

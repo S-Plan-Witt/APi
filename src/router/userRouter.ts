@@ -1,13 +1,14 @@
 import {TimeTable} from '../classes/timeTable';
 import {Jwt} from '../classes/jwt';
-import {ReplacementLessons} from '../classes/replacementLessons';
-import {Announcements} from '../classes/announcements';
+import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLessons';
+import {Announcement, Announcements} from '../classes/announcements';
 import {Exam, Exams, Supervisors} from '../classes/exams';
 import express, {Request, Response} from 'express';
 import winston, {Logger} from 'winston';
 import {User}   from '../classes/user';
 import {Totp} from '../classes/totp';
 import {Ldap} from "../classes/ldap";
+import assert from "assert";
 
 const logger: Logger = winston.loggers.get('main');
 export let router = express.Router();
@@ -86,9 +87,13 @@ router.post('/login', async function (req: Request, res: Response) {
             user = await User.getUserByUsername(username);
             console.log(user)
         }catch (e) {
-            console.log(e);
-            res.status(602);
-            res.send("User not available")
+            res.sendStatus(401);
+            logger.log({
+                level: 'error',
+                label: 'User',
+                message: ' Login: /user/login : user not found ('+ username +') e:' + JSON.stringify(e)
+            });
+            //res.send("User not available")
             return;
         }
     }
@@ -204,6 +209,7 @@ router.get('/lessons',  async function (req: Request, res: Response) {
                 try{
                     //Get lesson for course as array
                     let lessons: any = await TimeTable.getLessonsByCourse(course);
+                    console.log(lessons)
                     lessons.forEach((lesson:any) => {
                         //Add lesson to response array
                         response.push(lesson);
@@ -271,17 +277,19 @@ router.get('/replacementlessons',  async function (req: Request, res: Response) 
         for(const course of courses){
             //Get replacement lessons with today and today + 6 days
             let data: any = await ReplacementLessons.getByCourse(course);
-            data.forEach((replacementLesson: any) => {
+            data.forEach((replacementLesson: ReplacementLesson) => {
                 //Add replacement lesson to all replacement lessons
-                response.push(replacementLesson);
+                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, info: replacementLesson.info, date: replacementLesson.date}
+                response.push(dataset);
             });
         }
         if(req.decoded.userType === "teacher"){
             //Get replacement lessons hold by teacher
-            let data: any = await ReplacementLessons.getByTeacher(req.user.username, dateToday, dateEnd);
-            console.log(data)
+            assert(req.user.id != null)
+            let data: any = await ReplacementLessons.getByTeacher(req.user.id, dateToday, dateEnd);
             data.forEach((replacementLesson: any) => {
-                response.push(replacementLesson);
+                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject,teacherId: replacementLesson.teacherId, info: replacementLesson.info, date: replacementLesson.date}
+                response.push(dataset);
             });
         }
 
@@ -308,9 +316,11 @@ router.get('/announcements',  async (req: Request, res: Response) => {
     for(const course of courses){
         try{
             let data: Announcements[] = await Announcements.getByCourse(course);
-            data.forEach(element => {
-                response.push(element)
-            });
+            for (let i = 0; i < data.length; i++) {
+                let announcement: any = data[i];
+                response.push({courseId: announcement.course.id, authorId: announcement.authorId, editorId: announcement.editorId, date: announcement.date, id: announcement.id, content: announcement.content})
+            }
+
         } catch(e){
             //TODO add logger
             //TODO add handler
@@ -460,7 +470,6 @@ router.delete('/devices/deviceId/:id', async function (req: Request, res: Respon
         console.log(e);
         res.sendStatus(500)
     }
-
 });
 
 router.get('/auth/totp', async function (req,res) {
@@ -512,7 +521,7 @@ router.post('/auth/totp', async function (req,res) {
 });
 
 /**
- * Verifys the given key with the correct totp code
+ * Verifies the given key with the correct totp code
  * @route POST /user/auth/totp/verify
  * @group User - Operations about logged in user
  * @consumes application/json
@@ -538,7 +547,7 @@ router.post('/auth/totp/verify', async function (req,res) {
 });
 
 /**
- * Delets the totp device specified by id
+ * Deletes the totp device specified by id
  * @route DELETE /user/auth/totp/id/{id}
  * @group User - Operations about logged in user
  * @consumes application/json
@@ -556,4 +565,53 @@ router.delete('/auth/totp/id/:id', async function (req,res) {
         console.log(e);
         res.json({"err": e});
     }
+});
+
+/**
+ * Lists all mail addresses
+ * @route GET /user/profile/emails
+ * @group User - Operations about logged in user
+ * @returns {Array.<EMail>} 200
+ * @returns {Error} 401 - Wrong JWT
+ * @security JWT
+ */
+router.get('/profile/emails', async (req, res) => {
+        try {
+            res.json(req.user.mails);
+        }catch (e) {
+            res.sendStatus(500);
+        }
+});
+
+/**
+ * Adds a new mail address
+ * @route POST /user/profile/emails
+ * @group User - Operations about logged in user
+ * @param {EMail.model} EMail.body.require
+ * @returns {object>} 200
+ * @returns {Error} 401 - Wrong JWT
+ * @security JWT
+ */
+router.post('/profile/emails', async (req, res) => {
+        try {
+            res.json(req.user.mails);
+        }catch (e) {
+            res.sendStatus(500);
+        }
+});
+
+/**
+ * Deletes one mail address
+ * @route DELETE /user/profile/emails/{id}
+ * @group User - Operations about logged in user
+ * @returns {object} 200
+ * @returns {Error} 401 - Wrong JWT
+ * @security JWT
+ */
+router.delete('/profile/emails/:id', async (req, res) => {
+        try {
+            res.json(req.user.mails);
+        }catch (e) {
+            res.sendStatus(500);
+        }
 });
