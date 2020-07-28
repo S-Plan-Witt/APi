@@ -3,5 +3,5 @@
 /.env
 /log/
 /keys/
-
-!/.idea/
+/build/
+/package-lock.json
