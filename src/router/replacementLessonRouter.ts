@@ -4,7 +4,7 @@ import winston from 'winston';
 import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLessons';
 import {User} from '../classes/user';
 import {PushNotifications} from '../classes/pushNotifications';
-import {Course, Lesson, TimeTable} from "../classes/timeTable";
+import {Course, TimeTable} from "../classes/timeTable";
 import assert from "assert";
 
 const logger = winston.loggers.get('main');

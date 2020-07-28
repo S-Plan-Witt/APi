@@ -470,7 +470,6 @@ router.delete('/devices/deviceId/:id', async function (req: Request, res: Respon
         console.log(e);
         res.sendStatus(500)
     }
-
 });
 
 router.get('/auth/totp', async function (req,res) {
@@ -522,7 +521,7 @@ router.post('/auth/totp', async function (req,res) {
 });
 
 /**
- * Verifys the given key with the correct totp code
+ * Verifies the given key with the correct totp code
  * @route POST /user/auth/totp/verify
  * @group User - Operations about logged in user
  * @consumes application/json
@@ -548,7 +547,7 @@ router.post('/auth/totp/verify', async function (req,res) {
 });
 
 /**
- * Delets the totp device specified by id
+ * Deletes the totp device specified by id
  * @route DELETE /user/auth/totp/id/{id}
  * @group User - Operations about logged in user
  * @consumes application/json
@@ -566,4 +565,53 @@ router.delete('/auth/totp/id/:id', async function (req,res) {
         console.log(e);
         res.json({"err": e});
     }
+});
+
+/**
+ * Lists all mail addresses
+ * @route GET /user/profile/emails
+ * @group User - Operations about logged in user
+ * @returns {Array.<EMail>} 200
+ * @returns {Error} 401 - Wrong JWT
+ * @security JWT
+ */
+router.get('/profile/emails', async (req, res) => {
+        try {
+            res.json(req.user.mails);
+        }catch (e) {
+            res.sendStatus(500);
+        }
+});
+
+/**
+ * Adds a new mail address
+ * @route POST /user/profile/emails
+ * @group User - Operations about logged in user
+ * @param {EMail.model} EMail.body.require
+ * @returns {object>} 200
+ * @returns {Error} 401 - Wrong JWT
+ * @security JWT
+ */
+router.post('/profile/emails', async (req, res) => {
+        try {
+            res.json(req.user.mails);
+        }catch (e) {
+            res.sendStatus(500);
+        }
+});
+
+/**
+ * Deletes one mail address
+ * @route DELETE /user/profile/emails/{id}
+ * @group User - Operations about logged in user
+ * @returns {object} 200
+ * @returns {Error} 401 - Wrong JWT
+ * @security JWT
+ */
+router.delete('/profile/emails/:id', async (req, res) => {
+        try {
+            res.json(req.user.mails);
+        }catch (e) {
+            res.sendStatus(500);
+        }
 });

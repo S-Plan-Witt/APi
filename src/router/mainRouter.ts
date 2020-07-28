@@ -129,6 +129,15 @@ class LoginRequest {
  */
 
 /**
+ * @typedef EMail
+ * @property {number} userId.required
+ * @property {string} address.required
+ * @property {boolean} verified.required
+ * @property {Date} dateAdded.required
+ * @property {boolean} primary
+ */
+
+/**
  * @typedef Device
  * @property {number} id
  * @property {string} userId.required

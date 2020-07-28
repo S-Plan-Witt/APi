@@ -155,7 +155,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await pool.getConnection();
-                let res = await conn.query("INSERT INTO `splan`.`data_announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`) VALUES (?, ?, ?, ?, ?)", [content,date,authorId,editorId,courseId]);
+                await conn.query("INSERT INTO `splan`.`data_announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`) VALUES (?, ?, ?, ?, ?)", [content,date,authorId,editorId,courseId]);
                 resolve(true);
             } catch (e) {
                 logger.log({

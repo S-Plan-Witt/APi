@@ -13,6 +13,7 @@ const logger = winston.loggers.get('main');
 
 import {ApiGlobal} from "../types/global";
 import {Moodle} from "./moodle";
+import {Device} from "./device";
 declare const global: ApiGlobal;
 let pool = global["mySQLPool"];
 
@@ -343,7 +344,17 @@ export class User {
                 let mails: EMail[] = [];
                 const rows = await conn.query("SELECT * FROM users_mails WHERE `userid`= ?;", [userId]);
                 rows.forEach((row: any) => {
-                    mails.push(new EMail(userId, row["mail"],row["confirmed"], row["added"]));
+                    let confirmed  = false;
+                    let primary  = false;
+                    if(row["confirmed"] == 1){
+                        confirmed  = true;
+                    }
+                    if(row["primary"] == 1){
+                        primary  = true;
+                    }
+
+
+                    mails.push(new EMail(userId, row["mail"],confirmed, row["added"],primary));
                 });
                 logger.log({
                     level: 'silly',
@@ -567,13 +578,11 @@ export class User {
             let conn = await pool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM devices WHERE `userID`= ?;", [userId]);
-                let devices: any = [];
+                let devices: Device[] = [];
                 rows.forEach((row: any) => {
-                    //TODO [""]
                     if (row.deviceID != null) {
-                        devices.push({"device": row.deviceID, "platform": row.plattform});
+                        devices.push(new Device(row.plattform,row.deviceID,row.userId,row.added));
                     }
-
                 });
                 logger.log({
                     level: 'silly',

@@ -3,7 +3,7 @@ import {Course} from  "../classes/timeTable";
 import express from 'express';
 import winston from 'winston';
 
-import {Exams,Exam,Supervisors, Supervisor} from '../classes/exams';
+import {Exams,Exam,Supervisors} from '../classes/exams';
 
 const logger = winston.loggers.get('main');
 export let router = express.Router();
@@ -68,7 +68,7 @@ router.get('/', async function (req,res){
  * @security JWT
  */
 router.put('/:id', async function (req,res){
-    let id = req.params.id;
+    req.params.id;
 
     //TODO add exam update
     res.sendStatus(605);

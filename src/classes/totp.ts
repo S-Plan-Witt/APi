@@ -65,7 +65,7 @@ export class Totp {
     static checkKeyCode(key: string,code: number){
         return new Promise(async function (resolve, reject) {
             try {
-                const isValid = speakeasy.totp.verify({token: code.toString(),secret: key});
+                speakeasy.totp.verify({token: code.toString(),secret: key});
                 resolve();
             }catch (e) {
                 reject(e);

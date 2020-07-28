@@ -86,13 +86,11 @@ logger.log({
 
 //Webservice
 import express, {NextFunction, Request, Response, Express} from "express";
-import bodyParser from "body-parser";
 import {Jwt} from './classes/jwt';
-import {Permissions, Teacher, User, UserFilter} from './classes/user';
+import {User} from './classes/user';
 import {Course} from './classes/timeTable';
 import {Telegram} from './classes/telegram';
 import {PushNotifications, PushTelegram} from './classes/pushNotifications';
-import {Ldap} from "./classes/ldap";
 /*
 (async () => {
     let user : User = await User.getUserById(1630)
@@ -139,6 +137,11 @@ if(process.env.APIDOC == "true"){
         files: ['./router/*.js'] //Path to the API handle folder
     };
     expressSwagger(options)
+    logger.log({
+        level: 'debug',
+        label: 'Api-docs',
+        message: 'Api documentation available at http://localhost:' + process.env.PORT + '/api-docs/'
+    });
 }
 
 
@@ -190,177 +193,6 @@ app.options('*', (req: Request, res: Response) => {
 //++++ Router
 app.use("/", require('./router/mainRouter').router);
 
-
-//---- Router
-
-/**
- * Deletes all existing Courses for req. user and adds supplied ones.
- *
- * Payload from Request with courses array
- * returns SC 200
- */
-app.post('/students/:username/courses', async (req: Request, res: Response) => {
-    if(!req.decoded.permissions.usersAdmin){
-        logger.log({
-            level: 'debug',
-            label: 'Express',
-            message: 'No permissions : /students/'+ req.params.username + '/courses'
-        });
-        return res.sendStatus(401);
-    }
-
-    try {
-        await req.user.deleteCourses();
-        let courses = [];
-        for (const courseData of req.body){
-            courses.push(new Course(courseData["grade"],courseData["subject"], courseData["group"], courseData["exams"]));
-        }
-        await req.user.addCourse(courses);
-        res.sendStatus(200);
-    } catch(e){
-        //TODO add logger
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
-
-/**
- * Returns all Students from LDAP
- */
-app.get('/students/ldap/', async (req: Request, res: Response) => {
-    if(!req.decoded.permissions.users){
-        logger.log({
-            level: 'debug',
-            label: 'Express',
-            message: 'No permissions : /students/ldap/'
-        });
-        return res.sendStatus(401);
-    }
-
-    try {
-        let data = await User.getAllStudentsLDAP();
-        await res.json(data);
-    } catch(e){
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
-
-//------------ACCESSTOKEN MGM
-
-app.get('/jwt/all', async (req: Request, res: Response) => {
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
-
-    let tokens = await Jwt.getAll();
-    res.json(tokens);
-});
-/*
-app.get('/jwt/user/:user', function(req: Request, res: Response){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
-
-    //TODO async
-    Jwt.getUser(req.params.user,function(err: any,tokens: any){
-        res.json(tokens);
-    })
-});
-
- */
-/*
-
-
-app.delete('/jwt', async function(req: Request, res: Response){
-    if(!req.decoded.admin){
-        //TODO add logger
-        return res.sendStatus(401);
-    }
-
-    let token = req.decoded.session;
-
-    try{
-        await Jwt.revokeToken(token);
-        res.sendStatus(200);
-    } catch(e){
-        //TODO add logger
-        res.sendStatus(500);
-    }
-});
-*/
-/*
-app.delete('/jwt/token/:token', function(req: Request, res: Response){
-    if(!req.decoded.admin){
-        //TODO add logger
-        return res.sendStatus(401);
-    }
-
-    let token = req.params.token;
-
-    Jwt.revokeToken(token,function(err: any,success: any){
-        if(success){
-            res.sendStatus(200);
-        }else{
-            //TODO add logger
-            res.sendStatus(500);
-        }
-    })
-});
-
- */
-/*
-app.post('/aufsichten', async function(req: Request, res: Response){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
-
-    let body = req.body;
-    await body.forEach(aufsicht => {
-        aufsichten.add(aufsicht);
-    });
-
-    res.sendStatus(200);
-});
-
-
-
-app.put('/aufsichten/id/:id', async function(req: Request, res: Response){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
-
-    let body = req.body;
-    await aufsichten.set(req.params.id,body);
-
-    res.sendStatus(200);
-});
-
-app.get('/aufsichten', async function (req: Request, res: Response){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
-
-    let rows = await aufsichten.getAll();
-    await res.json(rows);
-});
-
-app.delete('/aufsichten/id/:id', async function (req: Request, res: Response){
-    if(!req.decoded.admin){
-        return res.sendStatus(401);
-    }
-
-    let id = req.params.id;
-    const suc = await aufsichten.delete(id);
-    if(suc){
-        res.sendStatus(200);
-    }else{
-        //TODO add logger
-        res.sendStatus(500);
-    }
-});
- */
-
 app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     let token = req.params.token;
     try{
@@ -377,47 +209,7 @@ app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
         res.sendStatus(500);
     }
 });
-/*
-app.get('/webcal/:id', async (req: Request, res: Response) => {
-    let user;
-    try{
-        user = await User.getUserByCalToken(req.params.id);
-        let courses = user.courses;
-        let response: { begin: string; end: string; summary: any; description: any; }[] = [];
-        for(const course of courses){
-            try{
-                if(course.displayKlausuren){
-                    let data = await Exams.getByCourse(course);
-                    data.forEach(element => {
-                        element = JSON.stringify(element);
-                        element = JSON.parse(element);
 
-                        let begin = element.date.substring(0,11) + " " + element.from + ".000Z";
-                        let end = element.date.substring(0,11) + " " + element.to + ".000Z";
-
-                        response.push({"begin":begin,"end":end,"summary":element.subject,"description": element.subject})
-                    });
-                }
-            } catch(e){
-                console.log(e);
-                //TODO add logger
-                //TODO add handler
-            }
-        }
-        let responseText = await calender.generateICS(response);
-        res.send(responseText);
-    } catch(e){
-        console.log(e);
-        //TODO add logger
-        res.sendStatus(500);
-    }
-});
-
- */
-
-/**
- *
- */
 async function clearDB(){
     let tablesToTruncate = ["data_exams","data_exam_supervisors","users_mails","permissions","student_courses","totp","moodle_mapping","token_calendar","preAuth_Token","data_announcements","data_courses","jwt_Token","devices","lessons_teacher","data_vertretungen","data_lessons","data_aufsichten","telegramLinks","data_entschuldigungen","users","data_exam_rooms"];
     let pool = global.mySQLPool;
@@ -442,8 +234,8 @@ async function clearDB(){
 /*
 (async () => {
     let teachers: Teacher[] = await Ldap.loadTeacher()
-    for (const teacherkey in teachers) {
-        let teacher = teachers[teacherkey];
+    for (const teacherKey in teachers) {
+        let teacher = teachers[teacherKey];
         console.log(teacher)
         try {
             await teacher.createToDB();

@@ -257,8 +257,10 @@ export class TimeTable {
                 });
                 await conn.query("TRUNCATE TABLE data_courses");
                 for (let courseId in courses){
-                    let course = courses[courseId];
-                    rows = await conn.query('INSERT INTO data_courses (grade, subject, `group`, `teacher`) VALUES (?, ?, ?, ?)', [course["grade"], course["subject"], course["group"], course["teacher"]]);
+                    if(courses.hasOwnProperty(courseId)){
+                        let course = courses[courseId];
+                        rows = await conn.query('INSERT INTO data_courses (grade, subject, `group`, `teacher`) VALUES (?, ?, ?, ?)', [course["grade"], course["subject"], course["group"], course["teacher"]]);
+                    }
                 }
                 resolve();
             } catch (e) {

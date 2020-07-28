@@ -97,24 +97,34 @@ export class SendGrid {
 export class EMails {
 
 }
-
+/**
+ * @typedef EMail
+ * @property {number} userId.required
+ * @property {string} address.required
+ * @property {boolean} verified.required
+ * @property {Date} dateAdded.required
+ * @property {boolean} primary
+ */
 export class EMail {
     userId: number;
     address: string;
-    status: any;
+    verified: boolean;
     dateAdded: any;
+    primary: boolean;
 
     /**
      *
-     * @param userId
-     * @param address
-     * @param status
-     * @param dateAdded
+     * @param userId {Number}
+     * @param address {String}
+     * @param verified {Boolean}
+     * @param dateAdded {Date}
+     * @param primary {Boolean}
      */
-    constructor(userId: number, address: string, status: any, dateAdded: any) {
+    constructor(userId: number, address: string, verified: any, dateAdded: any, primary: boolean = false) {
         this.userId = userId;
         this.address = address;
-        this.status = status;
+        this.verified = verified;
         this.dateAdded = dateAdded;
+        this.primary = primary
     }
 }
