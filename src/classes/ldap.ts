@@ -31,6 +31,15 @@ export class Ldap {
                             ca: [fs.readFileSync(process.env.LDAP_CA_PATH).toString()]
                         };
                         ldapClient.starttls(opts, undefined,function(err, res) {
+                            if(err){
+                                logger.log({
+                                    level: 'error',
+                                    label: 'LDAP',
+                                    message: 'starting TLS: ' + err
+                                });
+                                reject(err)
+                                return
+                            }
                             if (process.env.LDAP_PASS != null) {
                                 ldapClient.bind(process.env.LDAP_DOMAIN + "\\" + process.env.LDAP_USER, process.env.LDAP_PASS, (err: Error | null) => {
                                     if (err) {
