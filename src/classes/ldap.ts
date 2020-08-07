@@ -267,6 +267,90 @@ export class Ldap {
                         });
                     }
 
+                }else {
+                    if (process.env.LDAP_PASS != null) {
+                        ldpC.bind(process.env.LDAP_DOMAIN + "\\" + username, password, function (err) {
+                            if (err) {
+                                logger.log({
+                                    level: 'warn',
+                                    label: 'LDAP',
+                                    message: 'bind failed for: ' + username + ' ;Reason: ' + err
+                                });
+                                reject();
+                            } else {
+                                let opts: SearchOptions = {
+                                    filter: '(samAccountName=' + username + ')',
+                                    scope: 'sub',
+                                    attributes: ['dn', 'info', 'samaccountname', 'memberof']
+                                };
+                                ldpC.search(process.env.LDAP_ROOT + "", opts, function (err, res) {
+                                    if (err) {
+                                        logger.log({
+                                            level: 'error',
+                                            label: 'LDAP',
+                                            message: 'search failed for: ' + JSON.stringify(opts)
+                                        });
+                                        reject(err);
+                                    } else {
+                                        let users: any = [];
+                                        res.on('searchEntry', function (entry) {
+                                            logger.log({
+                                                level: 'silly',
+                                                label: 'LDAP',
+                                                message: 'entry found: ' + JSON.stringify(entry.object)
+                                            });
+
+                                            let object = entry.object;
+                                            object.type = "student";
+                                            users.push(object);
+                                        });
+                                        res.on('error', ldapErrorHandler);
+                                        res.on('end', function (result: LDAPResult) {
+                                            logger.log({
+                                                level: 'silly',
+                                                label: 'LDAP',
+                                                message: 'search ended: ' + result.status
+                                            });
+                                            if (users[0].memberOf === "CN=NMTeachers-global,OU=HH,DC=netman,DC=lokal") {
+                                                logger.log({
+                                                    level: 'silly',
+                                                    label: 'LDAP',
+                                                    message: 'password successfully checked: ' + username
+                                                });
+                                                resolve(2);
+                                            } else {
+                                                let birthday
+                                                try {
+                                                    birthday = users[0].info.replace(/\./g, "");
+                                                }catch (e) {
+
+                                                }
+                                                //verify that password and date of birth are not equal
+                                                if (password === birthday) {
+                                                    logger.log({
+                                                        level: 'warn',
+                                                        label: 'LDAP-User-Confirm',
+                                                        message: 'Password equals birthday'
+                                                    });
+
+                                                    reject("pw equals birth");
+                                                } else {
+                                                    logger.log({
+                                                        level: 'silly',
+                                                        label: 'LDAP',
+                                                        message: 'password successfully checked: ' + username
+                                                    });
+                                                    resolve(1);
+                                                    ldpC.unbind();
+                                                    ldpC.destroy();
+                                                }
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
                 }
             }
         });
