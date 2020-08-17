@@ -5,12 +5,15 @@ const logger = winston.loggers.get('main');
 
 import {ApiGlobal} from "../types/global";
 import {Course} from "./timeTable";
+
 declare const global: ApiGlobal;
 let pool = global["mySQLPool"];
 
-
 export class Exams {
 
+    /**
+     * @returns {Promise<Exam[]>}
+     */
     static getAll(): Promise<Exam[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
@@ -53,6 +56,9 @@ export class Exams {
         });
     }
 
+    /**
+     * @returns {Promise<Exam[]>}
+     */
     static getByTeacher(teacher: string): Promise<Exam[]>{
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
@@ -68,6 +74,10 @@ export class Exams {
             }
         });
     }
+
+    /**
+     * @returns {Promise<Exam[]>}
+     */
     static sqlRowToArray(rows: any): Promise<Exam[]>{
         return new Promise(async (resolve, reject) => {
             let data: Exam[] = [];
@@ -81,6 +91,9 @@ export class Exams {
         });
     }
 
+    /**
+     * @returns {Promise<Exam[]>}
+     */
     static getByRoomLink(roomLinkId: number): Promise<Exam[]>{
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -104,6 +117,9 @@ export class Exams {
 
 export class RoomLinks {
 
+    /**
+     * @returns {Promise<RoomLink[]>}
+     */
     static getRoomLinks(date: string, room: string): Promise<RoomLink[]>{
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
@@ -128,7 +144,9 @@ export class RoomLinks {
             }
         });
     }
-
+    /**
+     * @returns {Promise<RoomLink>}
+     */
     static getById(id: number): Promise<RoomLink> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -154,10 +172,10 @@ export class RoomLinks {
 
 
     /**
-     *
      * @param roomLink {RoomLink}
+     * @returns {Promise<void>}
      */
-    static add(roomLink: RoomLink): Promise<never>{
+    static add(roomLink: RoomLink): Promise<void>{
         return new Promise(async (resolve, reject) => {
             let conn = await pool.getConnection();
             try {
@@ -178,6 +196,11 @@ export class RoomLinks {
 }
 
 export class Supervisors {
+
+    /**
+     * @param id
+     * @returns {Promise<Supervisor[]>}
+     */
     static getByRoomLink(id: number): Promise<Supervisor[]>{
         return new Promise(async (resolve, reject) =>{
             let conn;
@@ -203,6 +226,10 @@ export class Supervisors {
         });
     }
 
+    /**
+     * @param id
+     * @returns {Promise<Supervisor>}
+     */
     static getById(id: number): Promise<Supervisor>{
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -231,6 +258,7 @@ export class Supervisors {
         });
     }
 
+    //TODO REMOVE
     static getByTeacherUsername(username: string): Promise<Supervisor[]>{
         return new Promise(async (resolve, reject) =>{
             let conn;
@@ -353,8 +381,10 @@ export class Exam {
         });
     }
 
-
-    delete(): Promise<never>{
+    /**
+     * @returns {Promise<void>}
+     */
+    delete(): Promise<void>{
         let id = this.id;
 
         return new Promise(async (resolve, reject) => {

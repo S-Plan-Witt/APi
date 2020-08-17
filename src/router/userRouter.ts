@@ -19,7 +19,7 @@ export let router = express.Router();
  * @route POST /user/
  * @group User - Operations about logged in user
  * @returns {User.model} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  */
 router.get('/', async function(req,res){
     try {
@@ -39,7 +39,7 @@ router.get('/', async function(req,res){
  * @param {LoginRequest.model} LoginRequest.body.required - username
  * @returns {LoginResponse.model} 200
  * @returns {Error} 602 - missing secondFactor
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  */
 router.post('/login', async function (req: Request, res: Response) {
 
@@ -195,7 +195,7 @@ router.get('/courses',  async function (req: Request, res: Response) {
  * @group User - Operations about logged in user
  * @consumes application/json
  * @returns {Array.<Lesson>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/lessons',  async function (req: Request, res: Response) {
@@ -242,7 +242,7 @@ router.get('/lessons',  async function (req: Request, res: Response) {
  * @group User - Operations about logged in user
  * @consumes application/json
  * @returns {Array.<ReplacementLesson>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/replacementlessons',  async function (req: Request, res: Response) {
@@ -307,7 +307,7 @@ router.get('/replacementlessons',  async function (req: Request, res: Response) 
  * @group User - Operations about logged in user
  * @consumes application/json
  * @returns {Array.<Announcement>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/announcements',  async (req: Request, res: Response) => {
@@ -337,7 +337,7 @@ router.get('/announcements',  async (req: Request, res: Response) => {
  * @group User - Operations about logged in user
  * @consumes application/json
  * @returns {Array.<Exam>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/exams',  async function (req: Request, res: Response) {
@@ -388,7 +388,7 @@ router.get('/exams',  async function (req: Request, res: Response) {
  * @group User - Operations about logged in user
  * @consumes application/json
  * @returns {Array.<Supervisor>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/supervisors',  async function (req: Request, res: Response) {
@@ -409,7 +409,7 @@ router.get('/supervisors',  async function (req: Request, res: Response) {
  * @group User - Operations about logged in user
  * @consumes application/json
  * @returns {Array.<Device>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/devices', async function (req: Request, res: Response) {
@@ -429,7 +429,7 @@ router.get('/devices', async function (req: Request, res: Response) {
  * @group User - Operations about logged in user
  * @consumes application/json
  * @param {Device.model} Device.body
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/devices', async function(req: Request, res: Response){
@@ -455,7 +455,7 @@ router.post('/devices', async function(req: Request, res: Response){
  * @group User - Operations about logged in user
  * @consumes application/json
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.delete('/devices/deviceId/:id', async function (req: Request, res: Response) {
@@ -484,7 +484,7 @@ router.get('/auth/totp', async function (req,res) {
  * @consumes application/json
  * @param {TotpAddRequest.model} TotpAddRequest.body.require
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/auth/totp', async function (req,res) {
@@ -527,7 +527,7 @@ router.post('/auth/totp', async function (req,res) {
  * @consumes application/json
  * @param {TotpVerifyRequest.model} TotpVerifyRequest.body.require
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/auth/totp/verify', async function (req,res) {
@@ -552,7 +552,7 @@ router.post('/auth/totp/verify', async function (req,res) {
  * @group User - Operations about logged in user
  * @consumes application/json
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.delete('/auth/totp/id/:id', async function (req,res) {

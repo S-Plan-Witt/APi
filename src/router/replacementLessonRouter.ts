@@ -16,7 +16,7 @@ export let router = express.Router();
  * @group ReplacementLesson - Management functions for ReplacementLesson
  * @param {ReplacementLesson.model} ReplacementLesson.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/', async function (req,res){
@@ -78,7 +78,7 @@ router.post('/', async function (req,res){
  * @route GET /replacementLessons/
  * @group ReplacementLesson - Management functions for ReplacementLesson
  * @returns {Array.<ReplacementLesson>} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/', async function (req,res){
@@ -97,7 +97,7 @@ router.get('/', async function (req,res){
  * @route GET /replacementLessons/date/{date}
  * @group ReplacementLesson - Management functions for ReplacementLesson
  * @returns {Array.<ReplacementLesson>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/date/:date', async function (req,res){
@@ -121,7 +121,7 @@ router.get('/date/:date', async function (req,res){
  * @route GET /replacementLessons/id/{id}
  * @group ReplacementLesson - Management functions for ReplacementLesson
  * @returns {ReplacementLesson.model} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/id/:id', async function (req,res){
@@ -158,7 +158,7 @@ router.post('/find', async function (req: Request, res: Response) {
  * @route DELETE /replacementLessons/id/{id}
  * @group ReplacementLesson - Management functions for ReplacementLesson
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.delete('/id/:id', async function (req,res){
@@ -179,7 +179,6 @@ router.delete('/id/:id', async function (req,res){
         res.sendStatus(200);
     } catch(e){
         console.log(e);
-        //TODO add logger
         res.sendStatus(500);
     }
 });

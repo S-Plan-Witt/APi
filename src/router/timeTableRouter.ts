@@ -29,7 +29,7 @@ router.use((req, res, next) =>{
  * @group TimeTable - Functions for Management of Courses, Grades, Lessons
  * @param {Lesson.model} Lesson.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/lessons', async function (req,res){
@@ -80,7 +80,7 @@ router.post('/lessons', async function (req,res){
  * @group TimeTable - Functions for Management of Courses, Grades, Lessons
  * @param {Course.model} Course.body.required
  * @returns {Array.<Course>} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/find/course', async (req: Request, res: Response) => {
@@ -99,7 +99,7 @@ router.post('/find/course', async (req: Request, res: Response) => {
  * @route GET /timetable/grades
  * @group TimeTable - Functions for Management of Courses, Grades, Lessons
  * @returns {Array.<Grade>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/grades', async function (req,res){
@@ -111,7 +111,7 @@ router.get('/grades', async function (req,res){
  * @route GET /timetable/courses
  * @group TimeTable - Functions for Management of Courses, Grades, Lessons
  * @returns {Array.<Course>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/courses', async function (req,res){
@@ -123,7 +123,7 @@ router.get('/courses', async function (req,res){
  * @route GET /timetable/lessons
  * @group TimeTable - Functions for Management of Courses, Grades, Lessons
  * @returns {Array.<Lesson>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/lessons', async function (req,res){
@@ -135,7 +135,7 @@ router.get('/lessons', async function (req,res){
  * @route GET /timetable/rebuild
  * @group TimeTable - Functions for Management of Courses, Grades, Lessons
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/rebuild', async (req: Request, res: Response) => {

@@ -22,7 +22,7 @@ router.use((req, res, next) =>{
  * @group Announcements - Management functions for Announcements
  * @param {Announcement.model} Announcement.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 
@@ -62,7 +62,7 @@ router.post('/', async function(req,res){
  * @route GET /announcements/
  * @group Announcements - Management functions for Announcements
  * @returns {Array.<Announcement>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/', async function (req,res){
@@ -75,7 +75,7 @@ router.get('/', async function (req,res){
  * @route PUT /announcements/id/{id}
  * @group Announcements - Management functions for Announcements
  * @returns {Error} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.put('/id/:id', async function(req,res){
@@ -104,13 +104,12 @@ router.put('/id/:id', async function(req,res){
  * @route GET /announcements/id/{id}
  * @group Announcements - Management functions for Announcements
  * @returns {Error} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/id/:id', async function(req,res){
+router.get('/id/:id', async function(req,res) {
     let id = parseInt(req.params.id);
     let announcement = await Announcements.getById(id);
-
     res.json(announcement)
 });
 
@@ -119,7 +118,7 @@ router.get('/id/:id', async function(req,res){
  * @route DELETE /announcements/id/{id}
  * @group Announcements - Management functions for Announcements
  * @returns {Error} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.delete('/id/:id', async function (req,res){

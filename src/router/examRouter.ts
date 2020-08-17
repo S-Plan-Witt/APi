@@ -14,7 +14,7 @@ export let router = express.Router();
  * @group Exams - Management functions for Exams
  * @param {Exam.model} Exam.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/', async function(req,res){
@@ -49,7 +49,7 @@ router.post('/', async function(req,res){
  * @group Exams - Management functions for Exams
  * @param {Exam.model} Exam.body.required
  * @returns {Array.<Exam>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/', async function (req,res){
@@ -64,7 +64,7 @@ router.get('/', async function (req,res){
  * @group Exams - Management functions for Exams
  * @param {Exam.model} Exam.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.put('/:id', async function (req,res){
@@ -80,14 +80,13 @@ router.put('/:id', async function (req,res){
  * @group Exams - Management functions for Exams
  * @param {Exam.model} Exam.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.delete('/id/:id', async function (req,res){
     if(!req.decoded.admin){
         return res.sendStatus(401);
     }
-
     //TODO add Delete
     res.sendStatus(605);
 });
