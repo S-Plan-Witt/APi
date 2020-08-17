@@ -33,7 +33,7 @@ export class Jwt {
 			try {
 				let rows = await conn.query("SELECT * FROM `jwt_Token` WHERE `tokenIdentifier`= ?", [id]);
 				if(rows.length === 1){
-					resolve();
+					resolve(rows[0]['idjwt_Token']);
 				}else {
 					console.log("revoked: " + rows.length);
 					reject();
@@ -107,8 +107,7 @@ export class Jwt {
 				try {
 					let decoded: any = jwt.verify(token, publicKey);
 					if(typeof decoded == 'object'){
-						await Jwt.verifyId(decoded.session);
-
+						decoded['jwtId'] = await Jwt.verifyId(decoded.session)
 						req.decoded = decoded;
 						req.user = await User.getUserById(req.decoded.userId);
 						req.decoded.permissions = req.user.permissions;
@@ -141,7 +140,7 @@ export class Jwt {
 		return new Promise(async (resolve, reject) => {
 			let conn = await pool.getConnection();
 			try {
-				await conn.query(`DELETE FROM jwt_Token where tokenIdentifier=?`, [tokenId]);
+				await conn.query(`DELETE FROM jwt_Token where idjwt_Token=?`, [tokenId]);
 				logger.log({
 					level: 'silly',
 					label: 'JWT',
@@ -152,7 +151,7 @@ export class Jwt {
 				logger.log({
 					level: 'error',
 					label: 'JWT',
-					message: 'revoke of token failed ' + tokenId
+					message: 'revoke of token failed ' + tokenId + '; e:' +e
 				});
 				reject(e);
 			}finally {
