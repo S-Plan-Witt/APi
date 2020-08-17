@@ -615,3 +615,21 @@ router.delete('/profile/emails/:id', async (req, res) => {
             res.sendStatus(500);
         }
 });
+
+/**
+ * Deletes access jwt
+ * @route DELETE /user/jwt
+ * @group User - Operations about logged in user
+ * @returns {object} 200
+ * @returns {Error} 401 - Wrong JWT
+ * @security JWT
+ */
+router.delete('/jwt', async (req, res) => {
+        try {
+            await Jwt.revokeById(req.decoded.jwtId);
+            console.log("revoke")
+            res.sendStatus(200);
+        }catch (e) {
+            res.sendStatus(500);
+        }
+});
