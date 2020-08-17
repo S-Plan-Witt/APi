@@ -29,7 +29,7 @@ router.use((req, res, next) =>{
  * @route GET /users/
  * @group Users - Operations about all users
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/', async (req: Request, res : Response) => {
@@ -52,7 +52,7 @@ router.get('/', async (req: Request, res : Response) => {
  * @route GET /users/type/{type}
  * @group Users - Operations about all users
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/type/:type', async (req: Request, res: Response) => {
@@ -75,7 +75,7 @@ router.get('/type/:type', async (req: Request, res: Response) => {
  * @route GET /users/username/{username}
  * @group Users - Operations about all users
  * @returns {User.model} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/username/:username', async (req: Request, res: Response) => {
@@ -98,7 +98,7 @@ router.get('/username/:username', async (req: Request, res: Response) => {
  * @route GET /users/id/{id}
  * @group Users - Operations about all users
  * @returns {User.model} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/id/:id', async (req: Request, res: Response) => {
@@ -121,7 +121,7 @@ router.get('/id/:id', async (req: Request, res: Response) => {
  * @route GET /users/userid/{id}/preAuth
  * @group Users - Operations about all users
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
@@ -139,7 +139,7 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
         await user.isActive();
         let token = await user.createPreAuthToken(userId);
 
-        //TODO add eviro var for domain
+        //TODO add environment var for domain
 
         await res.json([token]);
     } catch(e){
@@ -158,7 +158,7 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
  * @route GET /users/ldap
  * @group Users - Operations about all users
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/ldap/', async (req: Request, res: Response) => {
@@ -182,7 +182,7 @@ router.get('/ldap/', async (req: Request, res: Response) => {
  * @group Users - Operations about all users
  * @param {UserFilter.model} UserFilter.body.required
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/ldap/find', async (req: Request, res: Response) => {
@@ -218,7 +218,7 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
  * @group Users - Operations about all users
  * @param {Array.<Course>} Array<Course>.body.required
  * @returns {object} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/:username/courses', async (req: Request, res: Response) => {
@@ -265,7 +265,7 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
  * @route POST /users/teacher/reload
  * @group Users - Operations about all users
  * @returns {object} 200
- * @returns {Error} 401 - Wrong Creds
+ * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.get('/teacher/reload', async (req: Request, res: Response) => {

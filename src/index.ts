@@ -87,24 +87,8 @@ logger.log({
 //Webservice
 import express, {NextFunction, Request, Response, Express} from "express";
 import {Jwt} from './classes/jwt';
-import {User} from './classes/user';
-import {Course} from './classes/timeTable';
 import {Telegram} from './classes/telegram';
 import {PushNotifications, PushTelegram} from './classes/pushNotifications';
-/*
-(async () => {
-    let user : User = await User.getUserById(1630)
-    console.log(user)
-    await user.enableMoodleAccount();
-    //user = await User.getUserById(1630)
-    //user.disableMoodleAccount()
-})();
-
- */
-
-
-
-
 
 //Creating Web-Server
 const app = express();
@@ -178,7 +162,6 @@ app.use(reqLogger);
 
 //add parser to webServer for json payload
 app.use(express.json({limit: '50mb'}));
-//app.use(express.urlencoded({limit: '50mb'}));
 
 //Validation of request auth tokens 
 app.use(Jwt.checkToken);
@@ -230,28 +213,6 @@ async function clearDB(){
 
 }
 
-//clearDB();
-/*
-(async () => {
-    let teachers: Teacher[] = await Ldap.loadTeacher()
-    for (const teacherKey in teachers) {
-        let teacher = teachers[teacherKey];
-        console.log(teacher)
-        try {
-            await teacher.createToDB();
-        }catch (e) {
-            console.log(e)
-        }
-
-    }
-})();
-
- */
-
-
-/**
- * start webserver to serve requests
- */
 app.listen(process.env.PORT, () => {
     logger.log({
         level: 'silly',

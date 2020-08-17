@@ -13,6 +13,7 @@ declare global {
         session: string,
         userType: string,
         userId: number,
+        jwtId: number,
         permissions: Permissions
     }
 
