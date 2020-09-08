@@ -4,16 +4,17 @@
 
 import {Course} from "./timeTable";
 
-import {Ldap}from './ldap';
+import {Ldap} from './ldap';
 import {EMail} from './eMail';
 import {Jwt} from './jwt';
 
 import winston from 'winston';
-const logger = winston.loggers.get('main');
-
 import {ApiGlobal} from "../types/global";
 import {Moodle} from "./moodle";
 import {Device} from "./device";
+
+const logger = winston.loggers.get('main');
+
 declare const global: ApiGlobal;
 let pool = global["mySQLPool"];
 
@@ -303,7 +304,7 @@ export class User {
             try {
                 let courses: Course[] = [];
                 if(userType == "student"){
-                    const rows = await conn.query("SELECT student_courses.subject, student_courses.grade, student_courses.`group`, student_courses.displayKlausuren, iddata_courses FROM student_courses LEFT JOIN data_courses ON student_courses.`group` = data_courses.`group` AND student_courses.subject = data_courses.subject AND student_courses.grade = data_courses.grade WHERE `user_id`= ?;", [userId]);
+                    const rows = await conn.query("SELECT data_courses.*, student_courses.displayKlausuren FROM student_courses LEFT JOIN data_courses ON student_courses.courseId = data_courses.iddata_courses WHERE `user_id`= ?;", [userId]);
                     await conn.end();
                     rows.forEach((row: any) => {
                         let exams = false;
