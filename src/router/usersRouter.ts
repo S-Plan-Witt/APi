@@ -2,7 +2,7 @@ import express, {Request, Response} from 'express';
 import winston from 'winston';
 import {Teacher, User, UserFilter} from '../classes/user';
 import { Ldap }   from '../classes/ldap';
-import {Course} from "../classes/timeTable";
+import {Course, TimeTable} from "../classes/timeTable";
 
 const logger = winston.loggers.get('main');
 export let router = express.Router();
@@ -42,7 +42,6 @@ router.get('/', async (req: Request, res : Response) => {
             label: 'Express',
             message: 'Routing: /users ; ' + JSON.stringify(e)
         });
-        console.log(e);
         res.sendStatus(500);
     }
 });
@@ -58,7 +57,7 @@ router.get('/', async (req: Request, res : Response) => {
 router.get('/type/:type', async (req: Request, res: Response) => {
 
     try {
-        let data = await User.getUsersByType(req.params.type);
+        let data = await User.getUsersByType(parseInt(req.params.type));
         await res.json(data);
     } catch(e){
         logger.log({
@@ -88,7 +87,6 @@ router.get('/username/:username', async (req: Request, res: Response) => {
             label: 'Express',
             message: 'Routing: /users/username ; ' + JSON.stringify(e)
         });
-        console.log(e);
         res.sendStatus(500);
     }
 });
@@ -111,7 +109,6 @@ router.get('/id/:id', async (req: Request, res: Response) => {
             label: 'Express',
             message: 'Routing: /users/username ; ' + JSON.stringify(e)
         });
-        console.log(e);
         res.sendStatus(500);
     }
 });
@@ -139,8 +136,6 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
         await user.isActive();
         let token = await user.createPreAuthToken(userId);
 
-        //TODO add environment var for domain
-
         await res.json([token]);
     } catch(e){
         logger.log({
@@ -148,7 +143,7 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
             label: 'Express',
             message: 'Routing: /users/:username/preAuth ; ' + JSON.stringify(e)
         });
-        console.log(e);
+
         res.sendStatus(500);
     }
 });
@@ -171,7 +166,6 @@ router.get('/ldap/', async (req: Request, res: Response) => {
             label: 'Express',
             message: 'Routing: /users/ldap/ ; ' + JSON.stringify(e)
         });
-        console.log(e);
         res.sendStatus(500);
     }
 });
@@ -226,7 +220,7 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
         logger.log({
             level: 'debug',
             label: 'Express',
-            message: 'No permissions : /students/'+ req.params.username + '/courses'
+            message: 'No permissions : /users/'+ req.params.username + '/courses'
         });
         return res.sendStatus(401);
     }
@@ -234,7 +228,11 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
     try {
         user = await User.getUserByUsername(req.params.username);
     }catch (e) {
-        console.log(e);
+        logger.log({
+            level: 'error',
+            label: 'Express',
+            message: '/users/'+ req.params.username +'/courses;1: ' + JSON.stringify(e)
+        });
     }
     if(user == null){
         await User.createUserFromLdap(req.params.username);
@@ -245,16 +243,30 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
             await user.deleteCourses();
             let courses = [];
             for (const courseData of req.body){
-                courses.push(new Course(courseData["grade"],courseData["subject"], courseData["group"], courseData["exams"]));
+                try {
+                    let course: Course = await TimeTable.getCourseByFields(courseData["subject"],courseData["grade"], courseData["group"])
+                    course.exams = courseData["exams"];
+                    courses.push(course);
+                }catch (e) {
+                    //TODO add logger
+                }
             }
             await user.addCourse(courses);
             res.sendStatus(200);
         } catch(e){
-            //TODO add logger
-            console.log(e);
+            logger.log({
+                level: 'error',
+                label: 'Express',
+                message: '/users/'+ req.params.username +'/courses;2: ' + JSON.stringify(e)
+            });
             res.sendStatus(500);
         }
     }else {
+        logger.log({
+            level: 'debug',
+            label: 'Express',
+            message: '/users/'+ req.params.username +'/courses;3: User not found'
+        });
         res.send("user not found")
     }
 });
@@ -283,11 +295,10 @@ router.get('/teacher/reload', async (req: Request, res: Response) => {
         try {
             await teacher.createToDB();
         }catch (e) {
-            console.log(e)
             logger.log({
                 level: 'error',
-                label: 'Users',
-                message: 'UserRouter->/teacher/reload: ' + JSON.stringify(e)
+                label: 'Express',
+                message: '/teacher/reload: ' + JSON.stringify(e)
             });
         }
     }
