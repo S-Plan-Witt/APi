@@ -1,11 +1,10 @@
-import {Course} from  "../classes/timeTable";
-
+import {Course} from "../classes/timeTable";
 import express from 'express';
-import winston from 'winston';
+import {Exam, Exams, Supervisors} from '../classes/exams';
+import {ApiGlobal} from "../types/global";
 
-import {Exams,Exam,Supervisors} from '../classes/exams';
+declare const global: ApiGlobal;
 
-const logger = winston.loggers.get('main');
 export let router = express.Router();
 
 /**
@@ -34,7 +33,7 @@ router.post('/', async function(req,res){
         }
         res.sendStatus(200);
     } catch (e) {
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'ExamsRouter',
             message: 'Err: ' + JSON.stringify(e)
@@ -101,7 +100,7 @@ router.get('/exams/supervisors/:id', async function (req,res){
         let data = await Supervisors.getById(parseInt(req.params.id));
         await res.json(data);
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'ExamsRouter',
             message: 'Err: ' + JSON.stringify(e)

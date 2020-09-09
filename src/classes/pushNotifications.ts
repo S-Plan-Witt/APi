@@ -1,49 +1,13 @@
-//NPM
-import winston from 'winston';
-const logger = winston.loggers.get('main');
-
 import firebaseAdmin from 'firebase-admin';
 import webPush from "web-push";
-
-//LC
 import Telegraf from 'telegraf';
 import {Telegram} from './telegram';
 import {User} from './user';
-
-//Vars
-let TGT: string = "" ;
-
-let serviceAccount;
-if(process.env.GOOGLE_APPLICATION_CREDENTIALS !== undefined){
-    serviceAccount = require(process.env.GOOGLE_APPLICATION_CREDENTIALS)
-}
-
-if(process.env.API_TELEGRAM!= undefined){
-    TGT = process.env.API_TELEGRAM
-}
-const telegram = new Telegraf(TGT).telegram;
-
-
-//Create mySQL connection pool
 import {ApiGlobal} from "../types/global";
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
 
-//init FCM connector
-firebaseAdmin.initializeApp({
-    credential: firebaseAdmin.credential.cert(serviceAccount),
-    databaseURL: "https://fir-plan-194f7.firebaseio.com"
-});
-
-//init webPush
-if(process.env.VAPID_PUBLIC !== undefined && process.env.VAPID_PRIVATE !== undefined){
-    webPush.setVapidDetails(
-        "https://splan.nils-witt.de",
-        process.env.VAPID_PUBLIC,
-        process.env.VAPID_PRIVATE
-    );
-}
-
+let telegram: any;
 
 export class PushNotifications {
 
@@ -55,6 +19,22 @@ export class PushNotifications {
         this.pushTelegram = new PushTelegram();
         this.pushWebPush = new PushWebPush();
         this.pushFCM = new PushFCM();
+    }
+
+    static initFrameworks() {
+
+        firebaseAdmin.initializeApp({
+            credential: firebaseAdmin.credential.cert(require(global.config.pushFrameWorks.firebaseCertificatePath)),
+            databaseURL: "https://fir-plan-194f7.firebaseio.com"
+        });
+
+        webPush.setVapidDetails(
+            "https://splan.nils-witt.de",
+            global.config.pushFrameWorks.vapidKeyPublic,
+            global.config.pushFrameWorks.vapidKeyPrivate
+        );
+
+        telegram = new Telegraf(global.config.pushFrameWorks.telegramBotToken).telegram;
     }
 
     /**
@@ -141,11 +121,7 @@ export class PushTelegram {
     bot: Telegraf<any>;
 
     constructor() {
-        if(TGT !== undefined){
-            this.bot = new Telegraf(TGT);
-        }else {
-            this.bot = new Telegraf("");
-        }
+        this.bot = new Telegraf(global.config.pushFrameWorks.telegramBotToken);
     }
 
     startTelegramBot(){
@@ -153,7 +129,7 @@ export class PushTelegram {
         this.bot.start(async (ctx) => {
             let token = await Telegram.createRequest(ctx.update.message.from.id);
             await ctx.reply("Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token);
-            logger.log({
+            global.logger.log({
                 level: 'silly',
                 label: 'TelegramBot',
                 message: 'created Linking token'
@@ -167,26 +143,26 @@ export class PushTelegram {
 
                 await User.removeDevice(ctx.update.message.from.id.toString());
                 await ctx.reply("Abgeschlossen");
-                logger.log({
+                global.logger.log({
                     level: 'silly',
                     label: 'TelegramBot',
-                    message: 'deleted Device: '+ ctx.update.message.from.id
+                    message: 'deleted Device: ' + ctx.update.message.from.id
                 });
             } catch (e) {
                 console.log(e);
                 await ctx.reply("Es ist ein Fehler aufgetreten");
 
-                logger.log({
+                global.logger.log({
                     level: 'silly',
                     label: 'TelegramBot',
-                    message: 'Error while deleting Device: '+ ctx.update.message.from.id
+                    message: 'Error while deleting Device: ' + ctx.update.message.from.id
                 });
             }
         });
 
         //Launch TG replay bot
         this.bot.launch().then(() => {
-            logger.log({
+            global.logger.log({
                 level: 'silly',
                 label: 'TelegramBot',
                 message: 'started'
@@ -205,17 +181,17 @@ export class PushTelegram {
         return new Promise(async function (resolve, reject) {
             try {
                 await telegram.sendMessage(chatID, body);
-                logger.log({
+                global.logger.log({
                     level: 'silly',
                     label: 'TelegramPush',
-                    message: 'sent message: '+ body + " ;to: " + chatID
+                    message: 'sent message: ' + body + " ;to: " + chatID
                 });
                 resolve();
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'warn',
                     label: 'TelegramPush',
-                    message: 'sent message: '+ body + " ;to: " + chatID + ' Error: ' + JSON.stringify(e)
+                    message: 'sent message: ' + body + " ;to: " + chatID + ' Error: ' + JSON.stringify(e)
                 });
                 reject(e);
             }
@@ -237,10 +213,13 @@ export class PushWebPush {
         return new Promise(async function (resolve, reject) {
             try {
                 await webPush.sendNotification(subscription, JSON.stringify({title: title, body: body}), {});
-                logger.log({
+                global.logger.log({
                     level: 'silly',
                     label: 'WebPush',
-                    message: 'sent message: '+ JSON.stringify({title: title, body: body}) + " ;to: " + JSON.stringify(subscription)
+                    message: 'sent message: ' + JSON.stringify({
+                        title: title,
+                        body: body
+                    }) + " ;to: " + JSON.stringify(subscription)
                 });
                 resolve();
             } catch (e) {
@@ -257,7 +236,7 @@ export class PushWebPush {
      */
     deleteSubscription(endpoint: any){
         return new Promise(async function (resolve, reject) {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `devices` WHERE (`deviceID` LIKE ?);", ['%' + endpoint + '%']);
                 //TODO add logger
@@ -291,7 +270,7 @@ export class PushFCM{
             };
             try {
                 let response = await firebaseAdmin.messaging().send(message);
-                logger.log({
+                global.logger.log({
                     level: 'silly',
                     label: 'FCM',
                     message: 'Successfully send message: ' + JSON.stringify(response)
@@ -301,10 +280,10 @@ export class PushFCM{
                 if(e.code == "messaging/registration-token-not-registered"){
                     //TODO add FCM delete registration
                 }
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'FCM',
-                    message: 'Error sending message: '+ JSON.stringify(e)
+                    message: 'Error sending message: ' + JSON.stringify(e)
                 });
                 reject(e);
             }

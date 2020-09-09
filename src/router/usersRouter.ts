@@ -1,21 +1,22 @@
 import express, {Request, Response} from 'express';
-import winston from 'winston';
 import {Teacher, User, UserFilter} from '../classes/user';
-import { Ldap }   from '../classes/ldap';
+import {Ldap} from '../classes/ldap';
 import {Course, TimeTable} from "../classes/timeTable";
+import {ApiGlobal} from "../types/global";
 
-const logger = winston.loggers.get('main');
+declare const global: ApiGlobal;
+
 export let router = express.Router();
 
 /**
  * Checks if base permission for all sub functions is given
  */
-router.use((req, res, next) =>{
-    if(req.decoded.permissions.users){
+router.use((req, res, next) => {
+    if (req.decoded.permissions.users) {
         next();
         return;
     }
-    logger.log({
+    global.logger.log({
         level: 'notice',
         label: 'Privileges violation',
         message: `Path: ${req.path} By UserId ${req.decoded.userId}`
@@ -37,7 +38,7 @@ router.get('/', async (req: Request, res : Response) => {
         let data = await User.getAllUsers();
         await res.json(data);
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /users ; ' + JSON.stringify(e)
@@ -60,7 +61,7 @@ router.get('/type/:type', async (req: Request, res: Response) => {
         let data = await User.getUsersByType(parseInt(req.params.type));
         await res.json(data);
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /users/type/ : ' + JSON.stringify(e)
@@ -82,7 +83,7 @@ router.get('/username/:username', async (req: Request, res: Response) => {
         let data = await User.getUserByUsername(req.params.username);
         await res.json([data]);
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /users/username ; ' + JSON.stringify(e)
@@ -104,7 +105,7 @@ router.get('/id/:id', async (req: Request, res: Response) => {
         let data = await User.getUserById(parseInt(req.params.id));
         await res.json([data]);
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /users/username ; ' + JSON.stringify(e)
@@ -123,7 +124,7 @@ router.get('/id/:id', async (req: Request, res: Response) => {
  */
 router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
     if(!req.decoded.permissions.usersAdmin){
-        logger.log({
+        global.logger.log({
             level: 'debug',
             label: 'Express',
             message: 'No permissions : /students/find'
@@ -138,7 +139,7 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
 
         await res.json([token]);
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /users/:username/preAuth ; ' + JSON.stringify(e)
@@ -161,7 +162,7 @@ router.get('/ldap/', async (req: Request, res: Response) => {
     try {
         await res.json(await Ldap.getAllStudents());
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /users/ldap/ ; ' + JSON.stringify(e)
@@ -197,7 +198,7 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
         let users = await Ldap.searchUser(filter);
         res.json(users);
     } catch (e){
-        logger.log({
+        global.logger.log({
             level: 'warn',
             label: 'Express',
             message: 'Error while executing callback : /students/find : ' + e
@@ -217,10 +218,10 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
  */
 router.post('/:username/courses', async (req: Request, res: Response) => {
     if(!req.decoded.permissions.usersAdmin){
-        logger.log({
+        global.logger.log({
             level: 'debug',
             label: 'Express',
-            message: 'No permissions : /users/'+ req.params.username + '/courses'
+            message: 'No permissions : /users/' + req.params.username + '/courses'
         });
         return res.sendStatus(401);
     }
@@ -228,10 +229,10 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
     try {
         user = await User.getUserByUsername(req.params.username);
     }catch (e) {
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
-            message: '/users/'+ req.params.username +'/courses;1: ' + JSON.stringify(e)
+            message: '/users/' + req.params.username + '/courses;1: ' + JSON.stringify(e)
         });
     }
     if(user == null){
@@ -254,18 +255,18 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
             await user.addCourse(courses);
             res.sendStatus(200);
         } catch(e){
-            logger.log({
+            global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: '/users/'+ req.params.username +'/courses;2: ' + JSON.stringify(e)
+                message: '/users/' + req.params.username + '/courses;2: ' + JSON.stringify(e)
             });
             res.sendStatus(500);
         }
     }else {
-        logger.log({
+        global.logger.log({
             level: 'debug',
             label: 'Express',
-            message: '/users/'+ req.params.username +'/courses;3: User not found'
+            message: '/users/' + req.params.username + '/courses;3: User not found'
         });
         res.send("user not found")
     }
@@ -282,20 +283,20 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
  */
 router.get('/teacher/reload', async (req: Request, res: Response) => {
     if(!req.decoded.permissions.usersAdmin){
-        logger.log({
+        global.logger.log({
             level: 'debug',
             label: 'Express',
-            message: 'No permissions : /students/'+ req.params.username + '/courses'
+            message: 'No permissions : /students/' + req.params.username + '/courses'
         });
         return res.sendStatus(401);
     }
-    let teachers: Teacher[] = await Ldap.loadTeacher();
+    let teachers: Teacher[] = await Ldap.loadTeachers();
     for (const teacherKey in teachers) {
         let teacher = teachers[teacherKey];
         try {
             await teacher.createToDB();
         }catch (e) {
-            logger.log({
+            global.logger.log({
                 level: 'error',
                 label: 'Express',
                 message: '/teacher/reload: ' + JSON.stringify(e)

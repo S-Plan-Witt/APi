@@ -1,13 +1,13 @@
 import express, {Request, Response} from 'express';
-import winston from 'winston';
 
 import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLessons';
 import {User} from '../classes/user';
 import {PushNotifications} from '../classes/pushNotifications';
 import {Course, TimeTable} from "../classes/timeTable";
-import assert from "assert";
+import {ApiGlobal} from "../types/global";
 
-const logger = winston.loggers.get('main');
+declare const global: ApiGlobal;
+
 export let router = express.Router();
 
 /**
@@ -50,20 +50,22 @@ router.post('/', async function (req,res){
             }
         }
         try {
-            assert(replacementLesson != null, "RL null");
-            let status = await ReplacementLessons.add(replacementLesson);
 
-            let devices = await User.getStudentDevicesByCourse(replacementLesson.course);
-            console.log(status + ":" + JSON.stringify(replacementLesson))
-            let pushNotifications = new PushNotifications();
-            if(status === "added"){
-                pushNotifications.sendBulk(devices,"Hinzugefügt: " + replacementLesson.course.subject," Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
-            }else if(status === "updated"){
-                pushNotifications.sendBulk(devices,"Aktualisiert: " + replacementLesson.course.subject," Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+            if (replacementLesson != null) {
+
+                let status = await ReplacementLessons.add(replacementLesson);
+                let devices = await User.getStudentDevicesByCourse(replacementLesson.course);
+                console.log(status + ":" + JSON.stringify(replacementLesson))
+                let pushNotifications = new PushNotifications();
+                if (status === "added") {
+                    pushNotifications.sendBulk(devices, "Hinzugefügt: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                } else if (status === "updated") {
+                    pushNotifications.sendBulk(devices, "Aktualisiert: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                }
             }
 
         } catch(e){
-            logger.log({
+            global.logger.log({
                 level: 'warn',
                 label: 'ReplacementLessons',
                 message: 'Error while processing post ' + e + '; at: ' + JSON.stringify(postDataSet)

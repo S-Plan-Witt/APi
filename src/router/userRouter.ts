@@ -4,13 +4,14 @@ import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLesso
 import {Announcement, Announcements} from '../classes/announcements';
 import {Exam, Exams, Supervisors} from '../classes/exams';
 import express, {Request, Response} from 'express';
-import winston, {Logger} from 'winston';
-import {User}   from '../classes/user';
+import {User} from '../classes/user';
 import {Totp} from '../classes/totp';
 import {Ldap} from "../classes/ldap";
 import assert from "assert";
+import {ApiGlobal} from "../types/global";
 
-const logger: Logger = winston.loggers.get('main');
+declare const global: ApiGlobal;
+
 export let router = express.Router();
 
 
@@ -57,7 +58,7 @@ router.post('/login', async function (req: Request, res: Response) {
             preauth = true;
 
         }catch(e){
-            logger.log({
+            global.logger.log({
                 level: 'error',
                 label: 'Login',
                 message: 'token Error : ' + e
@@ -66,7 +67,7 @@ router.post('/login', async function (req: Request, res: Response) {
             return ;
         }
     }else{
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /user/login : No method provided '
@@ -88,10 +89,10 @@ router.post('/login', async function (req: Request, res: Response) {
             console.log(user)
         }catch (e) {
             res.sendStatus(401);
-            logger.log({
+            global.logger.log({
                 level: 'error',
                 label: 'User',
-                message: ' Login: /user/login : user not found ('+ username +') e:' + JSON.stringify(e)
+                message: ' Login: /user/login : user not found (' + username + ') e:' + JSON.stringify(e)
             });
             //res.send("User not available")
             return;
@@ -112,7 +113,7 @@ router.post('/login', async function (req: Request, res: Response) {
                         console.log("ERROR")
                     }catch (e) {
                         res.sendStatus(401);
-                        logger.log({
+                        global.logger.log({
                             level: 'info',
                             label: 'Login',
                             message: 'SecondFactor failed : ' + username
@@ -121,25 +122,28 @@ router.post('/login', async function (req: Request, res: Response) {
                     }
                 }else {
                     res.sendStatus(602);
-                    logger.log({
+                    global.logger.log({
                         level: 'info',
                         label: 'Login',
                         message: 'Futher information required : ' + username
                     });
-                    return ;
+                    return;
                 }
             }
         }
         let token = await user.generateToken();
-        res.json({"token": token,"userType": user.type});
-        logger.log({
+        let type = "";
+        if (user.type == 1) type = "student";
+        if (user.type == 2) type = "teacher";
+        res.json({"token": token, "userType": type});
+        global.logger.log({
             level: 'info',
             label: 'Login',
             message: 'Loggedin : ' + username
         });
     }catch(e){
         console.log(e);
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /user/login/ ; ' + JSON.stringify(e)
@@ -171,7 +175,7 @@ router.get('/courses',  async function (req: Request, res: Response) {
             courses = user.courses;
             await res.json(courses);
         }else{
-            logger.log({
+            global.logger.log({
                 level: 'error',
                 label: 'Express',
                 message: 'Routing: /user/courses : invalid usertype :' + req.decoded.userType
@@ -179,7 +183,7 @@ router.get('/courses',  async function (req: Request, res: Response) {
             res.sendStatus(401);
         }
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /user/courses ; ' + JSON.stringify(e)
@@ -216,7 +220,7 @@ router.get('/lessons',  async function (req: Request, res: Response) {
                     });
                 } catch(e){
                     console.log(e);
-                    logger.log({
+                    global.logger.log({
                         level: 'error',
                         label: 'Express',
                         message: 'Routing: /user/lessons : processinf courses: ' + JSON.stringify(e)
@@ -227,7 +231,7 @@ router.get('/lessons',  async function (req: Request, res: Response) {
         }
         res.json(response);
     } catch(e){
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'Express',
             message: 'Routing: /user/lessons : ' + JSON.stringify(e)
@@ -350,13 +354,13 @@ router.get('/exams',  async function (req: Request, res: Response) {
             for(const course of courses){
                 try{
                     //if user should see exams in this course
-                    if(course.exams){
+                    if (course.exams) {
                         //Get exams by course
                         let data = await Exams.getByCourse(course);
                         data.forEach(exam => {
                             response.push(exam);
                         });
-                    }else if (req.user.type === 'teacher'){
+                    } else if (req.user.type === 2) {
                         //Get exams by course
                         let data: Exam[] = await Exams.getByCourse(course);
                         data.forEach(exam => {

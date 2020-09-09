@@ -1,8 +1,7 @@
 import {ApiGlobal} from "../types/global";
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
-import winston from 'winston';
-const logger = winston.loggers.get('main');
+
 
 export class Telegram {
     /**
@@ -13,7 +12,7 @@ export class Telegram {
 
     static validateRequestToken(token: string): Promise<number> {
         return new Promise(async function (resolve, reject) {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM telegramLinks WHERE `token`= ? ", [token]);
                 if (rows.length === 1) {
@@ -38,7 +37,7 @@ export class Telegram {
      */
     static revokeRequest(token: string) {
         return new Promise(async function (resolve, reject) {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `telegramLinks` WHERE (`token` = ?);", [token]);
                 resolve();
@@ -58,7 +57,7 @@ export class Telegram {
      */
     static createRequest(telegramId: number) {
         return new Promise(async function (resolve, reject) {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
                 await conn.query("INSERT INTO `telegramLinks` (`telegramId`, `token`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token`=?;", [telegramId, tokenId, tokenId]);

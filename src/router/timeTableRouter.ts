@@ -1,20 +1,21 @@
 import express, {Request, Response} from 'express';
-import winston from 'winston';
 
-import {Lesson, TimeTable, Course} from '../classes/timeTable';
+import {Course, Lesson, TimeTable} from '../classes/timeTable';
 import {User} from "../classes/user";
+import {ApiGlobal} from "../types/global";
 
-const logger = winston.loggers.get('main');
+declare const global: ApiGlobal;
+
 export let router = express.Router();
 /**
  * Checks if base permission for all sub functions is given
  */
-router.use((req, res, next) =>{
-    if(req.decoded.permissions.timeTable){
+router.use((req, res, next) => {
+    if (req.decoded.permissions.timeTable) {
         next();
         return;
     }
-    logger.log({
+    global.logger.log({
         level: 'notice',
         label: 'Privileges violation',
         message: `Path: ${req.path} By UserId ${req.decoded.userId}`
@@ -128,17 +129,4 @@ router.get('/courses', async function (req,res){
  */
 router.get('/lessons', async function (req,res){
     res.json(await TimeTable.getAllLessons());
-});
-
-/**
- * Rebuild of all internal lists
- * @route GET /timetable/rebuild
- * @group TimeTable - Functions for Management of Courses, Grades, Lessons
- * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
- * @security JWT
- */
-router.get('/rebuild', async (req: Request, res: Response) => {
-    await TimeTable.rebuildCourseList();
-    res.sendStatus(200);
 });

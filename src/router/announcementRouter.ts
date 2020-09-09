@@ -1,17 +1,19 @@
 import {Course, TimeTable} from "../classes/timeTable";
 
 import express from 'express';
-import winston from 'winston';
-import {Announcements,Announcement} from '../classes/announcements';
-import {User}   from '../classes/user';
-import {PushNotifications}          from '../classes/pushNotifications';
-const logger = winston.loggers.get('main');
+import {Announcement, Announcements} from '../classes/announcements';
+import {User} from '../classes/user';
+import {PushNotifications} from '../classes/pushNotifications';
+import {ApiGlobal} from "../types/global";
+
+declare const global: ApiGlobal;
+
 export let router = express.Router();
 
-router.use((req, res, next) =>{
-    if(req.decoded.permissions.announcements){
+router.use((req, res, next) => {
+    if (req.decoded.permissions.announcements) {
         next();
-        return ;
+        return;
     }
     return res.sendStatus(401);
 });
@@ -48,7 +50,7 @@ router.post('/', async function(req,res){
         res.sendStatus(200);
     }catch (e) {
         console.log(e);
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'announcementsRouter',
             message: 'Error while processing request ' + JSON.stringify(e)

@@ -1,13 +1,9 @@
 import {User} from "./user";
 
-import winston from 'winston';
-const logger = winston.loggers.get('main');
-
 import {ApiGlobal} from "../types/global";
 import {Course} from "./timeTable";
 
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
 
 export class Exams {
 
@@ -16,12 +12,12 @@ export class Exams {
      */
     static getAll(): Promise<Exam[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT `data_exams`.*, `data_exam_rooms`.room   FROM `data_exams` LEFT JOIN `data_exam_rooms` ON `data_exams`.`roomLink` = `data_exam_rooms`.`iddata_exam_rooms`");
                 resolve(await this.sqlRowToArray(rows));
             } catch (err) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Get All failed: ' + JSON.stringify(err)
@@ -39,12 +35,12 @@ export class Exams {
      */
     static getByCourse(course: Course): Promise<Exam[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_exams` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Get by course failed: ' + JSON.stringify(course) + " Err: " + JSON.stringify(e)
@@ -61,7 +57,7 @@ export class Exams {
      */
     static getByTeacher(teacher: string): Promise<Exam[]>{
         return new Promise(async (resolve, reject) => {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_exams` WHERE `teacher`= ?", [teacher]);
                 resolve(await this.sqlRowToArray(rows));
@@ -98,11 +94,11 @@ export class Exams {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM data_exams where roomLink = ?;", [roomLinkId]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Get supervisors by exam failed: ' + roomLinkId + " Err: " + JSON.stringify(e)
@@ -122,7 +118,7 @@ export class RoomLinks {
      */
     static getRoomLinks(date: string, room: string): Promise<RoomLink[]>{
         return new Promise(async (resolve, reject) => {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let roomLinks: RoomLink[] = [];
                 let rows = await conn.query("SELECT * FROM `data_exam_rooms` WHERE `date`= ? AND `room`= ? ", [date, room]);
@@ -133,7 +129,7 @@ export class RoomLinks {
                 });
                 resolve(roomLinks);
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Get by course failed:  Err: ' + JSON.stringify(e)
@@ -151,7 +147,7 @@ export class RoomLinks {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let result = await conn.query("SELECT * FROM data_exam_rooms WHERE iddata_exam_rooms = ?", [id]);
                 if(result.length == 1){
                     let row = result[0];
@@ -177,12 +173,12 @@ export class RoomLinks {
      */
     static add(roomLink: RoomLink): Promise<void>{
         return new Promise(async (resolve, reject) => {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("INSERT INTO data_exam_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [roomLink.room, roomLink.from, roomLink.to, roomLink.date]);
                 resolve();
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'roomLink',
                     message: 'RoomLink Save failed: ' + JSON.stringify(roomLink) + " Err: " + JSON.stringify(e)
@@ -205,7 +201,7 @@ export class Supervisors {
         return new Promise(async (resolve, reject) =>{
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let data: Supervisor[] = [];
                 //TODO Add Supervisor object
                 let rows = await conn.query("SELECT * FROM `data_exam_supervisors` LEFT JOIN `users` ON `data_exam_supervisors`.`TeacherId` = `users`.`idusers` WHERE `RoomLink`= ?", [id]);
@@ -214,7 +210,7 @@ export class Supervisors {
                 });
                 resolve(data);
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Get supervisors by exam failed: ' + id + " Err: " + JSON.stringify(e)
@@ -234,7 +230,7 @@ export class Supervisors {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT `data_exam_supervisors`.*,`users`.*, `data_exam_rooms`.`room`, `data_exam_rooms`.`date` FROM `data_exam_supervisors` LEFT JOIN `users` ON `data_exam_supervisors`.`TeacherId` = `users`.`idusers` LEFT JOIN `data_exam_rooms` ON `data_exam_supervisors`.`RoomLink` = `data_exam_rooms`.`iddata_exam_rooms` WHERE `supervisorId`= ?", [id]);
                 if(rows.length > 0){
                     let date = new Date(rows[0]["date"]);
@@ -246,7 +242,7 @@ export class Supervisors {
                 }
 
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Get supervisor by id failed: ' + id + " Err: " + JSON.stringify(e)
@@ -263,7 +259,7 @@ export class Supervisors {
         return new Promise(async (resolve, reject) =>{
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT `data_exam_supervisors`.*, `data_exam_rooms`.`room`, `data_exam_rooms`.`date` FROM `data_exam_supervisors` LEFT JOIN `users` ON `data_exam_supervisors`.`TeacherId` = `users`.`idusers` LEFT JOIN `data_exam_rooms` ON `data_exam_supervisors`.`RoomLink` = `data_exam_rooms`.`iddata_exam_rooms` WHERE `TeacherId`= (SELECT idusers FROM users WHERE users.username = ?)", [username]);
                 if(rows.length > 0){
                     let data = [];
@@ -279,7 +275,7 @@ export class Supervisors {
                 }
 
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Get supervisor by Teacher username failed: ' + username + " Err: " + JSON.stringify(e)
@@ -352,7 +348,7 @@ export class Exam {
             let linkId = avilRoomLinks[0]["iddata_exam_rooms"];
             let conn ;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
 
                 let uniqueIdentifier = grade + '-' + group + '-' + subject + '-' + date;
 
@@ -369,7 +365,7 @@ export class Exam {
                 }
                 resolve(res);
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Err: ' + JSON.stringify(e)
@@ -388,17 +384,17 @@ export class Exam {
         let id = this.id;
 
         return new Promise(async (resolve, reject) => {
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `data_exams` WHERE (`iddata_klausuren` = ?);",[id]);
-                logger.log({
+                global.logger.log({
                     level: 'silly',
                     label: 'exams',
                     message: 'Deleted: ' + JSON.stringify(id)
                 });
                 resolve();
             } catch (err) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'exams',
                     message: 'Delete failed: ' + JSON.stringify(id) + " Err: " + JSON.stringify(err)

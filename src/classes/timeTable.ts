@@ -1,10 +1,9 @@
-import winston from 'winston';
 import {ApiGlobal} from "../types/global";
 import assert from "assert";
 
-const logger = winston.loggers.get('main');
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
+
 
 export class TimeTable {
     /**
@@ -16,7 +15,7 @@ export class TimeTable {
         return new Promise(async function (resolve, reject) {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let lessons: Lesson[] = [];
                 assert(course.id != null);
                 let rows = await conn.query("SELECT * FROM data_lessons WHERE courseId = ?", [course.id]);
@@ -38,7 +37,7 @@ export class TimeTable {
         return new Promise(async function (resolve, reject) {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_courses.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM data_lessons LEFT JOIN data_courses ON data_lessons.courseId = data_courses.iddata_courses WHERE `idlessons`=?", [id.toString()]);
                 if(rows.length == 1){
                     let row = rows[0];
@@ -66,7 +65,7 @@ export class TimeTable {
         return new Promise(async function (resolve, reject) {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM data_lessons WHERE `courseId`=? && `lesson`=? AND weekday = ?", [course.id, lessonNum, weekday]);
                 if(rows.length == 1){
                     let row = rows[0];
@@ -91,7 +90,7 @@ export class TimeTable {
         return new Promise(async function (resolve, reject) {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let lessons: Lesson[] = [];
                 let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_courses.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM data_lessons LEFT JOIN data_courses ON data_lessons.courseId = data_courses.iddata_courses");
                 for (let i = 0; i < rows.length; i++) {
@@ -116,7 +115,7 @@ export class TimeTable {
      */
     static addLesson(lesson: Lesson){
         return new Promise(async (resolve, reject) =>{
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try{
                 await conn.query("INSERT INTO `data_lessons` (`courseId`, `room`, `lesson`, weekday) VALUES (?, ?, ?, ?);",[lesson.course.id, lesson.room, lesson.lessonNumber, lesson.day]);
                 resolve();
@@ -131,7 +130,7 @@ export class TimeTable {
 
     static addCourse(course: Course) : Promise<Course>{
         return new Promise(async (resolve, reject) =>{
-            let conn = await pool.getConnection();
+            let conn = await global.mySQLPool.getConnection();
             try{
                 let result = await conn.query("INSERT INTO `data_courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);",[course.grade, course.subject, course.group, course.teacherId]);
                 course.id = result.insertId;
@@ -156,9 +155,9 @@ export class TimeTable {
         return new Promise(async (resolve, reject) =>{
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let lessons: any = [];
-                let rows = await conn.query("SELECT * FROM data_lessons WHERE (`teacherId`=? && `lesson`=? && `weekday`=?)", [teacherId, lesson, weekday]);
+                let rows = await conn.query("SELECT data_lessons.* FROM data_lessons left join data_courses on data_lessons.courseId = data_courses.iddata_courses where (`teacherId`=? && `lesson`=? && `weekday`=?)", [teacherId, lesson, weekday]);
                 rows.forEach((lesson:any) => {
                     lessons.push(lesson);
                 });
@@ -176,7 +175,7 @@ export class TimeTable {
         return new Promise(async (resolve, reject) =>{
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM data_courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
                 if (rows.length != 1) {
                     reject()
@@ -195,13 +194,12 @@ export class TimeTable {
         return new Promise(async (resolve, reject) =>{
             let conn;
             try {
-                conn = await pool.getConnection();
-                let lessons: any = [];
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM data_courses WHERE (iddata_courses=?)", [id]);
-                if (rows.length != 1) {
-                    reject()
+                if (rows.length == 1) {
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["iddata_courses"]));
                 } else {
-                    resolve(new Course(rows[0]["grade"],rows[0]["subject"],rows[0]["group"], false, rows[0]["iddata_courses"]));
+                    reject()
                 }
             } catch (e) {
                 //TODO add logger
@@ -214,13 +212,13 @@ export class TimeTable {
 
     /**
      *
-     * @returns {Promise<unknown>}
+     * @returns {Promise<Course[]>}
      */
     static getAllCourses(): Promise<Course[]>{
         return new Promise(async (resolve, reject) =>{
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let courses: Course[] = [];
                 let rows = await conn.query("SELECT * FROM data_courses ORDER BY grade, subject, `group`");
                 rows.forEach((lesson: any) => {
@@ -229,44 +227,6 @@ export class TimeTable {
                 resolve(courses);
             } catch (e) {
                 //TODO add logger
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
-     *
-     * @returns {Promise<unknown>}
-     */
-    static rebuildCourseList() {
-        return new Promise(async (resolve, reject) =>{
-            let conn;
-            try {
-                conn = await pool.getConnection();
-                let courses: any = [];
-                let rows = await conn.query('SELECT `teacherId` FROM data_lessons');
-                rows.forEach((course: any)=> {
-                    let conName: string;
-                    if(course["grade"] == course["group"]){
-                        conName = course["grade"] + "/" + course["subject"];
-                    }else {
-                        conName = course["grade"] + "/" + course["subject"] + "-" + course["group"];
-                    }
-                    courses[conName] = course;
-                });
-                await conn.query("TRUNCATE TABLE data_courses");
-                for (let courseId in courses){
-                    if(courses.hasOwnProperty(courseId)){
-                        let course = courses[courseId];
-                        rows = await conn.query('INSERT INTO data_courses (grade, subject, `group`, `teacher`) VALUES (?, ?, ?, ?)', [course["grade"], course["subject"], course["group"], course["teacher"]]);
-                    }
-                }
-                resolve();
-            } catch (e) {
-                //TODO add logger
-                console.log(e);
                 reject(e);
             } finally {
                 await conn.end();

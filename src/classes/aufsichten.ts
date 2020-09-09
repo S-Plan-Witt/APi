@@ -1,6 +1,7 @@
 import {ApiGlobal} from "../types/global";
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
+
 
 //TODO split exports and functions
 module.exports = {
@@ -12,8 +13,8 @@ module.exports = {
 
         let conn;
         try {
-            conn = await pool.getConnection();
-            await conn.query("UPDATE `data_aufsichten` SET `date` = ?, `time`= ?, `location`= ?, `teacher`= ? WHERE (`iddata_aufsichten` = ?);",[date, time, location, teacher,id]);
+            conn = await global.mySQLPool.getConnection();
+            await conn.query("UPDATE `data_aufsichten` SET `date` = ?, `time`= ?, `location`= ?, `teacher`= ? WHERE (`iddata_aufsichten` = ?);", [date, time, location, teacher, id]);
             return true;
         } catch (err) {
             console.log(err);
@@ -32,8 +33,8 @@ module.exports = {
         let conn;
         
         try {
-            conn = await pool.getConnection();
-            await conn.query("INSERT INTO `data_aufsichten` (`date`,`time`, `teacher`, `location`) VALUES (?, ?, ?, ?);",[date, time, location, teacher]);
+            conn = await global.mySQLPool.getConnection();
+            await conn.query("INSERT INTO `data_aufsichten` (`date`,`time`, `teacher`, `location`) VALUES (?, ?, ?, ?);", [date, time, location, teacher]);
             return true;
         } catch (err) {
             console.log(err);
@@ -46,7 +47,7 @@ module.exports = {
     delete: async function (id: any) {
         let conn;
         try {
-            conn = await pool.getConnection();
+            conn = await global.mySQLPool.getConnection();
             const rows = await conn.query("DELETE FROM `data_aufsichten` WHERE (`iddata_aufsichten` = ?);",[id]);
             if(rows.affectedRows > 0){
                 console.log("deleted");
@@ -64,7 +65,7 @@ module.exports = {
     getAll: async function (){
         let conn;
         try {
-            conn = await pool.getConnection();
+            conn = await global.mySQLPool.getConnection();
             return await conn.query("SELECT *  FROM `data_aufsichten`");
             
         } catch (err) {

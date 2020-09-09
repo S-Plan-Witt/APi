@@ -1,8 +1,9 @@
 import http from 'https';
 
 import {ApiGlobal} from "../types/global";
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
+
 
 export class SendGrid {
     static createMailConfirmation (userId: number,mail: string): Promise<never> {
@@ -11,7 +12,7 @@ export class SendGrid {
             let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
 
                 let rows = await conn.query("SELECT * FROM users_mails WHERE mail = ?",[mail]);
 

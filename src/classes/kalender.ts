@@ -1,6 +1,3 @@
-
-import winston from 'winston';
-const logger = winston.loggers.get('main');
 /*
 export function generateDate(date){
 	let dateObj = new Date(date);

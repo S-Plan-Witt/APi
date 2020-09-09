@@ -1,11 +1,7 @@
 import {Course, TimeTable} from "./timeTable";
-
-import winston from 'winston';
-const logger = winston.loggers.get('main');
-
 import {ApiGlobal} from "../types/global";
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
 
 export class Announcements {
 
@@ -18,22 +14,28 @@ export class Announcements {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
-                let data: Announcement[] = [];
-
-                const rows = await conn.query("SELECT * FROM `data_announcements` WHERE `courseId`= ? ", [course.id]);
-                rows.forEach((element: any) => {
-                    let date = new Date(element["date"]);
-                    element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Announcement(course, element["authorId"],element["editorId"], element["content"], element["date"], element["iddata_announcements"]));
-                });
-                resolve(data);
-            }catch (e) {
+                conn = await global.mySQLPool.getConnection();
+                let rows = await conn.query("SELECT * FROM `data_announcements` WHERE `courseId`= ? ", [course.id]);
+                resolve(this.convertSqlRowsToObjects(rows));
+            } catch (e) {
                 console.log(e);
                 reject(e);
             } finally {
                 await conn.end();
             }
+        });
+    }
+
+    static convertSqlRowsToObjects(rows: any): Promise<Announcement[]> {
+        return new Promise(async (resolve, reject) => {
+
+            let announcements: Announcement[] = [];
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i];
+                row["date"] = Utils.converMysqlDate(row["date"]);
+                announcements.push(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
+            }
+            resolve(announcements);
         });
     }
 
@@ -45,18 +47,11 @@ export class Announcements {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
-                let data: Announcement[] = [];
-                const rows = await conn.query("SELECT * FROM `data_announcements`");
-                for (let i = 0; i < rows.length; i++) {
-                    let row = rows[i];
-                    let date = new Date(row["date"]);
-                    row["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    data.push(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"],row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
-                }
-                resolve(data);
+                conn = await global.mySQLPool.getConnection();
+                let rows = await conn.query("SELECT * FROM `data_announcements`");
+                resolve(this.convertSqlRowsToObjects(rows));
             }catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'Announcements',
                     message: '(getAll)) ' + e
@@ -77,18 +72,17 @@ export class Announcements {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM `data_announcements` WHERE iddata_announcements = ?", [id]);
-                if(rows.length == 1){
+                if (rows.length == 1) {
                     let row = rows[0];
-                    let date = new Date(row["date"]);
-                    row["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2,"0")+ "-" + date.getDate().toString().padStart(2,"0");
-                    resolve(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"],row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
-                }else {
+                    row["date"] = Utils.converMysqlDate(row["date"])
+                    resolve(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
+                } else {
                     reject("no row");
                 }
             }catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'Announcements',
                     message: '(getById)) ' + e
@@ -154,11 +148,11 @@ export class Announcement {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
-                await conn.query("INSERT INTO `splan`.`data_announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`) VALUES (?, ?, ?, ?, ?)", [content,date,authorId,editorId,courseId]);
+                conn = await global.mySQLPool.getConnection();
+                await conn.query("INSERT INTO `splan`.`data_announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`) VALUES (?, ?, ?, ?, ?)", [content, date, authorId, editorId, courseId]);
                 resolve(true);
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'Announcement',
                     message: '(create) ' + e
@@ -183,11 +177,11 @@ export class Announcement {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("UPDATE `data_announcements` SET `content` = ?, `edited` = CURRENT_TIMESTAMP, `editorId` = ?, `date` = ? WHERE iddata_announcements = ?", [content, editorId, date, id]);
                 resolve(true);
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'Announcement',
                     message: '(update) ' + e
@@ -208,11 +202,11 @@ export class Announcement {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE FROM `data_announcements` WHERE iddata_announcements = ?", [id]);
                 resolve(true);
             } catch (e) {
-                logger.log({
+                global.logger.log({
                     level: 'error',
                     label: 'Announcement',
                     message: '(delete) ' + e

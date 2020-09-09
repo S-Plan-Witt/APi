@@ -1,18 +1,19 @@
 "use strict";
 
 import {ApiGlobal} from "../types/global";
-declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
-
 import speakeasy from "speakeasy";
+
+declare const global: ApiGlobal;
+
+
 export class Totp {
 
 
-    static async saveTokenForUser(token:string, userId: number, alias: string){
+    static async saveTokenForUser(token: string, userId: number, alias: string) {
         return new Promise(async function (resolve, reject) {
             let conn;
-            try{
-                conn = await pool.getConnection();
+            try {
+                conn = await global.mySQLPool.getConnection();
                 let res = await conn.query("INSERT INTO `totp` (`user_id`, `totp_key`, alias) VALUES (?, ?, ?);", [userId, token, alias]);
                 await conn.query("UPDATE users SET twoFactor = 1 WHERE idusers = ?", [userId]);
                 console.log(res);
@@ -33,7 +34,7 @@ export class Totp {
         return new Promise(async function (resolve, reject) {
             let conn;
             try{
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM totp WHERE id_totp = ?;", [tokenId]);
                 if(rows.length != 1){
 
@@ -77,7 +78,7 @@ export class Totp {
         return new Promise(async function (resolve, reject) {
             let conn;
             try{
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM totp WHERE user_id = ?;", [userId]);
                 for (let i = 0; i < rows.length; i++) {
                     if(rows.hasOwnProperty(i)){
@@ -101,7 +102,7 @@ export class Totp {
         return new Promise(async function (resolve, reject) {
             let conn;
             try{
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM totp WHERE id_totp = ?;", [id]);
                 if(rows.length > 0){
                     await conn.query("DELETE FROM totp WHERE id_totp = ?", [id]);
