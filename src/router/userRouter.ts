@@ -272,8 +272,12 @@ router.get('/replacementlessons',  async function (req: Request, res: Response) 
         if(req.decoded.userType === "student" || req.decoded.userType === "teacher"){
             courses = req.user.courses;
         }else{
-            //TODO add logger
-            //TODO corr. status code
+            global.logger.log({
+                level: 'error',
+                label: 'Express',
+                message: 'Routing: /user/replacementlessons : rej (503)'
+            });
+
             res.sendStatus(503);
             return;
         }
