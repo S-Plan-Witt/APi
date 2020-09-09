@@ -274,7 +274,7 @@ router.get('/replacementlessons',  async function (req: Request, res: Response) 
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: 'Routing: /user/replacementlessons : rej (503)'
+                message: 'Routing: /user/replacementlessons : rej (503)(' + req.decoded.userType + ')'
             });
 
             res.sendStatus(503);
