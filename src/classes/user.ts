@@ -451,7 +451,10 @@ export class User {
             let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             try {
                 if (id != null) {
-                    resolve(await Jwt.createJWT(id, type, tokenId));
+                    let typeString = "";
+                    if (type === 1) typeString = "student";
+                    if (type === 2) typeString = "teacher";
+                    resolve(await Jwt.createJWT(id, typeString, tokenId));
                 }
                 reject("NAN UID")
             } catch (e) {

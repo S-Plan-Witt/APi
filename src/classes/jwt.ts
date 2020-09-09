@@ -56,7 +56,7 @@ export class Jwt {
 				await conn.end();
 				resolve();
 
-			}catch (e) {
+			} catch (e) {
 				reject(e);
 				await conn.end();
 			}
@@ -64,7 +64,7 @@ export class Jwt {
 
 	}
 
-	static createJWT (userId: number, userType: any, sessionId: string):Promise<string> {
+	static createJWT(userId: number, userType: string, sessionId: string): Promise<string> {
 		return new Promise(async (resolve, reject) => {
 			let payload: any = {};
 			payload.userId = userId;
