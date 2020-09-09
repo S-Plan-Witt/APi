@@ -213,7 +213,6 @@ router.get('/lessons',  async function (req: Request, res: Response) {
                 try{
                     //Get lesson for course as array
                     let lessons: any = await TimeTable.getLessonsByCourse(course);
-                    console.log(lessons)
                     lessons.forEach((lesson:any) => {
                         //Add lesson to response array
                         response.push(lesson);
