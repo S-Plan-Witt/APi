@@ -416,9 +416,7 @@ export class User {
         return new Promise(async function (resolve, reject) {
             let conn = await pool.getConnection();
             try {
-                let rows = await conn.query("SELECT student_courses.*, devices.* FROM student_courses LEFT JOIN devices ON student_courses.user_id = devices.userID WHERE (`grade`=? && `subject`=? && `group`=?)"
-                    , [course.grade, course.subject, course.group]);
-                //TODO update to use id
+                let rows = await conn.query("SELECT student_courses.*, devices.* FROM student_courses LEFT JOIN devices ON student_courses.user_id = devices.userID WHERE (`courseId`=? )", [course.id]);
 
                 let devices: any = [];
                 rows.forEach((row: any) => {
@@ -473,7 +471,7 @@ export class User {
             try {
                 for (const course of courses) {
                     try {
-                        await conn.query("INSERT INTO `student_courses` (`subject`, `user_id`, `grade`, `group`,`displayKlausuren`) VALUES (?, ?, ?, ?, ?)", [course.subject, userId, course.grade, course.group, course.exams]);
+                        await conn.query("INSERT INTO `student_courses` (`user_id`, `courseId`,`displayKlausuren`) VALUES (?, ?, ?)", [userId, course.id, course.exams]);
                     } catch (e) {
                         logger.log({
                             level: 'error',
