@@ -1,6 +1,7 @@
 //Create Database connection pool for requests
 import {ApiGlobal} from "../types/global";
 import {Course, Lesson, TimeTable} from "./timeTable";
+import {Utils} from "./Utils";
 
 
 declare const global: ApiGlobal;
@@ -115,7 +116,7 @@ export class ReplacementLessons {
             let replacementLessons: ReplacementLesson[] = [];
             for (let i = 0; i < rows.length; i++) {
                 let replacementLesson = rows[i];
-                replacementLesson["date"] = Utils.converMysqlDate(replacementLesson["date"])
+                replacementLesson["date"] = Utils.convertMysqlDate(replacementLesson["date"])
                 let lesson: Lesson = await TimeTable.getLessonById(replacementLesson["lessonId"].toString());
 
                 replacementLessons.push(new ReplacementLesson(replacementLesson["iddata_vertretungen"], lesson.course, lesson, replacementLesson["teacherId"], replacementLesson["room"], replacementLesson["subject"], replacementLesson["info"], replacementLesson["date"]));
