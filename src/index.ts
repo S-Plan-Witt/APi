@@ -9,7 +9,6 @@ import {Jwt} from './classes/jwt';
 import {Telegram} from './classes/telegram';
 import {SearchOptions} from "ldapjs";
 import {PushNotifications, PushTelegram} from './classes/pushNotifications';
-import {Ldap} from "./classes/ldap";
 
 declare const global: ApiGlobal;
 
@@ -84,7 +83,7 @@ logger.log({
 
 //Creating Web-Server
 const app = express();
-if(process.env.APIDOC == "true"){
+if (global.config.webServerConfig.apiDocumentation) {
     const expressSwagger = require('express-swagger-generator')(app);
 
     let options = {
@@ -143,7 +142,7 @@ let reqLogger = (req : Request, res : Response, next : NextFunction) => {
 };
 
 const TGBot = new PushTelegram();
-if (process.env.TGBot != "false") {
+if (global.config.pushFrameWorks.telegramBot) {
     TGBot.startTelegramBot();
 }
 
@@ -209,14 +208,6 @@ async function clearDB(){
     }
 
 }
-
-(async () => {
-    try {
-        console.log(await Ldap.checkPassword("wittnil1611", "l8keGMqB*3"));
-    } catch (e) {
-        console.log(e);
-    }
-})()
 
 
 app.listen(process.env.PORT, () => {
