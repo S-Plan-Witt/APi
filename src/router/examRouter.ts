@@ -16,7 +16,7 @@ export let router = express.Router();
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/', async function(req,res){
+router.post('/', async (req, res) => {
 
     try {
         let body = req.body;
@@ -51,7 +51,7 @@ router.post('/', async function(req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/', async function (req,res){
+router.get('/', async (req, res) => {
 
     let rows = await Exams.getAll();
     await res.json(rows);
@@ -66,7 +66,7 @@ router.get('/', async function (req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.put('/:id', async function (req,res){
+router.put('/:id', async (req, res) => {
     req.params.id;
 
     //TODO add exam update
@@ -82,8 +82,8 @@ router.put('/:id', async function (req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.delete('/id/:id', async function (req,res){
-    if(!req.decoded.admin){
+router.delete('/id/:id', async (req, res) => {
+    if (!req.decoded.admin) {
         return res.sendStatus(401);
     }
     //TODO add Delete
@@ -91,15 +91,15 @@ router.delete('/id/:id', async function (req,res){
 });
 
 //TODO determine correct router for endpoint
-router.get('/exams/supervisors/:id', async function (req,res){
-    if(!req.decoded.admin){
+router.get('/exams/supervisors/:id', async (req, res) => {
+    if (!req.decoded.admin) {
         return res.sendStatus(401);
     }
 
     try {
         let data = await Supervisors.getById(parseInt(req.params.id));
         await res.json(data);
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'ExamsRouter',

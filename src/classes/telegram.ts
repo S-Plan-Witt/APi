@@ -11,7 +11,7 @@ export class Telegram {
      */
 
     static validateRequestToken(token: string): Promise<number> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM telegramLinks WHERE `token`= ? ", [token]);
@@ -36,7 +36,7 @@ export class Telegram {
      * @returns Promise
      */
     static revokeRequest(token: string) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `telegramLinks` WHERE (`token` = ?);", [token]);
@@ -56,7 +56,7 @@ export class Telegram {
      * @returns Promise {String} token
      */
     static createRequest(telegramId: number) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);

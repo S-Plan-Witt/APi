@@ -33,14 +33,14 @@ router.use((req, res, next) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/lessons', async function (req,res){
-    if(!req.decoded.permissions.timeTableAdmin){
+router.post('/lessons', async (req, res) => {
+    if (!req.decoded.permissions.timeTableAdmin) {
         //TODO add logger
         return res.sendStatus(401);
     }
 
     let body = req.body;
-    for(let i = 0; i < body.length; i++){
+    for (let i = 0; i < body.length; i++) {
         let lessonDataSet = body[i];
         try {
             let course: Course | undefined = undefined;
@@ -103,7 +103,7 @@ router.post('/find/course', async (req: Request, res: Response) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/grades', async function (req,res){
+router.get('/grades', async (req, res) => {
     //TODO implement
 });
 
@@ -115,7 +115,7 @@ router.get('/grades', async function (req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/courses', async function (req,res){
+router.get('/courses', async (req, res) => {
     res.json(await TimeTable.getAllCourses())
 });
 
@@ -127,6 +127,6 @@ router.get('/courses', async function (req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/lessons', async function (req,res){
+router.get('/lessons', async (req, res) => {
     res.json(await TimeTable.getAllLessons());
 });

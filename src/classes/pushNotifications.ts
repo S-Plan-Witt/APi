@@ -49,7 +49,7 @@ export class PushNotifications {
         let pushFCM = this.pushFCM;
         let pushWebPush = this.pushWebPush;
         let pushTelegram = this.pushTelegram;
-            return new Promise(async function (resolve, reject) {
+            return new Promise(async (resolve, reject) => {
                 try {
 
                     if (type === "FCM") {
@@ -90,16 +90,16 @@ export class PushNotifications {
 
     sendBulk(devices: any, title: any, message: any) {
         let self = this;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             try {
-                for(let id in devices){
-                    if(devices.hasOwnProperty(id)){
+                for (let id in devices) {
+                    if (devices.hasOwnProperty(id)) {
                         let device = devices[id];
                         let type = device.platform;
                         let deviceInfo = device.device;
                         try {
-                            await self.send(type,deviceInfo,title,message);
-                        }catch (e) {
+                            await self.send(type, deviceInfo, title, message);
+                        } catch (e) {
                             console.log(e);
                         }
 
@@ -178,7 +178,7 @@ export class PushTelegram {
      * @returns Promise resolves on successful send message
      */
     sendPush(chatID: number, body: string) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             try {
                 await telegram.sendMessage(chatID, body);
                 global.logger.log({
@@ -210,7 +210,7 @@ export class PushWebPush {
      * @returns Promise resolves on successful send message
      */
     sendPush(subscription: any,title: string, body: string) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             try {
                 await webPush.sendNotification(subscription, JSON.stringify({title: title, body: body}), {});
                 global.logger.log({
@@ -235,7 +235,7 @@ export class PushWebPush {
      * @returns Promise resolves true if deleted
      */
     deleteSubscription(endpoint: any){
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `devices` WHERE (`deviceID` LIKE ?);", ['%' + endpoint + '%']);
@@ -260,8 +260,8 @@ export class PushFCM{
      * @returns Promise resolves on successful send message
      */
     sendPush(deviceId: number, title: string, body: string) {
-        return new Promise(async function (resolve, reject) {
-            let message :any = {
+        return new Promise(async (resolve, reject) => {
+            let message: any = {
                 notification: {
                     title: title,
                     body: body

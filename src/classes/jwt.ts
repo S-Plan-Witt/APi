@@ -162,17 +162,17 @@ export class Jwt {
 	}
 
 	 static getByUser(username: string){
-		return new Promise(async function (resolve, reject) {
-			let conn = await global.mySQLPool.getConnection();
-			try {
-				let rows = await conn.query(`SELECT *
-											 FROM jwt_Token
-											 WHERE userid = ?`, [username]);
-				resolve(rows);
-			} catch (e) {
-				global.logger.log({
-					level: 'error',
-					label: 'JWT',
+		 return new Promise(async (resolve, reject) => {
+			 let conn = await global.mySQLPool.getConnection();
+			 try {
+				 let rows = await conn.query(`SELECT *
+											  FROM jwt_Token
+											  WHERE userid = ?`, [username]);
+				 resolve(rows);
+			 } catch (e) {
+				 global.logger.log({
+					 level: 'error',
+					 label: 'JWT',
 					message: 'Get by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e)
 				});
 				reject(e);
@@ -182,9 +182,9 @@ export class Jwt {
 		});
 	}
 
-	static getAll (){
+	static getAll () {
 		//Load all issued tokens from DB
-		return new Promise(async function (resolve, reject) {
+		return new Promise(async (resolve, reject) => {
 			let conn = await global.mySQLPool.getConnection();
 			try {
 				let rows = await conn.query("SELECT * FROM `jwt_Token`");
@@ -202,9 +202,9 @@ export class Jwt {
 		});
 	}
 
-	static revokeUser (username: string){
+	static revokeUser (username: string) {
 		//Delete all tokens for specified user
-		return new Promise(async function (resolve, reject) {
+		return new Promise(async (resolve, reject) => {
 			let conn = await global.mySQLPool.getConnection();
 			try {
 				await conn.query("DELETE From `jwt_Token` where `userid`=?", [username]);
@@ -227,8 +227,8 @@ export class Jwt {
 		});
 	}
 
-	static preAuth (token: string){
-		return new Promise(async function (resolve, reject) {
+	static preAuth (token: string) {
+		return new Promise(async (resolve, reject) => {
 			let conn = await global.mySQLPool.getConnection();
 			try {
 				let rows = await conn.query("SELECT * FROM `preAuth_Token` WHERE `token` = ?", [token]);

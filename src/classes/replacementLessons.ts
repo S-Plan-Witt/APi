@@ -37,7 +37,7 @@ export class ReplacementLessons {
      * @returns Promise {replacementLesson}
      */
     static getByCourseTimeFrame(course: Course, dateStart: string, dateEnd: string) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `lessonId`= (SELECT idlessons FROM data_lessons WHERE courseId = (SELECT iddata_courses FROM data_courses WHERE `grade`= ? AND `subject`= ? AND `group`= ?)) AND `date` >= ? AND `date`<= ?", [course.grade, course.subject, course.group, dateStart, dateEnd]);
@@ -57,7 +57,7 @@ export class ReplacementLessons {
      * @returns Promise {replacementLessons}
      */
     static getAll(): Promise<ReplacementLesson[]> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM data_replacementlessons");
@@ -77,7 +77,7 @@ export class ReplacementLessons {
      * @returns Promise {replacementLessons}
      */
     static getByDate(date: string): Promise<ReplacementLesson[]> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `date`= ? ", [date]);
@@ -95,7 +95,7 @@ export class ReplacementLessons {
      * //TODO create JDOC
      */
     static getById(id: number) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `replacementId`= ? ", [id]);
@@ -131,7 +131,7 @@ export class ReplacementLessons {
      * @returns Promise {String} status
      */
     static add(replacementLesson: ReplacementLesson) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
 
@@ -168,11 +168,11 @@ export class ReplacementLessons {
      * @returns Promise
      */
     static deleteById(id: string): Promise<ReplacementLesson> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `replacementId` = ? ", [id]);
-                if(rows.length == 1){
+                if (rows.length == 1) {
                     await conn.query("DELETE FROM `data_replacementlessons` WHERE `replacementId` = ? ", [id]);
                     let replacementLesson = rows[0];
                     let date = new Date(replacementLesson["date"]);
@@ -201,7 +201,7 @@ export class ReplacementLessons {
      * @returns Promise {[replacementLessons]}
      */
     static getByTeacher(teacherId: number, dateStart: string, dateEnd: string){
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `teacherId` = ? AND `date` >= ? AND `date`<= ?", [teacherId, dateStart, dateEnd]);
@@ -216,7 +216,7 @@ export class ReplacementLessons {
     }
 
     static search(info: string){
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `info` LIKE ? ", [info]);

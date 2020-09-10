@@ -26,7 +26,7 @@ export function generateDate(date){
 }
 
 export function generateICS(data){
-	return new Promise(async function (resolve, reject) {
+	return new Promise(async (resolve, reject) => {
 
 		let output = "";
 

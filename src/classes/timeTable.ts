@@ -12,7 +12,7 @@ export class TimeTable {
      * @returns Promise {[lesson]}
      */
     static getLessonsByCourse(course: Course) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
@@ -34,15 +34,15 @@ export class TimeTable {
     }
 
     static getLessonById(id: number): Promise<Lesson> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_courses.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM data_lessons LEFT JOIN data_courses ON data_lessons.courseId = data_courses.iddata_courses WHERE `idlessons`=?", [id.toString()]);
-                if(rows.length == 1){
+                if (rows.length == 1) {
                     let row = rows[0];
-                    resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"],false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["idlessons"]))
-                }else {
+                    resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"], false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["idlessons"]))
+                } else {
                     reject();
                 }
             } catch (e) {
@@ -62,16 +62,16 @@ export class TimeTable {
      * @returns Promise {[lesson]}
      */
     static getLessonsByCourseAndLessonAndDay(course: Course,lessonNum: number, weekday: number): Promise<Lesson> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM data_lessons WHERE `courseId`=? && `lesson`=? AND weekday = ?", [course.id, lessonNum, weekday]);
-                if(rows.length == 1){
+                if (rows.length == 1) {
                     let row = rows[0];
-                    resolve(new Lesson(course, row["lesson"], row["weekday"], row["room"],parseInt(row["idlessons"])));
-                }else {
-                    reject("No lesson: "+ lessonNum + "; " + course.grade + "/" + course.subject + "-" + course.group);
+                    resolve(new Lesson(course, row["lesson"], row["weekday"], row["room"], parseInt(row["idlessons"])));
+                } else {
+                    reject("No lesson: " + lessonNum + "; " + course.grade + "/" + course.subject + "-" + course.group);
                 }
             } catch (e) {
                 //TODO add logger
@@ -87,7 +87,7 @@ export class TimeTable {
      * @returns Promise {[Lesson]}
      */
     static getAllLessons(): Promise<Lesson[]> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
@@ -96,7 +96,7 @@ export class TimeTable {
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
                     console.log(row)
-                    lessons.push(new Lesson(new Course(row["grade"], row["subject"], row["group"],false, row["iddata_courses"]), row["lesson"], row["weekday"], row["room"],row["idlessons"]));
+                    lessons.push(new Lesson(new Course(row["grade"], row["subject"], row["group"], false, row["iddata_courses"]), row["lesson"], row["weekday"], row["room"], row["idlessons"]));
                 }
                 resolve(lessons);
             } catch (e) {

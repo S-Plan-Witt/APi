@@ -40,15 +40,15 @@ export class SendGrid {
                     }
                 };
 
-                let req = http.request(options, function (res) {
+                let req = http.request(options, (res) => {
                     let chunks: any = [];
 
 
-                    res.on("data", function (chunk) {
+                    res.on("data", (chunk) => {
                         chunks.push(chunk);
                     });
 
-                    res.on("end", function () {
+                    res.on("end", () => {
                         let body = Buffer.concat(chunks);
                         console.log(body.toString())
                     });

@@ -64,7 +64,7 @@ export class User {
     }
 
     static getUserByUsername(username: string): Promise<User> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows: any[];
@@ -104,7 +104,7 @@ export class User {
     }
 
     static getUserById(id: number) : Promise<User> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows: any[];
@@ -130,7 +130,7 @@ export class User {
     }
 
     static async fromSqlUser(sql: any): Promise<User> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             resolve(new User(sql["firstname"], sql["lastname"], sql["username"], sql["idusers"], parseInt(sql["type"]), await User.getCoursesByUser(sql["idusers"], parseInt(sql["type"])), sql["active"], await User.getEMails(sql["idusers"]), await User.getDevices(sql["idusers"]), sql["twoFactor"], await Permissions.getByUID(parseInt(sql["idusers"])), sql["moodleid"]))
         });
     }
@@ -141,7 +141,7 @@ export class User {
      * @returns Promise resolves if user is created
      */
      static createUserFromLdap(username: string) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let user: User = await Ldap.getUserByUsername(username);
 
             let conn = await global.mySQLPool.getConnection();
@@ -167,7 +167,7 @@ export class User {
      * @returns Promise {courses}
      */
     static getCoursesByUser(userId: number, userType: number): Promise<Course[]> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let courses: Course[] = [];
@@ -207,16 +207,16 @@ export class User {
     }
 
     static getEMails(userId: number): any{
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let mails: EMail[] = [];
                 const rows = await conn.query("SELECT * FROM users_mails WHERE `userid`= ?;", [userId]);
                 rows.forEach((row: any) => {
-                    let confirmed  = false;
-                    let primary  = false;
-                    if(row["confirmed"] == 1){
-                        confirmed  = true;
+                    let confirmed = false;
+                    let primary = false;
+                    if (row["confirmed"] == 1) {
+                        confirmed = true;
                     }
                     if(row["primary"] == 1){
                         primary  = true;
@@ -250,7 +250,7 @@ export class User {
      * @returns Promise {device}
      */
     static getStudentDevicesByCourse(course: Course){
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT student_courses.*, devices.* FROM student_courses LEFT JOIN devices ON student_courses.user_id = devices.userID WHERE (`courseId`=? )", [course.id]);
@@ -281,7 +281,7 @@ export class User {
      * @param filter {UserFilter}
      */
     static find(filter: UserFilter) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             try {
                 let list = await Ldap.searchUser(filter);
                 resolve(list);
@@ -301,7 +301,7 @@ export class User {
      * @returns Promise({user})
      */
     static getAllUsers() {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM users");
@@ -325,7 +325,7 @@ export class User {
      * @param userId
      */
     static getDevices(userId: number): Promise<any> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM devices WHERE `userID`= ?;", [userId]);
@@ -360,7 +360,7 @@ export class User {
      * @returns Promise
      */
     static removeDevice(deviceId: string) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `devices` WHERE `deviceID` = ?", [deviceId]);
@@ -380,7 +380,7 @@ export class User {
      * @returns {Promise(username)}
      */
     static getUserByCalToken(token: string) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM token_calendar WHERE `calendar_token`= ? ", [token]);
@@ -400,7 +400,7 @@ export class User {
     }
 
     static getUsersByType(type: any) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM users WHERE `type`= ? ", [type]);
@@ -414,13 +414,28 @@ export class User {
         });
     }
 
+    /**
+     *
+     */
+    static getAllStudentsLDAP(): Promise<Student[]> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let users: Student[] = await Ldap.getAllStudents();
+                resolve(users);
+            } catch (e) {
+                console.log(e);
+                reject(e);
+            }
+        });
+    }
+
     createToDB() {
         let firstName = this.firstName;
         let lastName = this.lastName;
         let username = this.username;
         let type = this.type;
         let displayName = this.displayName;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
@@ -441,13 +456,31 @@ export class User {
     }
 
     /**
+     *
+     * @param needle {Course}
+     */
+    isTeacherOf(needle: Course) {
+        if (this.courses != null) {
+            for (let i = 0; i < this.courses.length; i++) {
+                let course = this.courses[i];
+
+                if (course.grade == needle.grade && course.subject == needle.subject && course.group == needle.group) {
+                    console.log("Found");
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
      * Creates a JWT for user
      * @returns Promise {String} token
      */
     generateToken() {
         let type = this.type;
         let id = this.id;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             try {
                 if (id != null) {
@@ -470,31 +503,13 @@ export class User {
     }
 
     /**
-     *
-     * @param needle {Course}
-     */
-    isTeacherOf(needle: Course) {
-        if (this.courses != null) {
-            for (let i = 0; i < this.courses.length; i++) {
-                let course = this.courses[i];
-
-                if(course.grade == needle.grade && course.subject == needle.subject && course.group == needle.group){
-                    console.log("Found");
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
      * Verifies password and username
      * @param password {String}
      * @returns Promise resolves if password is correct
      */
     verifyPassword(password: string) {
         let username = this.username;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             try {
                 await Ldap.checkPassword(username, password);
                 resolve("Ldap")
@@ -515,7 +530,7 @@ export class User {
      * @returns Promise resolves if user is in database
      */
     userInDB(username: string) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM users WHERE username=?", [username.toLowerCase()]);
@@ -549,7 +564,7 @@ export class User {
 
     getAnnouncements() {
         let userId: number;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let announcements: any = [];
@@ -585,7 +600,7 @@ export class User {
      */
     addCourse(courses: Course[]) {
         let userId = this.id;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 for (const course of courses) {
@@ -620,7 +635,7 @@ export class User {
      */
     deleteCourses() {
         let username = this.username;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM users WHERE `username`= ? AND `type`= 1;", [username]);
@@ -652,7 +667,7 @@ export class User {
      */
     addDevice(device: string, platform: string) {
         let username = this.username;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 console.log(device)
@@ -683,7 +698,7 @@ export class User {
      * @returns Promise
      */
     removeAllDevicesByUser(userId: number) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `devices` WHERE `userID` = ?", [userId]);
@@ -703,7 +718,7 @@ export class User {
      * @param userId
      */
     createPreAuthToken(userId: number) {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -720,29 +735,14 @@ export class User {
     }
 
     /**
-     *
-     */
-    static getAllStudentsLDAP(): Promise<Student[]> {
-        return new Promise(async function (resolve, reject) {
-            try{
-                let users: Student[] = await Ldap.getAllStudents();
-                resolve(users);
-            }catch(e){
-                console.log(e);
-                reject(e);
-            }
-        });
-    }
-
-    /**
      * @returns {Promise<boolean>}
      */
     isActive(){
         let active = this.active;
-        return new Promise(async function (resolve, reject) {
-            if(active){
+        return new Promise(async (resolve, reject) => {
+            if (active) {
                 resolve(true);
-            }else {
+            } else {
                 reject("disabled");
             }
         });
@@ -762,15 +762,15 @@ export class User {
         }else {
             mail = this.mails[0];
         }
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let muid = null;
             try {
-                 muid = await Moodle.createUser(username, firstname, lastname, mail);
+                muid = await Moodle.createUser(username, firstname, lastname, mail);
                 console.log(muid)
-            }catch (e) {
+            } catch (e) {
                 reject(e);
             }
-            if(muid != null){
+            if (muid != null) {
                 let conn;
                 try {
                     conn = await global.mySQLPool.getConnection();
@@ -789,14 +789,14 @@ export class User {
     disableMoodleAccount(){
         let mUID: number | null = this.moodleUID;
         let uid: number | null = this.id;
-        return new Promise(async function (resolve, reject) {
-            if(mUID != null){
+        return new Promise(async (resolve, reject) => {
+            if (mUID != null) {
                 let conn;
                 try {
                     await Moodle.deleteUserById(mUID);
 
                     conn = await global.mySQLPool.getConnection();
-                    let result = await conn.query("DELETE FROM `moodle_mapping` WHERE `userid` = ?",[uid]);
+                    let result = await conn.query("DELETE FROM `moodle_mapping` WHERE `userid` = ?", [uid]);
                     await conn.end();
                     console.log(result);
                     resolve(mUID);
@@ -864,17 +864,17 @@ export class Permissions {
     }
 
     static getByUID(userId: number): Promise<Permissions> {
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
 
             try {
                 conn = await global.mySQLPool.getConnection();
                 let result = await conn.query("SELECT * FROM permissions WHERE userId = ?", [userId]);
-                if(result.length == 1){
+                if (result.length == 1) {
                     let uResult = result[0];
                     let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);
 
-                    if(uResult["users"] == 2){
+                    if (uResult["users"] == 2) {
                         permissions.usersAdmin = true;
                         permissions.users = true;
                     }else if(uResult["users"] == 1){

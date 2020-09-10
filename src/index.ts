@@ -11,9 +11,7 @@ import {SearchOptions} from "ldapjs";
 import {PushNotifications, PushTelegram} from './classes/pushNotifications';
 
 declare const global: ApiGlobal;
-
 const {combine, timestamp, printf} = format;
-
 
 //Create all 6 hours a new file
 const rotateFile = new (winston.transports.DailyRotateFile)({

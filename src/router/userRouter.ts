@@ -22,7 +22,7 @@ export let router = express.Router();
  * @returns {User.model} 200
  * @returns {Error} 401 - Wrong Credentials
  */
-router.get('/', async function(req,res){
+router.get('/', async (req, res) => {
     try {
         await res.json(req.user);
     } catch (e) {
@@ -42,17 +42,17 @@ router.get('/', async function(req,res){
  * @returns {Error} 602 - missing secondFactor
  * @returns {Error} 401 - Wrong Credentials
  */
-router.post('/login', async function (req: Request, res: Response) {
+router.post('/login', async (req, res) => {
 
     let username = req.body.username;
     let password = req.body.password;
     let token = req.body.token;
     let preauth = false;
 
-    if(username != null && password != null){
+    if (username != null && password != null) {
         username = username.toLowerCase();
 
-    }else if(token != null){
+    } else if (token != null) {
         try{
             username = await Jwt.preAuth(token);
             preauth = true;
@@ -161,16 +161,16 @@ router.post('/login', async function (req: Request, res: Response) {
  * @returns {Error} 401 - Wrong JWT
  * @security JWT
  */
-router.get('/courses',  async function (req: Request, res: Response) {
+router.get('/courses', async (req, res) => {
     let user = req.user;
     let courses;
-    try{
-        if(req.decoded.userType === "student"){
+    try {
+        if (req.decoded.userType === "student") {
             //Get userId for user
             //Get courses for user
             courses = user.courses;
             await res.json(courses);
-        }else if(req.decoded.userType === "teacher"){
+        } else if (req.decoded.userType === "teacher") {
             //Get courses for user
             courses = user.courses;
             await res.json(courses);
@@ -202,15 +202,15 @@ router.get('/courses',  async function (req: Request, res: Response) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/lessons',  async function (req: Request, res: Response) {
+router.get('/lessons', async (req, res) => {
     // => Array containing all lesson for user
     let response: any = [];
 
-    try{
+    try {
         let courses = req.user.courses;
-        if(courses != null){
-            for(const course of courses){
-                try{
+        if (courses != null) {
+            for (const course of courses) {
+                try {
                     //Get lesson for course as array
                     let lessons: any = await TimeTable.getLessonsByCourse(course);
                     lessons.forEach((lesson:any) => {
@@ -248,7 +248,7 @@ router.get('/lessons',  async function (req: Request, res: Response) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/replacementlessons',  async function (req: Request, res: Response) {
+router.get('/replacementlessons', async (req, res) => {
 
     //Generate date of today
     let today = new Date();
@@ -347,15 +347,15 @@ router.get('/announcements',  async (req: Request, res: Response) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/exams',  async function (req: Request, res: Response) {
-    try{
+router.get('/exams', async (req, res) => {
+    try {
         let response: Exam[] = [];
         console.log("UT:" + req.decoded.userType)
-        if(req.decoded.userType === "student"){
+        if (req.decoded.userType === "student") {
             let courses = req.user.courses;
 
-            for(const course of courses){
-                try{
+            for (const course of courses) {
+                try {
                     //if user should see exams in this course
                     if (course.exams) {
                         //Get exams by course
@@ -398,12 +398,12 @@ router.get('/exams',  async function (req: Request, res: Response) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/supervisors',  async function (req: Request, res: Response) {
+router.get('/supervisors', async (req, res) => {
     let username = req.user.username;
-    try{
+    try {
         let data = await Supervisors.getByTeacherUsername(username);
         res.json(data);
-    }catch(e){
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500);
@@ -419,11 +419,11 @@ router.get('/supervisors',  async function (req: Request, res: Response) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/devices', async function (req: Request, res: Response) {
+router.get('/devices', async (req, res) => {
     try {
         let data = await req.user.devices;
         res.json(data);
-    } catch(e){
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500);
@@ -439,17 +439,17 @@ router.get('/devices', async function (req: Request, res: Response) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/devices', async function(req: Request, res: Response){
+router.post('/devices', async (req: Request, res: Response) => {
     let deviceId = req.body.deviceId;
     let platform = req.body.plattform;
 
     try {
-        if(await req.user.addDevice(deviceId, platform)){
+        if (await req.user.addDevice(deviceId, platform)) {
             res.sendStatus(200);
-        }else{
+        } else {
             res.sendStatus(200);
         }
-    } catch(e) {
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500);
@@ -465,21 +465,21 @@ router.post('/devices', async function(req: Request, res: Response){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.delete('/devices/deviceId/:id', async function (req: Request, res: Response) {
+router.delete('/devices/deviceId/:id', async (req, res) => {
     //TODO not null req.
     let deviceId = req.params.id;
     try {
         //TODO Fix
         await User.removeDevice(deviceId);
         res.sendStatus(200)
-    } catch(e){
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500)
     }
 });
 
-router.get('/auth/totp', async function (req,res) {
+router.get('/auth/totp', async (req, res) => {
 
     res.sendStatus(200);
 });
@@ -494,15 +494,15 @@ router.get('/auth/totp', async function (req,res) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/auth/totp', async function (req,res) {
-    if(req.body.hasOwnProperty("password") && req.body.hasOwnProperty("key")){
+router.post('/auth/totp', async (req, res) => {
+    if (req.body.hasOwnProperty("password") && req.body.hasOwnProperty("key")) {
         let user;
         let tokenId;
         try {
             user = req.user;
-        }catch (e) {
+        } catch (e) {
             res.sendStatus(602);
-            return ;
+            return;
         }
         try {
             await user.verifyPassword(req.body["password"]);
@@ -537,8 +537,8 @@ router.post('/auth/totp', async function (req,res) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/auth/totp/verify', async function (req,res) {
-    if(req.body.hasOwnProperty("keyId") && req.body.hasOwnProperty("code")){
+router.post('/auth/totp/verify', async (req, res) => {
+    if (req.body.hasOwnProperty("keyId") && req.body.hasOwnProperty("code")) {
         try {
             let keyId = req.body["keyId"];
             let code = req.body["code"];
@@ -546,7 +546,7 @@ router.post('/auth/totp/verify', async function (req,res) {
             await res.sendStatus(200);
         } catch (e) {
             console.log(e);
-            await res.json({err:e})
+            await res.json({err: e})
         }
     }else{
         res.json({"err":"Invalid Parameters",body: req.body});
@@ -562,13 +562,13 @@ router.post('/auth/totp/verify', async function (req,res) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.delete('/auth/totp/id/:id', async function (req,res) {
+router.delete('/auth/totp/id/:id', async (req, res) => {
     try {
-        if(req.user.id != null){
+        if (req.user.id != null) {
             await Totp.removeById(parseInt(req.params.id), req.user.id);
         }
         res.sendStatus(200)
-    }catch (e) {
+    } catch (e) {
         console.log(e);
         res.json({"err": e});
     }
