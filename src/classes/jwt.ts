@@ -3,7 +3,7 @@
 import jwt from 'jsonwebtoken';
 //Filesystem
 import fs from 'fs';
-import {User} from './user';
+import {User} from './User';
 
 
 //Create Database connection pool for requests

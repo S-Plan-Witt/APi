@@ -12,8 +12,8 @@ export class Config {
     static loadFromEnv(): Config {
         let config = new Config();
         //LDAP
-        if (typeof process.env.LDAP == "string") if (process.env.LDAP == "true") config.ldapConfig.enabled = true;
-        if (typeof process.env.LDAP_TLS == "string") if (process.env.LDAP_TLS == "true") config.ldapConfig.tls = true;
+        if (typeof process.env.LDAP == "string") if (process.env.LDAP === "true") config.ldapConfig.enabled = true;
+        if (typeof process.env.LDAP_TLS == "string") if (process.env.LDAP_TLS === "true") config.ldapConfig.tls = true;
         if (typeof process.env.LDAP_HOST == "string") config.ldapConfig.host = process.env.LDAP_HOST;
         if (typeof process.env.LDAP_ROOT == "string") config.ldapConfig.root = process.env.LDAP_ROOT;
         if (typeof process.env.LDAP_USER == "string") config.ldapConfig.user = process.env.LDAP_USER;
@@ -33,7 +33,7 @@ export class Config {
         if (typeof process.env.SQL_DB == "string") config.mysqlConfig.database = process.env.SQL_DB;
 
         //PushFrameworks
-        if (typeof process.env.TGBot == "string") if (process.env.TGBot == "true") config.pushFrameWorks.telegramBot = true;
+        if (typeof process.env.TGBot == "string") if (process.env.TGBot === "true") config.pushFrameWorks.telegramBot = true;
         if (typeof process.env.API_TELEGRAM == "string") config.pushFrameWorks.telegramBotToken = process.env.API_TELEGRAM;
         if (typeof process.env.API_SENDGRID == "string") config.pushFrameWorks.sendgridToken = process.env.API_SENDGRID;
         if (typeof process.env.VAPID_PUBLIC == "string") config.pushFrameWorks.vapidKeyPublic = process.env.VAPID_PUBLIC;
@@ -43,7 +43,7 @@ export class Config {
 
         //Webserver
         if (typeof process.env.PORT == "string") config.webServerConfig.port = parseInt(process.env.PORT);
-        if (typeof process.env.APIDOC == "string") if (process.env.APIDOC == "true") config.webServerConfig.apiDocumentation = true;
+        if (typeof process.env.APIDOC == "string") if (process.env.APIDOC === "true") config.webServerConfig.apiDocumentation = true;
         if (typeof process.env.ORIGIN == "string") config.webServerConfig.serverOrigin = process.env.ORIGIN;
 
         return config;

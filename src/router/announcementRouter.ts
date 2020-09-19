@@ -1,10 +1,12 @@
-import {Course, TimeTable} from "../classes/timeTable";
+import {TimeTable} from "../classes/TimeTable";
 
 import express from 'express';
-import {Announcement, Announcements} from '../classes/announcements';
-import {User} from '../classes/user';
-import {PushNotifications} from '../classes/pushNotifications';
+import {Announcements} from '../classes/announcements';
+import {User} from '../classes/User';
+import {PushNotifications} from '../classes/PushNotifications';
 import {ApiGlobal} from "../types/global";
+import {Course} from "../classes/Course";
+import {Announcement} from "../classes/Announcement";
 
 declare const global: ApiGlobal;
 
@@ -45,7 +47,7 @@ router.post('/', async (req, res) => {
 
         let devices = await User.getStudentDevicesByCourse(course);
         let push = new PushNotifications();
-        push.sendBulk(devices,"Aushang: " + announcement.course.subject," Hinzugefügt: " + announcement.content + " Datum: " + announcement.date);
+        await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Hinzugefügt: " + announcement.content + " Datum: " + announcement.date);
 
         res.sendStatus(200);
     }catch (e) {
@@ -96,7 +98,7 @@ router.put('/id/:id', async (req, res) => {
 
     let devices = await User.getStudentDevicesByCourse(announcement.course);
     let push = new PushNotifications();
-    push.sendBulk(devices,"Aushang: " + announcement.course.subject," Geändert: " + announcement.content + " Datum: " + announcement.date);
+    await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Geändert: " + announcement.content + " Datum: " + announcement.date);
 
     res.sendStatus(200);
 });
@@ -140,7 +142,7 @@ router.delete('/id/:id', async (req, res) => {
         await announcement.delete();
         let devices = await User.getStudentDevicesByCourse(announcement.course);
         let push = new PushNotifications();
-        push.sendBulk(devices,"Aushang: " + announcement.course.subject," Entfernt Datum: " + announcement.date);
+        await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Entfernt Datum: " + announcement.date);
 
         res.sendStatus(200);
     }catch (e) {

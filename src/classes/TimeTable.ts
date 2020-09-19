@@ -1,9 +1,10 @@
 import {ApiGlobal} from "../types/global";
 import assert from "assert";
+import {Course} from "./Course";
+import {Lesson} from "./Lesson";
 
 
 declare const global: ApiGlobal;
-
 
 export class TimeTable {
     /**
@@ -39,7 +40,7 @@ export class TimeTable {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_courses.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM data_lessons LEFT JOIN data_courses ON data_lessons.courseId = data_courses.iddata_courses WHERE `idlessons`=?", [id.toString()]);
-                if (rows.length == 1) {
+                if (rows.length === 1) {
                     let row = rows[0];
                     resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"], false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["idlessons"]))
                 } else {
@@ -67,7 +68,7 @@ export class TimeTable {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM data_lessons WHERE `courseId`=? && `lesson`=? AND weekday = ?", [course.id, lessonNum, weekday]);
-                if (rows.length == 1) {
+                if (rows.length === 1) {
                     let row = rows[0];
                     resolve(new Lesson(course, row["lesson"], row["weekday"], row["room"], parseInt(row["idlessons"])));
                 } else {
@@ -177,10 +178,10 @@ export class TimeTable {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM data_courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
-                if (rows.length != 1) {
+                if (rows.length !== 1) {
                     reject()
                 } else {
-                    resolve(new Course(rows[0]["grade"],rows[0]["subject"],rows[0]["group"], false, rows[0]["iddata_courses"]));
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["iddata_courses"]));
                 }
             } catch (e) {
                 //TODO add logger
@@ -196,7 +197,7 @@ export class TimeTable {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM data_courses WHERE (iddata_courses=?)", [id]);
-                if (rows.length == 1) {
+                if (rows.length === 1) {
                     resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["iddata_courses"]));
                 } else {
                     reject()
@@ -232,58 +233,5 @@ export class TimeTable {
                 await conn.end();
             }
         });
-    }
-}
-
-
-export class Lesson {
-    course: Course;
-    lessonNumber: number;
-    day: number;
-    room: string;
-    id: number | null;
-
-    /**
-     *
-     * @param course {Course}
-     * @param lesson {number}
-     * @param day {number}
-     * @param room {string}
-     * @param id
-     */
-    constructor(course: Course, lesson: number, day: number, room: string, id: number | null) {
-        this.course = course;
-        this.lessonNumber = lesson;
-        this.day = day;
-        this.room = room;
-        this.id = id;
-    }
-}
-
-
-export class Course {
-    grade: any;
-    subject: any;
-    group: any;
-    exams: boolean;
-    id: number | null;
-    teacherId: number | null;
-
-    /**
-     *
-     * @param grade {String}
-     * @param subject {String}
-     * @param group {String}
-     * @param exams {String}
-     * @param id
-     * @param teacherId
-     */
-    constructor(grade: string | null = null, subject: string | null = null, group: string | null = null, exams = false, id: number | null = null, teacherId: number | null = null) {
-        this.grade = grade;
-        this.subject = subject;
-        this.group = group;
-        this.exams = exams;
-        this.id = id;
-        this.teacherId = teacherId;
     }
 }

@@ -17,10 +17,10 @@ export class SendGrid {
                 let rows = await conn.query("SELECT * FROM users_mails WHERE mail = ?",[mail]);
 
                 if(rows.length >0){
-                    if(rows[0].userid == userId){
+                    if (rows[0].userid === userId) {
                         //TODO add where clause
                         //await conn.query("UPDATE splan.users_mails SET token = ?",[token]);
-                    }else {
+                    } else {
                         reject("assigned to other user");
                     }
                 }else {
@@ -36,7 +36,7 @@ export class SendGrid {
                     "path": "/v3/mail/send",
                     "headers": {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer " + process.env.API_SENDGRID
+                        "Authorization": "Bearer " + "" //TODO add global conf
                     }
                 };
 

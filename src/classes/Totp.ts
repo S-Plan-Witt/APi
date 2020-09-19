@@ -17,7 +17,7 @@ export class Totp {
                 let res = await conn.query("INSERT INTO `totp` (`user_id`, `totp_key`, alias) VALUES (?, ?, ?);", [userId, token, alias]);
                 await conn.query("UPDATE users SET twoFactor = 1 WHERE idusers = ?", [userId]);
                 console.log(res);
-                if (res.warningStatus == 0) {
+                if (res.warningStatus === 0) {
                     resolve(res.insertId);
                 }
             } catch (e) {
@@ -36,17 +36,19 @@ export class Totp {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM totp WHERE id_totp = ?;", [tokenId]);
-                if (rows.length != 1) {
+                if (rows.length !== 1) {
 
                     reject("Key is not available");
                 } else {
                     console.log(rows[0]);
                     let key = rows[0]["totp_key"];
-                    let valid = speakeasy.totp.verify({ secret: key,
+                    let valid = speakeasy.totp.verify({
+                        secret: key,
                         encoding: 'base32',
-                        token: code });
+                        token: code
+                    });
 
-                    if(!valid){
+                    if (!valid) {
                         reject("Invalid code");
                         return ;
                     }

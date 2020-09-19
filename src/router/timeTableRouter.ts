@@ -1,8 +1,10 @@
 import express, {Request, Response} from 'express';
 
-import {Course, Lesson, TimeTable} from '../classes/timeTable';
-import {User} from "../classes/user";
+import {TimeTable} from '../classes/TimeTable';
+import {User} from "../classes/User";
 import {ApiGlobal} from "../types/global";
+import {Course} from "../classes/Course";
+import {Lesson} from "../classes/Lesson";
 
 declare const global: ApiGlobal;
 
@@ -49,7 +51,7 @@ router.post('/lessons', async (req, res) => {
             } catch (e) {
                 console.log(e)
             }
-            if(course == undefined){
+            if (course === undefined) {
                 let teacherId: number | null = null;
                 try {
                     let teacher: User = await User.getUserByUsername(lessonDataSet["teacher"]);
@@ -58,7 +60,7 @@ router.post('/lessons', async (req, res) => {
                     console.log("Teacher error:" + e)
                 }
 
-                course = await TimeTable.addCourse(new Course(lessonDataSet["course"]["grade"], lessonDataSet["course"]["subject"], lessonDataSet["course"]["group"],false,null, teacherId))
+                course = await TimeTable.addCourse(new Course(lessonDataSet["course"]["grade"], lessonDataSet["course"]["subject"], lessonDataSet["course"]["group"], false, null, teacherId))
             }
             let lesson: Lesson = new Lesson(course,lessonDataSet["lessonNumber"], lessonDataSet["day"], lessonDataSet["room"], null);
             try {

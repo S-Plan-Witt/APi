@@ -1,14 +1,17 @@
-import {TimeTable} from '../classes/timeTable';
+import {TimeTable} from '../classes/TimeTable';
 import {Jwt} from '../classes/jwt';
-import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLessons';
-import {Announcement, Announcements} from '../classes/announcements';
-import {Exam, Exams, Supervisors} from '../classes/exams';
+import {ReplacementLessons} from '../classes/ReplacementLessons';
+import {Announcements} from '../classes/announcements';
+import {Exams} from '../classes/Exams';
 import express, {Request, Response} from 'express';
-import {User} from '../classes/user';
-import {Totp} from '../classes/totp';
-import {Ldap} from "../classes/ldap";
+import {User} from '../classes/User';
+import {Totp} from '../classes/Totp';
+import {Ldap} from "../classes/Ldap";
 import assert from "assert";
 import {ApiGlobal} from "../types/global";
+import {ReplacementLesson} from "../classes/ReplacementLesson";
+import {Exam} from "../classes/Exam";
+import {Supervisors} from "../classes/Supervisors";
 
 declare const global: ApiGlobal;
 
@@ -133,8 +136,8 @@ router.post('/login', async (req, res) => {
         }
         let token = await user.generateToken();
         let type = "";
-        if (user.type == 1) type = "student";
-        if (user.type == 2) type = "teacher";
+        if (user.type === 1) type = "student";
+        if (user.type === 2) type = "teacher";
         res.json({"token": token, "userType": type});
         global.logger.log({
             level: 'info',

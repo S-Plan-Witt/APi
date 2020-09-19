@@ -6,9 +6,8 @@ import * as dot from 'dotenv';
 import {Config} from "./classes/config/Config";
 import express, {Express, NextFunction, Request, Response} from "express";
 import {Jwt} from './classes/jwt';
-import {Telegram} from './classes/telegram';
-import {SearchOptions} from "ldapjs";
-import {PushNotifications, PushTelegram} from './classes/pushNotifications';
+import {Telegram} from './classes/Telegram';
+import {PushNotifications} from './classes/PushNotifications';
 
 declare const global: ApiGlobal;
 const {combine, timestamp, printf} = format;
@@ -22,6 +21,7 @@ const rotateFile = new (winston.transports.DailyRotateFile)({
     format: winston.format.json(),
     frequency: '6h'
 });
+
 //Logger output format
 const myFormat = printf(({ level, message, label, timestamp: timestamp}) => {
     return `${timestamp} [${label}] ${level}: ${message}`;
@@ -58,9 +58,7 @@ logger.log({
 });
 //-- ENV
 
-
-//init Push Frameworks
-PushNotifications.initFrameworks();
+global.pushNotifications = new PushNotifications();
 
 //++ Mysql Pool
 global.mySQLPool = mySQL.createPool({
@@ -113,7 +111,7 @@ if (global.config.webServerConfig.apiDocumentation) {
     global.logger.log({
         level: 'debug',
         label: 'Api-docs',
-        message: 'Api documentation available at http://localhost:' + process.env.PORT + '/api-docs/'
+        message: 'Api documentation available at http://localhost:' + global.config.webServerConfig.port + '/api-docs/'
     });
 }
 
@@ -122,8 +120,8 @@ if (global.config.webServerConfig.apiDocumentation) {
 const header = (req : Request, res : Response, next : NextFunction) => {
     res.set({
         'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Origin' : process.env.ORIGIN,
-        'Access-Control-Allow-Headers' : 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma',
+        'Access-Control-Allow-Origin': global.config.webServerConfig.serverOrigin,
+        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma',
         'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
     });
     next();
@@ -139,18 +137,9 @@ let reqLogger = (req : Request, res : Response, next : NextFunction) => {
     next();
 };
 
-const TGBot = new PushTelegram();
 if (global.config.pushFrameWorks.telegramBot) {
-    TGBot.startTelegramBot();
+    global.pushNotifications.pushTelegram.startTelegramBot();
 }
-
-(async () => {
-    let opts: SearchOptions = {};
-    //console.log(await Ldap.searchUsers(opts,"OU=Q2a,OU=Students,DC=netman,DC=lokal"));
-    //console.log(await Ldap.bindLDAPAsUser("wittnil1611","l8keGMqB*3"));
-    //console.log(await Ldap.bindLDAP());
-})();
-
 
 //++ HTTP
 app.use(header);
@@ -197,7 +186,6 @@ async function clearDB(){
         for(let i = 0; i < tablesToTruncate.length; i++) {
             let tableName = tablesToTruncate[i];
             let result = await conn.query(`DELETE FROM ${tableName}`);
-            console.log(result);
         }
     } catch (e) {
         console.log(e);
@@ -207,11 +195,10 @@ async function clearDB(){
 
 }
 
-
-app.listen(process.env.PORT, () => {
+app.listen(global.config.webServerConfig.port, () => {
     global.logger.log({
         level: 'silly',
         label: 'Express',
-        message: 'Listening on port: ' + process.env.PORT
+        message: 'Listening on port: ' + global.config.webServerConfig.port
     });
 });

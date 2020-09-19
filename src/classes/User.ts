@@ -2,19 +2,18 @@
  * Copyright (c) 2020. Nils Witt
  */
 
-import {Course} from "./timeTable";
-
-import {Ldap} from './ldap';
+import {Ldap} from './Ldap';
 import {EMail} from './eMail';
 import {Jwt} from './jwt';
 
 import {ApiGlobal} from "../types/global";
-import {Moodle} from "./moodle";
-import {Device} from "./device";
-
+import {Moodle} from "./Moodle";
+import {Device} from "./Device";
+import {Permissions} from "./Permissions";
+import {Student} from "./Student";
+import {Course} from "./Course";
 
 declare const global: ApiGlobal;
-
 
 export class User {
     displayName: string = "";
@@ -171,17 +170,17 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let courses: Course[] = [];
-                if (userType == 1) {
+                if (userType === 1) {
                     const rows = await conn.query("SELECT data_courses.*, student_courses.displayKlausuren FROM student_courses LEFT JOIN data_courses ON student_courses.courseId = data_courses.iddata_courses WHERE `user_id`= ?;", [userId]);
                     await conn.end();
                     rows.forEach((row: any) => {
                         let exams = false;
-                        if (row.displayKlausuren == 1) {
+                        if (row.displayKlausuren === 1) {
                             exams = true;
                         }
                         courses.push(new Course(row.grade, row.subject, row.group, exams, row.iddata_courses));
                     });
-                } else if (userType == 2) {
+                } else if (userType === 2) {
                     const rows = await conn.query("SELECT * FROM data_courses WHERE `teacherId` = ?;", [userId]);
                     rows.forEach((row: any) => {
                         courses.push(new Course(row.grade, row.subject, row.group, false, row.iddata_courses, row.teacherId));
@@ -215,11 +214,11 @@ export class User {
                 rows.forEach((row: any) => {
                     let confirmed = false;
                     let primary = false;
-                    if (row["confirmed"] == 1) {
+                    if (row["confirmed"] === 1) {
                         confirmed = true;
                     }
-                    if(row["primary"] == 1){
-                        primary  = true;
+                    if (row["primary"] === 1) {
+                        primary = true;
                     }
 
 
@@ -271,27 +270,6 @@ export class User {
                 reject(e);
             } finally {
                 await conn.end();
-            }
-        });
-    }
-
-    /**
-     * Find user by supplied parameters
-     * @returns Promise {user}
-     * @param filter {UserFilter}
-     */
-    static find(filter: UserFilter) {
-        return new Promise(async (resolve, reject) => {
-            try {
-                let list = await Ldap.searchUser(filter);
-                resolve(list);
-            } catch (e) {
-                global.logger.log({
-                    level: 'warn',
-                    label: 'User',
-                    message: 'Error while getting user list from ldap : user.find (' + filter.firstName + "," + filter.lastName + "," + filter.birthday + ")"
-                });
-                reject(e);
             }
         });
     }
@@ -464,7 +442,7 @@ export class User {
             for (let i = 0; i < this.courses.length; i++) {
                 let course = this.courses[i];
 
-                if (course.grade == needle.grade && course.subject == needle.subject && course.group == needle.group) {
+                if (course.grade === needle.grade && course.subject === needle.subject && course.group === needle.group) {
                     console.log("Found");
                     return true;
                 }
@@ -757,9 +735,9 @@ export class User {
         let firstname: string = this.firstName;
         let lastname: string = this.lastName;
         let mail: string;
-        if (this.mails.length == 0){
+        if (this.mails.length === 0) {
             mail = this.username + "@netman.lokal";
-        }else {
+        } else {
             mail = this.mails[0];
         }
         return new Promise(async (resolve, reject) => {
@@ -810,138 +788,8 @@ export class User {
     }
 }
 
-export class Student extends User {
-    _grade: string;
-    birthday: string;
 
 
-    constructor(firstName = "", lastName = "", displayName: string, username = "", id = 0, grade = "", birthday: string,) {
-        super(firstName, lastName, username, id, 1, [], false, null, null, 0, Permissions.getDefault());
-        this._grade = grade;
-        this.birthday = birthday;
-        this.displayName = displayName;
-    }
-}
-
-export class Teacher extends User {
-
-    constructor(firstName = "", lastName = "", username = "", displayName: string = "", id = 0) {
-        super(firstName, lastName, username, id, 2, [], false, null, null, 0, Permissions.getDefault());
-        this.displayName = displayName;
-    }
-}
-
-export class Permissions {
-    users: boolean;
-    usersAdmin: boolean;
-    replacementLessons: boolean;
-    replacementLessonsAdmin: boolean;
-    announcements: boolean;
-    announcementsAdmin: boolean;
-    timeTable: boolean;
-    timeTableAdmin: boolean;
-    moodle: boolean;
-    moodleAdmin: boolean;
-    globalAdmin: boolean;
 
 
-    constructor(users: boolean, usersAdmin: boolean, replacementLessons: boolean, replacementLessonsAdmin: boolean, announcements: boolean, announcementsAdmin: boolean, timeTable: boolean, timeTableAdmin: boolean, moodle: boolean, moodleAdmin: boolean, globalAdmin: boolean) {
-        this.users = users;
-        this.usersAdmin = usersAdmin;
-        this.replacementLessons = replacementLessons;
-        this.replacementLessonsAdmin = replacementLessonsAdmin;
-        this.announcements = announcements;
-        this.announcementsAdmin = announcementsAdmin;
-        this.timeTable = timeTable;
-        this.timeTableAdmin = timeTableAdmin;
-        this.moodle = moodle;
-        this.moodleAdmin = moodleAdmin;
-        this.globalAdmin = globalAdmin;
-    }
 
-    static getDefault(){
-        return new Permissions(false, false, true, false, true,false, true, false, true, false, false);
-    }
-
-    static getByUID(userId: number): Promise<Permissions> {
-        return new Promise(async (resolve, reject) => {
-            let conn;
-
-            try {
-                conn = await global.mySQLPool.getConnection();
-                let result = await conn.query("SELECT * FROM permissions WHERE userId = ?", [userId]);
-                if (result.length == 1) {
-                    let uResult = result[0];
-                    let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);
-
-                    if (uResult["users"] == 2) {
-                        permissions.usersAdmin = true;
-                        permissions.users = true;
-                    }else if(uResult["users"] == 1){
-                        permissions.users = true;
-                    }
-
-                    if(uResult["replacementLessons"] == 2){
-                        permissions.replacementLessonsAdmin = true;
-                        permissions.replacementLessons = true;
-                    }else if(uResult["replacementLessons"] == 1){
-                        permissions.replacementLessons = true;
-                    }
-
-                    if(uResult["announcements"] == 2){
-                        permissions.announcementsAdmin = true;
-                        permissions.announcements = true;
-                    }else if(uResult["announcements"] == 1){
-                        permissions.announcementsAdmin = true;
-                    }
-
-                    if(uResult["timeTable"] == 2){
-                        permissions.timeTableAdmin = true;
-                        permissions.timeTable = true;
-                    }else if(uResult["timeTable"] == 1){
-                        permissions.timeTable = true;
-                    }
-
-                    if(uResult["moodle"] == 2){
-                        permissions.moodleAdmin = true;
-                        permissions.moodle = true;
-                    }else if(uResult["moodle"] == 1){
-                        permissions.moodle = true;
-                    }
-
-                    if(uResult["globalAdmin"] == 1){
-                        permissions = new Permissions(true, true, true, true, true, true, true, true, true, true, true);
-                    }
-                    global.logger.log({
-                        level: 'silly',
-                        label: 'Permissions',
-                        message: 'Class: Permissions; Function: getByUID: loaded'
-                    });
-                    resolve(permissions);
-                }else {
-                    //TODO error
-                    let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);
-
-                    resolve(permissions);
-                }
-            }catch (e) {
-                console.log(e);
-            }  finally {
-                if (conn) await conn.end();
-            }
-        });
-    }
-}
-export class UserFilter {
-    username: string;
-    firstName: string;
-    lastName: string;
-    birthday: string;
-
-    constructor(username: string, firstName: string, lastName: string, birthday: string) {
-        this.username = username;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthday = birthday;
-    }
-}

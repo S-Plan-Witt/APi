@@ -1,10 +1,12 @@
 import express from 'express';
 
-import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLessons';
-import {User} from '../classes/user';
-import {PushNotifications} from '../classes/pushNotifications';
-import {Course, TimeTable} from "../classes/timeTable";
+import {ReplacementLessons} from '../classes/ReplacementLessons';
+import {User} from '../classes/User';
+import {PushNotifications} from '../classes/PushNotifications';
+import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
+import {ReplacementLesson} from "../classes/ReplacementLesson";
+import {Course} from "../classes/Course";
 
 declare const global: ApiGlobal;
 
@@ -27,17 +29,17 @@ router.post('/', async (req, res) => {
         let replacementLesson: ReplacementLesson | undefined = undefined;
         let course: Course = await TimeTable.getCourseByFields(postDataSet["course"]["subject"], postDataSet["course"]["grade"], postDataSet["course"]["group"]);
         let teacher: User | null = null;
-        if (postDataSet["teacher"] != "---") {
+        if (postDataSet["teacher"] !== "---") {
             try {
                 teacher = await User.getUserByUsername(postDataSet["teacher"]);
-            }catch (e) {
+            } catch (e) {
                 console.log("TNF")
             }
         }
-        if (teacher == null || teacher.id != null){
+        if (teacher == null || teacher.id != null) {
             try {
                 let teacherId: number | null = null;
-                if(teacher != null){
+                if (teacher != null) {
                     if (teacher.id != null){
                         teacherId = teacher.id;
                     }
@@ -58,9 +60,9 @@ router.post('/', async (req, res) => {
                 console.log(status + ":" + JSON.stringify(replacementLesson))
                 let pushNotifications = new PushNotifications();
                 if (status === "added") {
-                    pushNotifications.sendBulk(devices, "Hinzugefügt: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                    await pushNotifications.sendBulk(devices, "Hinzugefügt: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
                 } else if (status === "updated") {
-                    pushNotifications.sendBulk(devices, "Aktualisiert: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                    await pushNotifications.sendBulk(devices, "Aktualisiert: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
                 }
             }
 

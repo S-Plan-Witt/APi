@@ -1,5 +1,4 @@
 import express from 'express';
-import {Course, Lesson} from "../classes/timeTable";
 import {ApiGlobal} from "../types/global";
 
 declare const global: ApiGlobal;

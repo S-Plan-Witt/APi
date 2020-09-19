@@ -1,7 +1,10 @@
 //Create Database connection pool for requests
 import {ApiGlobal} from "../types/global";
-import {Course, Lesson, TimeTable} from "./timeTable";
+import {TimeTable} from "./TimeTable";
 import {Utils} from "./Utils";
+import {ReplacementLesson} from "./ReplacementLesson";
+import {Course} from "./Course";
+import {Lesson} from "./Lesson";
 
 
 declare const global: ApiGlobal;
@@ -172,14 +175,14 @@ export class ReplacementLessons {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `replacementId` = ? ", [id]);
-                if (rows.length == 1) {
+                if (rows.length === 1) {
                     await conn.query("DELETE FROM `data_replacementlessons` WHERE `replacementId` = ? ", [id]);
                     let replacementLesson = rows[0];
                     let date = new Date(replacementLesson["date"]);
                     replacementLesson["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
                     let lesson: Lesson = await TimeTable.getLessonById(replacementLesson["lessonId"].toString());
                     resolve(new ReplacementLesson(replacementLesson["iddata_vertretungen"], lesson.course, lesson, replacementLesson["teacherId"], replacementLesson["room"], replacementLesson["subject"], replacementLesson["info"], replacementLesson["date"]));
-                }else {
+                } else {
                     reject('NE')
                 }
 
@@ -228,28 +231,5 @@ export class ReplacementLessons {
                 await conn.end();
             }
         });
-    }
-}
-
-export class ReplacementLesson {
-    id: number | null;
-    course: Course;
-    lesson: Lesson;
-    teacherId: number | null;
-    room: string;
-    subject: string;
-    info: string;
-    date: string;
-
-    constructor(id: number | null, course: Course, lesson: Lesson, teacherId: number| null, room: string, subject: string, info: string, date: string) {
-        this.id = id;
-        this.course = course;
-        this.lesson = lesson;
-        this.teacherId = teacherId;
-        this.room = room;
-        this.subject = subject;
-        this.info = info;
-        this.date = date;
-
     }
 }

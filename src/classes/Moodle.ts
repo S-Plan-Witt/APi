@@ -39,7 +39,7 @@ export class Moodle {
      */
     static getUserById(id: number){
         return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY != undefined && process.env.MOODLE_URL !== undefined) {
+            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
                 let result = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_get_users", "criteria[0][key]=id&criteria[0][value]=" + id.toString())
             }
         });
@@ -48,7 +48,7 @@ export class Moodle {
 
     static getUserByUsername(username: string){
         return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY != undefined && process.env.MOODLE_URL !== undefined) {
+            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
                 let result = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_get_users", "criteria[0][key]=username&criteria[0][value]=siks" + username)
             }
         });
@@ -59,9 +59,9 @@ export class Moodle {
      */
     static deleteUserById(id: number){
         return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY != undefined && process.env.MOODLE_URL !== undefined) {
+            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
                 let result = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_delete_users", "userids[0]=" + id);
-                if (result == "null") {
+                if (result === "null") {
                     console.log("success")
                 } else {
                     console.log(result)
@@ -79,10 +79,10 @@ export class Moodle {
      */
     static createUser(username: string, firstname: string, lastname: string, mail: string){
         return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY != undefined && process.env.MOODLE_URL !== undefined) {
+            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
                 let response: string = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_create_users", '&users[0][auth]=ldap&users[0][username]=' + username + '&users[0][firstname]=' + firstname + '&users[0][lastname]=' + lastname + '&users[0][email]=' + mail)
                 let data = JSON.parse(response);
-                if (data.length == 1) {
+                if (data.length === 1) {
                     if (data[0].hasOwnProperty("id")) {
                         console.log(data[0]["id"]);
                         resolve(data[0]["id"]);
@@ -102,7 +102,7 @@ export class Moodle {
      */
     static updateEmailById(id: number,  mail: string){
         return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY != undefined && process.env.MOODLE_URL !== undefined) {
+            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
                 let result = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_update_users", "users[0][id]=" + id + "&users[0][email]=" + mail)
             }
         });

@@ -1,7 +1,10 @@
-import ldap, {Client, Error, LDAPResult, SearchCallbackResponse, SearchOptions} from 'ldapjs';
+import ldap, {Client, Error, SearchCallbackResponse, SearchEntry, SearchEntryObject, SearchOptions} from 'ldapjs';
 import fs from 'fs';
 import {ApiGlobal} from "../types/global";
-import {Permissions, Student, Teacher, User, UserFilter} from './user';
+import {User} from './User';
+import {Permissions} from "./Permissions";
+import {Teacher} from "./Teacher";
+import {Student} from "./Student";
 
 declare const global: ApiGlobal;
 
@@ -80,7 +83,7 @@ export class Ldap {
                 if (global.config.ldapConfig.tls) {
                     await this.startTlsClient(ldapClient);
                     resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, global.config.ldapConfig.user, global.config.ldapConfig.password));
-                } else if (global.config.ldapConfig.password != "") {
+                } else if (global.config.ldapConfig.password !== "") {
                     resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, global.config.ldapConfig.user, global.config.ldapConfig.password));
                 }
             } else {
@@ -133,19 +136,19 @@ export class Ldap {
 
                         resolve(users);
                     });
-                    res.on('searchEntry', (entry: any) => {
+                    res.on('searchEntry', (entry: ActiveDirectorySearchEntry) => {
                         global.logger.log({
                             level: 'silly',
                             label: 'LDAP',
                             message: 'Got entry : ' + JSON.stringify(entry.object)
                         });
-                        let obj = entry.object;
+                        let obj: ActiveDirectorySearchEntryObject = entry.object;
                         let dn = obj["dn"].toString().split(",");
                         let grade = dn[1].substr(3, (dn[1].length - 1));
 
-                        if (grade != '_Removed') {
-                            let user: User = new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, 2, [], true, null, null, null, Permissions.getDefault());
-                            user.displayName = obj["displayName"];
+                        if (grade !== '_Removed') {
+                            let user: User = new User(obj.givenname, obj.sn, obj.sAMAccountName, 0, 2, [], true, null, null, null, Permissions.getDefault());
+                            user.displayName = obj.displayName;
                             if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
                                 user.type = 1;
                             } else if (obj["memberOf"].includes(global.config.ldapConfig.teacherGroup)) {
@@ -180,15 +183,15 @@ export class Ldap {
      * @param password
      * @returns {Promise<number>}
      */
-    static checkPassword(username: string, password: string): Promise<any> {
+    static checkPassword(username: string, password: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
                 await Ldap.bindLDAPAsUser(username, password);
                 let users = await Ldap.searchUsers({
                     filter: '(&(objectClass=user)(samaccountname=' + username + '))'
                 }, global.config.ldapConfig.root);
-                if (users.length == 1) {
-                    resolve(users[0].type)
+                if (users.length === 1) {
+                    resolve()
                 } else {
                     reject("User not found")
                 }
@@ -200,187 +203,36 @@ export class Ldap {
     }
 
     /**
-     * Find user in AD not submitted fields will be ignored
-     * @returns Promise {[user]}
-     * @param filter {UserFilter}
-     */
-    static searchUser(filter: UserFilter) {
-        let firstName = filter.firstName;
-        let lastName = filter.lastName;
-        let birthDate = filter.birthday;
-        return new Promise(async (resolve, reject) => {
-
-            if (firstName == "") {
-                firstName = "*";
-            }
-            if (lastName == "") {
-                lastName = "*";
-            }
-            if (birthDate == "") {
-                birthDate = "*";
-            }
-
-            let opts = {
-                filter: '(&(objectClass=user)(sn=' + lastName + ')(givenname=' + firstName + ')(info=' + birthDate + '))',
-                scope: 'sub',
-                attributes: ['sn', 'givenname', 'samaccountname', 'displayName']
-            };
-            let ldapClient: any = await Ldap.bindLDAP();
-
-            ldapClient.search(process.env.LDAP_ROOT, opts, (err: Error, res: any) => {
-                if (err) {
-                    global.logger.log({
-                        level: 'warn',
-                        label: 'LDAP',
-                        message: 'Error while querying server : ' + err
-                    });
-                    reject(err)
-                } else {
-                    let users: User[] = [];
-                    res.on('searchEntry', (entry: any) => {
-                        global.logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'Got entry : ' + JSON.stringify(entry.object)
-                        });
-                        let obj = entry.object;
-                        let dn = obj["dn"].toString().split(",");
-                        let grade = dn[1].substr(3, (dn[1].length - 1));
-                        if (grade != '_Removed') {
-                            users.push(new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, 0, [], true, null, null, null, Permissions.getDefault()));
-                        }
-                    });
-                    res.on('error', ldapErrorHandler);
-                    res.on('end', (result: LDAPResult) => {
-                        global.logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'Got status : ' + result.status
-                        });
-                        //console.log('status: ' + result.status);
-                        resolve(users);
-                        ldapClient.unbind();
-                        ldapClient.destroy();
-                    });
-                }
-            });
-        });
-    }
-
-    /**
      * load user details for user
      * @returns Promise {[user]}
      * @param username
      */
     static getUserByUsername(username: string): Promise<User> {
         return new Promise(async (resolve, reject) => {
-            try {
-                let ldapClient: any = await Ldap.bindLDAP();
-                let opts = {
-                    filter: '(&(objectClass=user)(samaccountname=' + username + '))',
-                    scope: 'sub',
-                    attributes: ['sn', 'givenname', 'samaccountname', 'displayname']
-                };
-
-                ldapClient.search(process.env.LDAP_ROOT, opts, (err: Error, res: any) => {
-                    if (err) {
-                        global.logger.log({
-                            level: 'error',
-                            label: 'LDAP',
-                            message: 'Get user by username failed: ' + err
-                        });
-                        reject(err)
-                    } else {
-                        let users: User[] = [];
-                        res.on('searchEntry', (entry: any) => {
-                            global.logger.log({
-                                level: 'silly',
-                                label: 'LDAP',
-                                message: 'Got entry : ' + JSON.stringify(entry.object)
-                            });
-                            let obj = entry.object;
-                            let dn = obj["dn"].toString().split(",");
-                            let grade = dn[1].substr(3, (dn[1].length - 1));
-                            if (grade != '_Removed') {
-                                let newUser = new User(obj["givenName"], obj["sn"], obj["sAMAccountName"], 0, 0, [], true, null, null, null, Permissions.getDefault());
-                                newUser.displayName = obj["displayName"];
-                                users.push(newUser);
-                            }
-                        });
-                        res.on('error', ldapErrorHandler);
-                        res.on('end', () => {
-                            global.logger.log({
-                                level: 'silly',
-                                label: 'LDAP',
-                                message: 'Get user by username result: ' + JSON.stringify(users)
-                            });
-                            if(users.length === 1){
-                                resolve(users[0]);
-                            }else {
-                                reject("no user")
-                            }
-                            ldapClient.unbind();
-                            ldapClient.destroy();
-                        });
-                    }
-                });
-            }catch (e) {
-                reject(e);
+            let opts: SearchOptions = {
+                filter: '(&(objectClass=user)(samaccountname=' + username + '))'
+            };
+            let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
+            if (users.length === 1) {
+                resolve(users[0]);
+            } else {
+                reject("not found");
             }
-
         });
     }
 
     static getAllStudents(): Promise<Student[]>{
         return new Promise(async (resolve, reject) => {
-            let opts = {
+            let opts: SearchOptions = {
                 filter: '(objectClass=user)',
                 scope: 'sub',
                 attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'info', 'dn'],
                 paged: true
             };
-            let ldapClient: any = await Ldap.bindLDAP();
+            let users: Student[] = <Student[]>await Ldap.searchUsers(opts, global.config.ldapConfig.root);
 
-            ldapClient.search("OU=Students,DC=netman,DC=lokal", opts, (err: Error, res: any) => {
-                if (err) {
-                    global.logger.log({
-                        level: 'warn',
-                        label: 'LDAP',
-                        message: 'Error while querying server : ' + err
-                    });
-                    reject(err)
-                } else {
-                    let users: Student[] = [];
-                    res.on('searchEntry', (entry: any) => {
-                        global.logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'Got entry : ' + JSON.stringify(entry.object)
-                        });
-                        let obj = entry.object;
-                        let dn = obj["dn"].toString().split(",");
-                        let grade = dn[1].substr(3, (dn[1].length - 1));
-                        if (grade != '_Removed') {
-                            users.push(new Student(obj["givenName"], obj["sn"], obj["displayName"], obj["sAMAccountName"], 0, grade, obj["info"]));
-                        }
-                    });
-                    res.on('error', ldapErrorHandler);
-
-                    res.on('end', (result: LDAPResult) => {
-                        global.logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'Got status : ' + result.status
-                        });
-
-                        resolve(users);
-                        ldapClient.unbind();
-                        ldapClient.destroy();
-                    });
-                }
-            });
+            resolve(users);
         });
-
     }
 }
 
@@ -407,4 +259,18 @@ export class LdapSearch{
         this._username = username;
         this._ou = ou;
     }
+}
+
+interface ActiveDirectorySearchEntry extends SearchEntry {
+    readonly object: ActiveDirectorySearchEntryObject;
+
+}
+
+interface ActiveDirectorySearchEntryObject extends SearchEntryObject {
+    givenname: string;
+    sn: string;
+    sAMAccountName: string;
+    displayName: string;
+    info: string;
+
 }

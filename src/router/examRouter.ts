@@ -1,7 +1,9 @@
-import {Course} from "../classes/timeTable";
 import express from 'express';
-import {Exam, Exams, Supervisors} from '../classes/exams';
+import {Exams} from '../classes/Exams';
 import {ApiGlobal} from "../types/global";
+import {Course} from "../classes/Course";
+import {Exam} from "../classes/Exam";
+import {Supervisors} from "../classes/Supervisors";
 
 declare const global: ApiGlobal;
 

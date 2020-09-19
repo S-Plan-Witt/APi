@@ -1,8 +1,12 @@
 import express, {Request, Response} from 'express';
-import {Teacher, User, UserFilter} from '../classes/user';
-import {Ldap} from '../classes/ldap';
-import {Course, TimeTable} from "../classes/timeTable";
+import {User} from '../classes/User';
+import {Ldap} from '../classes/Ldap';
+import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
+import {UserFilter} from "../classes/UserFilter";
+import {Course} from "../classes/Course";
+import {Teacher} from "../classes/Teacher";
+import {SearchOptions} from "ldapjs";
 
 declare const global: ApiGlobal;
 
@@ -182,20 +186,38 @@ router.get('/ldap/', async (req: Request, res: Response) => {
  */
 router.post('/ldap/find', async (req: Request, res: Response) => {
 
-    let filter = new UserFilter("","","","");
+    let filter = new UserFilter("", "", "", "");
+    let firstName = "";
+    let lastName = "";
+    let birthday = "";
 
-    if(req.body.hasOwnProperty("firstname")){
-        filter.firstName = req.body.firstname;
+    if (req.body.hasOwnProperty("firstname")) {
+        firstName = req.body.firstname;
     }
-    if(req.body.hasOwnProperty("lastname")){
-        filter.lastName = req.body.lastname;
+    if (req.body.hasOwnProperty("lastname")) {
+        lastName = req.body.lastname;
     }
-    if(req.body.hasOwnProperty("birthday")){
-        filter.birthday = req.body.birthday;
+    if (req.body.hasOwnProperty("birthday")) {
+        birthday = req.body.birthday;
     }
 
     try {
-        let users = await Ldap.searchUser(filter);
+        if (firstName === "") {
+            firstName = "*";
+        }
+        if (lastName === "") {
+            lastName = "*";
+        }
+        if (birthday === "") {
+            birthday = "*";
+        }
+
+        let opts: SearchOptions = {
+            filter: '(&(objectClass=user)(sn=' + lastName + ')(givenname=' + firstName + ')(info=' + birthday + '))',
+            scope: 'sub',
+            attributes: ['sn', 'givenname', 'samaccountname', 'displayName']
+        };
+        let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
         res.json(users);
     } catch (e){
         global.logger.log({
