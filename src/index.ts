@@ -163,15 +163,22 @@ app.use("/", require('./router/mainRouter').router);
 
 app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     let token = req.params.token;
-    try{
-        let tgId: number;
+
+    let tgId: number = 0;
+
+    try {
         tgId = await Telegram.validateRequestToken(token);
+    } catch (e) {
+        res.sendStatus(200);
+        return;
+    }
+
+    try {
         await req.user.addDevice(tgId.toString(), "TG");
         await Telegram.revokeRequest(token);
-        let pushNot = new PushNotifications();
-        await pushNot.send("TG", tgId, "Connected to user", req.user.username);
+        await global.pushNotifications.pushTelegram.sendPush(tgId, "Connected to user " + req.user.username);
         res.sendStatus(200);
-    }catch(e){
+    } catch (e) {
         console.log(e);
         res.sendStatus(500);
     }

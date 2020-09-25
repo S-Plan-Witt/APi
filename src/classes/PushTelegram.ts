@@ -21,8 +21,9 @@ export class PushTelegram {
             global.logger.log({
                 level: 'silly',
                 label: 'TelegramBot',
-                message: 'created Linking token'
+                message: 'created Linking token id:' + ctx.update.message.from.id + " token: " + token
             });
+            Telegram.logMessage(ctx.update.message.from.id, "Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token, 'out');
         });
 
         this.bot.command('stop', async (ctx) => {
@@ -75,6 +76,7 @@ export class PushTelegram {
                     label: 'TelegramPush',
                     message: 'sent message: ' + body + " ;to: " + chatID
                 });
+                Telegram.logMessage(chatID, body, 'out');
                 resolve();
             } catch (e) {
                 global.logger.log({
