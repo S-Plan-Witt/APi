@@ -70,7 +70,7 @@ export class PushTelegram {
     sendPush(chatID: number, body: string) {
         return new Promise(async (resolve, reject) => {
             try {
-                await this.bot.telegram.sendMessage(chatID, body);
+                this.bot.telegram.sendMessage(chatID, body);
                 global.logger.log({
                     level: 'silly',
                     label: 'TelegramPush',
