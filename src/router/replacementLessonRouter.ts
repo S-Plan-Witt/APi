@@ -1,13 +1,15 @@
-import express, {Request, Response} from 'express';
-import winston from 'winston';
+import express from 'express';
 
-import {ReplacementLesson, ReplacementLessons} from '../classes/replacementLessons';
-import {User} from '../classes/user';
-import {PushNotifications} from '../classes/pushNotifications';
-import {Course, TimeTable} from "../classes/timeTable";
-import assert from "assert";
+import {ReplacementLessons} from '../classes/ReplacementLessons';
+import {User} from '../classes/User';
+import {PushNotifications} from '../classes/PushNotifications';
+import {TimeTable} from "../classes/TimeTable";
+import {ApiGlobal} from "../types/global";
+import {ReplacementLesson} from "../classes/ReplacementLesson";
+import {Course} from "../classes/Course";
 
-const logger = winston.loggers.get('main');
+declare const global: ApiGlobal;
+
 export let router = express.Router();
 
 /**
@@ -19,25 +21,25 @@ export let router = express.Router();
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/', async function (req,res){
+router.post('/', async (req, res) => {
 
-    for(let i= 0; i < req.body.length;i++){
+    for (let i = 0; i < req.body.length; i++) {
         let postDataSet: any = req.body[i];
 
         let replacementLesson: ReplacementLesson | undefined = undefined;
-        let course: Course = await TimeTable.getCourseByFields(postDataSet["course"]["subject"],postDataSet["course"]["grade"],postDataSet["course"]["group"]);
+        let course: Course = await TimeTable.getCourseByFields(postDataSet["course"]["subject"], postDataSet["course"]["grade"], postDataSet["course"]["group"]);
         let teacher: User | null = null;
-        if(postDataSet["teacher"] != "---"){
+        if (postDataSet["teacher"] !== "---") {
             try {
                 teacher = await User.getUserByUsername(postDataSet["teacher"]);
-            }catch (e) {
+            } catch (e) {
                 console.log("TNF")
             }
         }
-        if (teacher == null || teacher.id != null){
+        if (teacher == null || teacher.id != null) {
             try {
                 let teacherId: number | null = null;
-                if(teacher != null){
+                if (teacher != null) {
                     if (teacher.id != null){
                         teacherId = teacher.id;
                     }
@@ -50,20 +52,22 @@ router.post('/', async function (req,res){
             }
         }
         try {
-            assert(replacementLesson != null, "RL null");
-            let status = await ReplacementLessons.add(replacementLesson);
 
-            let devices = await User.getStudentDevicesByCourse(replacementLesson.course);
-            console.log(status + ":" + JSON.stringify(replacementLesson))
-            let pushNotifications = new PushNotifications();
-            if(status === "added"){
-                pushNotifications.sendBulk(devices,"Hinzugefügt: " + replacementLesson.course.subject," Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
-            }else if(status === "updated"){
-                pushNotifications.sendBulk(devices,"Aktualisiert: " + replacementLesson.course.subject," Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+            if (replacementLesson != null) {
+
+                let status = await ReplacementLessons.add(replacementLesson);
+                let devices = await User.getStudentDevicesByCourse(replacementLesson.course);
+                console.log(status + ":" + JSON.stringify(replacementLesson))
+                let pushNotifications = new PushNotifications();
+                if (status === "added") {
+                    await pushNotifications.sendBulk(devices, "Hinzugefügt: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                } else if (status === "updated") {
+                    await pushNotifications.sendBulk(devices, "Aktualisiert: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                }
             }
 
         } catch(e){
-            logger.log({
+            global.logger.log({
                 level: 'warn',
                 label: 'ReplacementLessons',
                 message: 'Error while processing post ' + e + '; at: ' + JSON.stringify(postDataSet)
@@ -81,10 +85,10 @@ router.post('/', async function (req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/', async function (req,res){
-    try{
+router.get('/', async (req, res) => {
+    try {
         await res.json(await ReplacementLessons.getAll());
-    }catch(e){
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500);
@@ -100,17 +104,26 @@ router.get('/', async function (req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/date/:date', async function (req,res){
+router.get('/date/:date', async (req, res) => {
     try {
         let date = req.params.date;
         let data: ReplacementLesson[] = await ReplacementLessons.getByDate(date);
         let response: any[] = [];
         data.forEach((replacementLesson: any) => {
-            let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject,teacherId: replacementLesson.teacherId, info: replacementLesson.info, date: replacementLesson.date}
+            let dataset = {
+                id: replacementLesson.id,
+                courseId: replacementLesson.course.id,
+                lessonId: replacementLesson.lesson.id,
+                room: replacementLesson.room,
+                subject: replacementLesson.subject,
+                teacherId: replacementLesson.teacherId,
+                info: replacementLesson.info,
+                date: replacementLesson.date
+            }
             response.push(dataset);
         });
         await res.json(response);
-    } catch(e){
+    } catch (e) {
         console.log(e);
         res.sendStatus(500)
     }
@@ -124,16 +137,16 @@ router.get('/date/:date', async function (req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/id/:id', async function (req,res){
-    if(!req.decoded.admin){
+router.get('/id/:id', async (req, res) => {
+    if (!req.decoded.admin) {
         //TODO add logger
         return res.sendStatus(401);
     }
     let id = parseInt(req.params.id);
-    try{
+    try {
         let lesson = await ReplacementLessons.getById(id);
         res.json(lesson);
-    } catch(e){
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500);
@@ -141,12 +154,12 @@ router.get('/id/:id', async function (req,res){
 
 });
 
-router.post('/find', async function (req: Request, res: Response) {
+router.post('/find', async (req, res) => {
     let info = req.body.info;
-    try{
+    try {
         let lessons = await ReplacementLessons.search(info);
         res.json(lessons);
-    } catch(e){
+    } catch (e) {
         //TODO add logger
         res.sendStatus(500);
     }
@@ -161,10 +174,10 @@ router.post('/find', async function (req: Request, res: Response) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.delete('/id/:id', async function (req,res){
+router.delete('/id/:id', async (req, res) => {
     let id = req.params.id;
     console.log(id)
-    try{
+    try {
         let replacementLesson: ReplacementLesson = await ReplacementLessons.deleteById(id.toString());
 
         let push = new PushNotifications();

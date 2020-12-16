@@ -1,17 +1,21 @@
-import {Course, TimeTable} from "../classes/timeTable";
+import {TimeTable} from "../classes/TimeTable";
 
 import express from 'express';
-import winston from 'winston';
-import {Announcements,Announcement} from '../classes/announcements';
-import {User}   from '../classes/user';
-import {PushNotifications}          from '../classes/pushNotifications';
-const logger = winston.loggers.get('main');
+import {Announcements} from '../classes/announcements';
+import {User} from '../classes/User';
+import {PushNotifications} from '../classes/PushNotifications';
+import {ApiGlobal} from "../types/global";
+import {Course} from "../classes/Course";
+import {Announcement} from "../classes/Announcement";
+
+declare const global: ApiGlobal;
+
 export let router = express.Router();
 
-router.use((req, res, next) =>{
-    if(req.decoded.permissions.announcements){
+router.use((req, res, next) => {
+    if (req.decoded.permissions.announcements) {
         next();
-        return ;
+        return;
     }
     return res.sendStatus(401);
 });
@@ -26,14 +30,14 @@ router.use((req, res, next) =>{
  * @security JWT
  */
 
-router.post('/', async function(req,res){
+router.post('/', async (req, res) => {
     let body = req.body;
     try {
-        let course = await TimeTable.getCourseByFields(body["course"]["subject"],body["course"]["grade"],body["course"]["group"])
+        let course = await TimeTable.getCourseByFields(body["course"]["subject"], body["course"]["grade"], body["course"]["group"])
         console.log(course);
 
-        if(!req.decoded.admin){
-            if(!req.user.isTeacherOf(course)){
+        if (!req.decoded.admin) {
+            if (!req.user.isTeacherOf(course)) {
                 return res.sendStatus(401);
             }
         }
@@ -43,12 +47,12 @@ router.post('/', async function(req,res){
 
         let devices = await User.getStudentDevicesByCourse(course);
         let push = new PushNotifications();
-        push.sendBulk(devices,"Aushang: " + announcement.course.subject," Hinzugefügt: " + announcement.content + " Datum: " + announcement.date);
+        await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Hinzugefügt: " + announcement.content + " Datum: " + announcement.date);
 
         res.sendStatus(200);
     }catch (e) {
         console.log(e);
-        logger.log({
+        global.logger.log({
             level: 'error',
             label: 'announcementsRouter',
             message: 'Error while processing request ' + JSON.stringify(e)
@@ -65,7 +69,7 @@ router.post('/', async function(req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/', async function (req,res){
+router.get('/', async (req, res) => {
 
     await res.json(await Announcements.getAll());
 });
@@ -78,15 +82,15 @@ router.get('/', async function (req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.put('/id/:id', async function(req,res){
-    if(!req.decoded.permissions.announcementsAdmin){
+router.put('/id/:id', async (req, res) => {
+    if (!req.decoded.permissions.announcementsAdmin) {
         return res.sendStatus(401);
     }
     let body = req.body;
     let id: number = parseInt(req.params.id);
     let announcement: Announcement = await Announcements.getById(id);
 
-    announcement.course = new Course(body["course"]["grade"], body["course"]["subject"], body["course"]["group"],false);
+    announcement.course = new Course(body["course"]["grade"], body["course"]["subject"], body["course"]["group"], false);
     announcement.content = body["content"];
     announcement.date = body["date"];
 
@@ -94,7 +98,7 @@ router.put('/id/:id', async function(req,res){
 
     let devices = await User.getStudentDevicesByCourse(announcement.course);
     let push = new PushNotifications();
-    push.sendBulk(devices,"Aushang: " + announcement.course.subject," Geändert: " + announcement.content + " Datum: " + announcement.date);
+    await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Geändert: " + announcement.content + " Datum: " + announcement.date);
 
     res.sendStatus(200);
 });
@@ -107,7 +111,7 @@ router.put('/id/:id', async function(req,res){
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/id/:id', async function(req,res) {
+router.get('/id/:id', async (req, res) => {
     let id = parseInt(req.params.id);
     let announcement = await Announcements.getById(id);
     res.json(announcement)
@@ -121,16 +125,16 @@ router.get('/id/:id', async function(req,res) {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.delete('/id/:id', async function (req,res){
-    if(!req.decoded.permissions.announcementsAdmin){
+router.delete('/id/:id', async (req, res) => {
+    if (!req.decoded.permissions.announcementsAdmin) {
         return res.sendStatus(401);
     }
     try {
         let id = parseInt(req.params.id);
         let announcement: Announcement = await Announcements.getById(id);
 
-        if(!req.decoded.admin){
-            if(!req.user.isTeacherOf(announcement.course)){
+        if (!req.decoded.admin) {
+            if (!req.user.isTeacherOf(announcement.course)) {
                 return res.sendStatus(401);
             }
         }
@@ -138,7 +142,7 @@ router.delete('/id/:id', async function (req,res){
         await announcement.delete();
         let devices = await User.getStudentDevicesByCourse(announcement.course);
         let push = new PushNotifications();
-        push.sendBulk(devices,"Aushang: " + announcement.course.subject," Entfernt Datum: " + announcement.date);
+        await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Entfernt Datum: " + announcement.date);
 
         res.sendStatus(200);
     }catch (e) {

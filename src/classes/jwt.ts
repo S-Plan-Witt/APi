@@ -2,17 +2,16 @@
 //JWToken
 import jwt from 'jsonwebtoken';
 //Filesystem
-import fs    from 'fs';
-import {User} from './user';
+import fs from 'fs';
+import {User} from './User';
 
-import winston from 'winston';
-const logger = winston.loggers.get('main');
 
 //Create Database connection pool for requests
 import {ApiGlobal} from "../types/global";
 import {NextFunction, Request, Response} from "express";
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
+
 //Load signing and validation keys
 const privateKey = fs.readFileSync('./keys/jwtRS256.key');
 const publicKey = fs.readFileSync('./keys/jwtRS256.key.pub');
@@ -29,17 +28,17 @@ export class Jwt {
 	 */
 	static verifyId (id: number): Promise<never>{
 		return new Promise(async (resolve, reject) => {
-			let conn = await pool.getConnection();
+			let conn = await global.mySQLPool.getConnection();
 			try {
 				let rows = await conn.query("SELECT * FROM `jwt_Token` WHERE `tokenIdentifier`= ?", [id]);
-				if(rows.length === 1){
+				if (rows.length === 1) {
 					resolve(rows[0]['idjwt_Token']);
-				}else {
+				} else {
 					console.log("revoked: " + rows.length);
 					reject();
 				}
 
-			}catch (e) {
+			} catch (e) {
 				console.log(e);
 				reject(e);
 			}finally {
@@ -52,12 +51,12 @@ export class Jwt {
 		return new Promise(async (resolve, reject) => {
 			let conn;
 			try {
-				conn = await pool.getConnection();
+				conn = await global.mySQLPool.getConnection();
 				await conn.query("INSERT INTO `jwt_Token` (`tokenIdentifier`, `userid`) VALUES (?, ?);", [tokenId, userId]);
 				await conn.end();
 				resolve();
 
-			}catch (e) {
+			} catch (e) {
 				reject(e);
 				await conn.end();
 			}
@@ -65,7 +64,7 @@ export class Jwt {
 
 	}
 
-	static createJWT (userId: number, userType: any, sessionId: string):Promise<string> {
+	static createJWT(userId: number, userType: string, sessionId: string): Promise<string> {
 		return new Promise(async (resolve, reject) => {
 			let payload: any = {};
 			payload.userId = userId;
@@ -83,8 +82,8 @@ export class Jwt {
 
 
 	static async checkToken (req: Request, res: Response, next: NextFunction) {
-		if(authFreePaths.includes(req.path)){
-			logger.log({
+		if(authFreePaths.includes(req.path)) {
+			global.logger.log({
 				level: 'silly',
 				label: 'JWT',
 				message: 'auth validation free path: ' + req.path
@@ -120,7 +119,7 @@ export class Jwt {
 
 				}catch (e) {
 
-					logger.log({
+					global.logger.log({
 						level: 'warn',
 						label: 'JWT',
 						message: 'validation of token failed: ' + e
@@ -128,7 +127,7 @@ export class Jwt {
 					return res.sendStatus(401);
 				}
 			} else {
-				//TODO add logger
+				//TODO add global.logger
 				return res.sendStatus(401)
 			}
 		}
@@ -138,20 +137,22 @@ export class Jwt {
 	static revokeById(tokenId: number): Promise<never>{
 		//Delete token from DB
 		return new Promise(async (resolve, reject) => {
-			let conn = await pool.getConnection();
+			let conn = await global.mySQLPool.getConnection();
 			try {
-				await conn.query(`DELETE FROM jwt_Token where idjwt_Token=?`, [tokenId]);
-				logger.log({
+				await conn.query(`DELETE
+								  FROM jwt_Token
+								  where idjwt_Token = ?`, [tokenId]);
+				global.logger.log({
 					level: 'silly',
 					label: 'JWT',
 					message: 'token revoked: ' + tokenId
 				});
 				resolve();
-			}catch (e) {
-				logger.log({
+			} catch (e) {
+				global.logger.log({
 					level: 'error',
 					label: 'JWT',
-					message: 'revoke of token failed ' + tokenId + '; e:' +e
+					message: 'revoke of token failed ' + tokenId + '; e:' + e
 				});
 				reject(e);
 			}finally {
@@ -161,15 +162,17 @@ export class Jwt {
 	}
 
 	 static getByUser(username: string){
-		return new Promise(async function (resolve, reject) {
-			let conn = await pool.getConnection();
-			try {
-				let rows = await conn.query(`SELECT * FROM jwt_Token WHERE userid=?`, [username]);
-				resolve(rows);
-			}catch (e) {
-				logger.log({
-					level: 'error',
-					label: 'JWT',
+		 return new Promise(async (resolve, reject) => {
+			 let conn = await global.mySQLPool.getConnection();
+			 try {
+				 let rows = await conn.query(`SELECT *
+											  FROM jwt_Token
+											  WHERE userid = ?`, [username]);
+				 resolve(rows);
+			 } catch (e) {
+				 global.logger.log({
+					 level: 'error',
+					 label: 'JWT',
 					message: 'Get by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e)
 				});
 				reject(e);
@@ -179,15 +182,15 @@ export class Jwt {
 		});
 	}
 
-	static getAll (){
+	static getAll () {
 		//Load all issued tokens from DB
-		return new Promise(async function (resolve, reject) {
-			let conn = await pool.getConnection();
+		return new Promise(async (resolve, reject) => {
+			let conn = await global.mySQLPool.getConnection();
 			try {
 				let rows = await conn.query("SELECT * FROM `jwt_Token`");
 				resolve(rows);
-			}catch (e) {
-				logger.log({
+			} catch (e) {
+				global.logger.log({
 					level: 'error',
 					label: 'JWT',
 					message: 'Get all failed: ' + JSON.stringify(e)
@@ -199,20 +202,20 @@ export class Jwt {
 		});
 	}
 
-	static revokeUser (username: string){
+	static revokeUser (username: string) {
 		//Delete all tokens for specified user
-		return new Promise(async function (resolve, reject) {
-			let conn = await pool.getConnection();
+		return new Promise(async (resolve, reject) => {
+			let conn = await global.mySQLPool.getConnection();
 			try {
 				await conn.query("DELETE From `jwt_Token` where `userid`=?", [username]);
-				logger.log({
+				global.logger.log({
 					level: 'silly',
 					label: 'JWT',
 					message: 'Revoked by username: ' + username
 				});
 				resolve();
-			}catch (e) {
-				logger.log({
+			} catch (e) {
+				global.logger.log({
 					level: 'error',
 					label: 'JWT',
 					message: 'Revoke by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e)
@@ -224,16 +227,16 @@ export class Jwt {
 		});
 	}
 
-	static preAuth (token: string){
-		return new Promise(async function (resolve, reject) {
-			let conn = await pool.getConnection();
+	static preAuth (token: string) {
+		return new Promise(async (resolve, reject) => {
+			let conn = await global.mySQLPool.getConnection();
 			try {
 				let rows = await conn.query("SELECT * FROM `preAuth_Token` WHERE `token` = ?", [token]);
 				if (rows.length === 1) {
 					let username = rows[0].username;
 					resolve(username);
 				} else {
-					logger.log({
+					global.logger.log({
 						level: 'error',
 						label: 'JWT',
 						message: 'PreAuth failed: ' + JSON.stringify(token) + " Err: not in database"
@@ -241,7 +244,7 @@ export class Jwt {
 					reject("not found in db");
 				}
 			} catch (e) {
-				logger.log({
+				global.logger.log({
 					level: 'error',
 					label: 'JWT',
 					message: 'PreAuth failed: ' + JSON.stringify(token) + " Err: " + JSON.stringify(e)

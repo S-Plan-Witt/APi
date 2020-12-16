@@ -1,22 +1,23 @@
 "use strict";
 
 import {ApiGlobal} from "../types/global";
-declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
-
 import speakeasy from "speakeasy";
+
+declare const global: ApiGlobal;
+
+
 export class Totp {
 
 
-    static async saveTokenForUser(token:string, userId: number, alias: string){
-        return new Promise(async function (resolve, reject) {
+    static async saveTokenForUser(token: string, userId: number, alias: string) {
+        return new Promise(async (resolve, reject) => {
             let conn;
-            try{
-                conn = await pool.getConnection();
+            try {
+                conn = await global.mySQLPool.getConnection();
                 let res = await conn.query("INSERT INTO `totp` (`user_id`, `totp_key`, alias) VALUES (?, ?, ?);", [userId, token, alias]);
                 await conn.query("UPDATE users SET twoFactor = 1 WHERE idusers = ?", [userId]);
                 console.log(res);
-                if(res.warningStatus == 0){
+                if (res.warningStatus === 0) {
                     resolve(res.insertId);
                 }
             } catch (e) {
@@ -30,22 +31,24 @@ export class Totp {
     }
 
     static async verifyKey(tokenId: number,code: string){
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
-            try{
-                conn = await pool.getConnection();
+            try {
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM totp WHERE id_totp = ?;", [tokenId]);
-                if(rows.length != 1){
+                if (rows.length !== 1) {
 
                     reject("Key is not available");
-                }else {
+                } else {
                     console.log(rows[0]);
                     let key = rows[0]["totp_key"];
-                    let valid = speakeasy.totp.verify({ secret: key,
+                    let valid = speakeasy.totp.verify({
+                        secret: key,
                         encoding: 'base32',
-                        token: code });
+                        token: code
+                    });
 
-                    if(!valid){
+                    if (!valid) {
                         reject("Invalid code");
                         return ;
                     }
@@ -63,28 +66,32 @@ export class Totp {
     }
 
     static checkKeyCode(key: string,code: number){
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             try {
-                speakeasy.totp.verify({token: code.toString(),secret: key});
+                speakeasy.totp.verify({token: code.toString(), secret: key});
                 resolve();
-            }catch (e) {
+            } catch (e) {
                 reject(e);
             }
         });
     }
 
     static verifyUserCode(code: number,userId: number){
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
-            try{
-                conn = await pool.getConnection();
+            try {
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM totp WHERE user_id = ?;", [userId]);
                 for (let i = 0; i < rows.length; i++) {
-                    if(rows.hasOwnProperty(i)){
-                        let valid = speakeasy.totp.verify({ secret: rows[i]["totp_key"], encoding: 'base32', token: code.toString() });
-                        if(valid){
+                    if (rows.hasOwnProperty(i)) {
+                        let valid = speakeasy.totp.verify({
+                            secret: rows[i]["totp_key"],
+                            encoding: 'base32',
+                            token: code.toString()
+                        });
+                        if (valid) {
                             resolve();
-                            return ;
+                            return;
                         }
                     }
                 }
@@ -98,15 +105,15 @@ export class Totp {
     }
 
     static removeById(id: number, userId: number){
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             let conn;
-            try{
-                conn = await pool.getConnection();
+            try {
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM totp WHERE id_totp = ?;", [id]);
-                if(rows.length > 0){
+                if (rows.length > 0) {
                     await conn.query("DELETE FROM totp WHERE id_totp = ?", [id]);
                     rows = await conn.query("SELECT * FROM totp WHERE user_id = ?;", [userId]);
-                    if(rows.length < 1){
+                    if (rows.length < 1) {
                         await conn.query("UPDATE users SET twoFactor = 0 WHERE idusers = ?", [userId]);
                     }
                 }

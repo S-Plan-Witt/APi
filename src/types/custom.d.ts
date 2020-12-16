@@ -1,4 +1,5 @@
-import {Permissions, User} from "../classes/user";
+import {User} from "../classes/User";
+import {Permissions} from "../classes/Permissions";
 
 declare global {
     namespace Express {
@@ -8,6 +9,7 @@ declare global {
         }
 
     }
+
     export interface Decoded {
         admin?: boolean,
         session: string,

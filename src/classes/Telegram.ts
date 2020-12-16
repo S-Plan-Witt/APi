@@ -1,8 +1,7 @@
 import {ApiGlobal} from "../types/global";
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
-import winston from 'winston';
-const logger = winston.loggers.get('main');
+
 
 export class Telegram {
     /**
@@ -12,8 +11,8 @@ export class Telegram {
      */
 
     static validateRequestToken(token: string): Promise<number> {
-        return new Promise(async function (resolve, reject) {
-            let conn = await pool.getConnection();
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM telegramLinks WHERE `token`= ? ", [token]);
                 if (rows.length === 1) {
@@ -37,8 +36,8 @@ export class Telegram {
      * @returns Promise
      */
     static revokeRequest(token: string) {
-        return new Promise(async function (resolve, reject) {
-            let conn = await pool.getConnection();
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `telegramLinks` WHERE (`token` = ?);", [token]);
                 resolve();
@@ -57,14 +56,29 @@ export class Telegram {
      * @returns Promise {String} token
      */
     static createRequest(telegramId: number) {
-        return new Promise(async function (resolve, reject) {
-            let conn = await pool.getConnection();
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
                 await conn.query("INSERT INTO `telegramLinks` (`telegramId`, `token`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token`=?;", [telegramId, tokenId, tokenId]);
+                //TODO unique link creation
                 resolve(tokenId);
             } catch (e) {
                 //TODO add logger
+                reject(e)
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    static logMessage(chatId: number, message: string, direction: string) {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("INSERT INTO `TelegramMessages` (`chatId`, `message`, `direction`) VALUES (?, ?, ?)", [chatId, message, direction]);
+                resolve();
+            } catch (e) {
                 reject(e)
             } finally {
                 await conn.end();

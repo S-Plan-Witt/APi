@@ -1,5 +1,4 @@
-
-import { exec } from 'child_process';
+import {exec} from 'child_process';
 
 
 export class Database {
@@ -11,9 +10,9 @@ export class Database {
         let user = process.env.SQL_USER;
         let password = process.env.SQL_PASS;
         let db = process.env.SQL_DB;
-        return new Promise(async function (resolve, reject) {
+        return new Promise(async (resolve, reject) => {
             try {
-                exec('mysql -h '+ host + ' -P '+ port + ' -u ' + user + ' --password='+ password + ' ' + db + ' < setup.sql', (err) => {
+                exec('mysql -h ' + host + ' -P ' + port + ' -u ' + user + ' --password=' + password + ' ' + db + ' < setup.sql', (err) => {
                     if (err) {
                         console.error(`exec error: ${err}`);
                         reject("Error: " + err);

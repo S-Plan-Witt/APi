@@ -1,15 +1,16 @@
 import {ApiGlobal} from "./types/global";
-declare const global: ApiGlobal;
-
-import mySQL from  "mariadb";
-
-//++ Logger
-import { format, transports } from 'winston';
-import winston from 'winston';
+import mySQL from "mariadb";
+import winston, {format, transports} from 'winston';
 import 'winston-daily-rotate-file';
+import * as dot from 'dotenv';
+import {Config} from "./classes/config/Config";
+import express, {Express, NextFunction, Request, Response} from "express";
+import {Jwt} from './classes/jwt';
+import {Telegram} from './classes/Telegram';
+import {PushNotifications} from './classes/PushNotifications';
 
-const { combine, timestamp, printf } = format;
-
+declare const global: ApiGlobal;
+const {combine, timestamp, printf} = format;
 
 //Create all 6 hours a new file
 const rotateFile = new (winston.transports.DailyRotateFile)({
@@ -20,26 +21,25 @@ const rotateFile = new (winston.transports.DailyRotateFile)({
     format: winston.format.json(),
     frequency: '6h'
 });
+
 //Logger output format
-// @ts-ignore
 const myFormat = printf(({ level, message, label, timestamp: timestamp}) => {
     return `${timestamp} [${label}] ${level}: ${message}`;
 });
 
 
 //Add Logger to global logger scope
-winston.loggers.add('main', {
+let logger = winston.createLogger({
     format: combine(
         timestamp(),
         myFormat
     ),
     transports: [
         rotateFile,
-        new transports.Console({ level: 'silly' }),
+        new transports.Console({level: 'silly'}),
     ]
 });
-
-const logger = winston.loggers.get('main');
+global.logger = logger;
 
 //-- Logger
 logger.log({
@@ -48,11 +48,8 @@ logger.log({
     message: 'Logger init success'
 });
 
-//++ ENV
-import * as dot from 'dotenv';
-
-dot.config({path:"./.env"});
-//console.log(process.env);
+dot.config({path: "./.env"});
+global.config = Config.loadFromEnv();
 
 logger.log({
     level: 'debug',
@@ -61,21 +58,17 @@ logger.log({
 });
 //-- ENV
 
-let sqlPort : number = 3306;
-if(process.env.SQL_PORT != undefined){
-    sqlPort = parseInt(process.env.SQL_PORT);
-}
-
+global.pushNotifications = new PushNotifications();
 
 //++ Mysql Pool
-global["mySQLPool"] = mySQL.createPool({
-    host: process.env.SQL_HOST,
-    port: sqlPort,
-    user: process.env.SQL_USER,
-    password: process.env.SQL_PASS,
+global.mySQLPool = mySQL.createPool({
+    host: global.config.mysqlConfig.hostname,
+    port: global.config.mysqlConfig.port,
+    user: global.config.mysqlConfig.username,
+    password: global.config.mysqlConfig.password,
     connectionLimit: 30,
     collation: "latin1_german2_ci",
-    database: process.env.SQL_DB
+    database: global.config.mysqlConfig.database
 });
 
 logger.log({
@@ -84,15 +77,9 @@ logger.log({
     message: 'MySql Connected'
 });
 
-//Webservice
-import express, {NextFunction, Request, Response, Express} from "express";
-import {Jwt} from './classes/jwt';
-import {Telegram} from './classes/telegram';
-import {PushNotifications, PushTelegram} from './classes/pushNotifications';
-
 //Creating Web-Server
 const app = express();
-if(process.env.APIDOC == "true"){
+if (global.config.webServerConfig.apiDocumentation) {
     const expressSwagger = require('express-swagger-generator')(app);
 
     let options = {
@@ -121,10 +108,10 @@ if(process.env.APIDOC == "true"){
         files: ['./router/*.js'] //Path to the API handle folder
     };
     expressSwagger(options)
-    logger.log({
+    global.logger.log({
         level: 'debug',
         label: 'Api-docs',
-        message: 'Api documentation available at http://localhost:' + process.env.PORT + '/api-docs/'
+        message: 'Api documentation available at http://localhost:' + global.config.webServerConfig.port + '/api-docs/'
     });
 }
 
@@ -133,8 +120,8 @@ if(process.env.APIDOC == "true"){
 const header = (req : Request, res : Response, next : NextFunction) => {
     res.set({
         'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Origin' : process.env.ORIGIN,
-        'Access-Control-Allow-Headers' : 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma',
+        'Access-Control-Allow-Origin': global.config.webServerConfig.serverOrigin,
+        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma',
         'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
     });
     next();
@@ -142,19 +129,17 @@ const header = (req : Request, res : Response, next : NextFunction) => {
 
 let reqLogger = (req : Request, res : Response, next : NextFunction) => {
     let token = req.headers['x-access-token'] || req.headers['authorization'];
-    logger.log({
+    global.logger.log({
         level: 'debug',
         label: 'Express',
-        message: 'Received request to '+ req.path + ' By ' + token
+        message: 'Received request to ' + req.path + ' By ' + token
     });
     next();
 };
 
-const TGBot = new PushTelegram();
-if(process.env.TGBot != "false"){
-    TGBot.startTelegramBot();
+if (global.config.pushFrameWorks.telegramBot) {
+    global.pushNotifications.pushTelegram.startTelegramBot();
 }
-
 
 //++ HTTP
 app.use(header);
@@ -178,34 +163,38 @@ app.use("/", require('./router/mainRouter').router);
 
 app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     let token = req.params.token;
-    try{
-        let tgId: number;
+
+    let tgId: number = 0;
+
+    try {
         tgId = await Telegram.validateRequestToken(token);
+    } catch (e) {
+        res.sendStatus(200);
+        return;
+    }
+
+    try {
         await req.user.addDevice(tgId.toString(), "TG");
         await Telegram.revokeRequest(token);
-        let pushNot = new PushNotifications();
-        await pushNot.send("TG", tgId, "Connected to user", req.user.username);
+        await global.pushNotifications.pushTelegram.sendPush(tgId, "Connected to user " + req.user.username);
         res.sendStatus(200);
-    }catch(e){
+    } catch (e) {
         console.log(e);
-        //TODO add logger
         res.sendStatus(500);
     }
 });
 
 async function clearDB(){
     let tablesToTruncate = ["data_exams","data_exam_supervisors","users_mails","permissions","student_courses","totp","moodle_mapping","token_calendar","preAuth_Token","data_announcements","data_courses","jwt_Token","devices","lessons_teacher","data_vertretungen","data_lessons","data_aufsichten","telegramLinks","data_entschuldigungen","users","data_exam_rooms"];
-    let pool = global.mySQLPool;
-    let conn;
 
+    let conn;
     try {
-        conn = await pool.getConnection();
+        conn = await global.mySQLPool.getConnection();
         for(let i = 0; i < tablesToTruncate.length; i++) {
             let tableName = tablesToTruncate[i];
             let result = await conn.query(`DELETE FROM ${tableName}`);
-            console.log(result);
         }
-    }catch (e) {
+    } catch (e) {
         console.log(e);
     } finally {
         if (conn) conn.end();
@@ -213,10 +202,10 @@ async function clearDB(){
 
 }
 
-app.listen(process.env.PORT, () => {
-    logger.log({
+app.listen(global.config.webServerConfig.port, () => {
+    global.logger.log({
         level: 'silly',
         label: 'Express',
-        message: 'Listening on port: ' + process.env.PORT
+        message: 'Listening on port: ' + global.config.webServerConfig.port
     });
 });

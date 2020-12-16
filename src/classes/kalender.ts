@@ -1,6 +1,3 @@
-
-import winston from 'winston';
-const logger = winston.loggers.get('main');
 /*
 export function generateDate(date){
 	let dateObj = new Date(date);
@@ -29,7 +26,7 @@ export function generateDate(date){
 }
 
 export function generateICS(data){
-	return new Promise(async function (resolve, reject) {
+	return new Promise(async (resolve, reject) => {
 
 		let output = "";
 

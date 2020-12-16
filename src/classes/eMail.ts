@@ -1,8 +1,9 @@
 import http from 'https';
 
 import {ApiGlobal} from "../types/global";
+
 declare const global: ApiGlobal;
-let pool = global["mySQLPool"];
+
 
 export class SendGrid {
     static createMailConfirmation (userId: number,mail: string): Promise<never> {
@@ -11,15 +12,15 @@ export class SendGrid {
             let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             let conn;
             try {
-                conn = await pool.getConnection();
+                conn = await global.mySQLPool.getConnection();
 
                 let rows = await conn.query("SELECT * FROM users_mails WHERE mail = ?",[mail]);
 
                 if(rows.length >0){
-                    if(rows[0].userid == userId){
+                    if (rows[0].userid === userId) {
                         //TODO add where clause
                         //await conn.query("UPDATE splan.users_mails SET token = ?",[token]);
-                    }else {
+                    } else {
                         reject("assigned to other user");
                     }
                 }else {
@@ -35,19 +36,19 @@ export class SendGrid {
                     "path": "/v3/mail/send",
                     "headers": {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer " + process.env.API_SENDGRID
+                        "Authorization": "Bearer " + "" //TODO add global conf
                     }
                 };
 
-                let req = http.request(options, function (res) {
+                let req = http.request(options, (res) => {
                     let chunks: any = [];
 
 
-                    res.on("data", function (chunk) {
+                    res.on("data", (chunk) => {
                         chunks.push(chunk);
                     });
 
-                    res.on("end", function () {
+                    res.on("end", () => {
                         let body = Buffer.concat(chunks);
                         console.log(body.toString())
                     });
