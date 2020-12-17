@@ -30,7 +30,9 @@ router.post('/', async (req, res) => {
                 exam.room = element["room"];
                 await exam.save();
             } catch (e) {
-                console.log(e);
+                if (e !== "row exists") {
+                    console.log(e);
+                }
             }
         }
         res.sendStatus(200);

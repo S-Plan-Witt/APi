@@ -62,14 +62,14 @@ router.post('/lessons', async (req, res) => {
 
                 course = await TimeTable.addCourse(new Course(lessonDataSet["course"]["grade"], lessonDataSet["course"]["subject"], lessonDataSet["course"]["group"], false, null, teacherId))
             }
-            let lesson: Lesson = new Lesson(course,lessonDataSet["lessonNumber"], lessonDataSet["day"], lessonDataSet["room"], null);
+            let lesson: Lesson = new Lesson(course, lessonDataSet["lessonNumber"], lessonDataSet["day"], lessonDataSet["room"], null);
             try {
                 await TimeTable.addLesson(lesson);
-            }catch (e) {
-                console.log("AE: "+ JSON.stringify(lesson));
+            } catch (e) {
+                console.log("AE: " + JSON.stringify(lesson));
             }
 
-        } catch(e){
+        } catch (e) {
             console.log(e);
             //TODO add logger
         }
@@ -87,11 +87,11 @@ router.post('/lessons', async (req, res) => {
  * @security JWT
  */
 router.post('/find/course', async (req: Request, res: Response) => {
-    try{
+    try {
         let courses = await TimeTable.getCourseByTeacherDayLesson(req.body["teacher"], req.body["weekday"], req.body["lesson"]);
 
         res.json(courses);
-    }catch(e){
+    } catch (e) {
         //TODO add logger
         res.sendStatus(500);
     }

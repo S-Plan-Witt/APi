@@ -55,7 +55,7 @@ export class Exams {
     /**
      * @returns {Promise<Exam[]>}
      */
-    static getByTeacher(teacher: string): Promise<Exam[]>{
+    static getByTeacher(teacher: string): Promise<Exam[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -74,7 +74,7 @@ export class Exams {
     /**
      * @returns {Promise<Exam[]>}
      */
-    static sqlRowToArray(rows: any): Promise<Exam[]>{
+    static sqlRowToArray(rows: any): Promise<Exam[]> {
         return new Promise(async (resolve, reject) => {
             let data: Exam[] = [];
             for (let i = 0; i < rows.length; i++) {
@@ -90,7 +90,7 @@ export class Exams {
     /**
      * @returns {Promise<Exam[]>}
      */
-    static getByRoomLink(roomLinkId: number): Promise<Exam[]>{
+    static getByRoomLink(roomLinkId: number): Promise<Exam[]> {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {

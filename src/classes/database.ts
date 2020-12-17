@@ -4,7 +4,7 @@ import {exec} from 'child_process';
 export class Database {
 
 
-    static init(){
+    static init() {
         let host = process.env.SQL_HOST;
         let port = process.env.SQL_PORT;
         let user = process.env.SQL_USER;

@@ -35,7 +35,7 @@ export class Telegram {
      * @param token
      * @returns Promise
      */
-    static revokeRequest(token: string) {
+    static revokeRequest(token: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -72,7 +72,7 @@ export class Telegram {
         });
     }
 
-    static logMessage(chatId: number, message: string, direction: string) {
+    static logMessage(chatId: number, message: string, direction: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -86,7 +86,6 @@ export class Telegram {
         });
     }
 }
-
 
 
 module.exports.Telegram = Telegram;

@@ -94,6 +94,7 @@ export class ReplacementLessons {
 
         });
     }
+
     /**
      * //TODO create JDOC
      */
@@ -203,7 +204,7 @@ export class ReplacementLessons {
      * @param dateEnd {String}
      * @returns Promise {[replacementLessons]}
      */
-    static getByTeacher(teacherId: number, dateStart: string, dateEnd: string){
+    static getByTeacher(teacherId: number, dateStart: string, dateEnd: string) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -218,7 +219,7 @@ export class ReplacementLessons {
         });
     }
 
-    static search(info: string){
+    static search(info: string) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {

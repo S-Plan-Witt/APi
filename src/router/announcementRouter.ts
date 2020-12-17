@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
             }
         }
 
-        let announcement = new Announcement(course, req.decoded.userId,req.decoded.userId, body["content"], body["date"], null);
+        let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body["content"], body["date"], null);
         await announcement.create();
 
         let devices = await User.getStudentDevicesByCourse(course);
@@ -50,7 +50,7 @@ router.post('/', async (req, res) => {
         await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Hinzugefügt: " + announcement.content + " Datum: " + announcement.date);
 
         res.sendStatus(200);
-    }catch (e) {
+    } catch (e) {
         console.log(e);
         global.logger.log({
             level: 'error',
@@ -145,7 +145,7 @@ router.delete('/id/:id', async (req, res) => {
         await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Entfernt Datum: " + announcement.date);
 
         res.sendStatus(200);
-    }catch (e) {
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500);

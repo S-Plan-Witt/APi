@@ -37,11 +37,11 @@ router.use((req, res, next) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/', async (req: Request, res : Response) => {
+router.get('/', async (req: Request, res: Response) => {
     try {
         let data = await User.getAllUsers();
         await res.json(data);
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -64,7 +64,7 @@ router.get('/type/:type', async (req: Request, res: Response) => {
     try {
         let data = await User.getUsersByType(parseInt(req.params.type));
         await res.json(data);
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -86,7 +86,7 @@ router.get('/username/:username', async (req: Request, res: Response) => {
     try {
         let data = await User.getUserByUsername(req.params.username);
         await res.json([data]);
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -108,7 +108,7 @@ router.get('/id/:id', async (req: Request, res: Response) => {
     try {
         let data = await User.getUserById(parseInt(req.params.id));
         await res.json([data]);
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -127,7 +127,7 @@ router.get('/id/:id', async (req: Request, res: Response) => {
  * @security JWT
  */
 router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
-    if(!req.decoded.permissions.usersAdmin){
+    if (!req.decoded.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
             label: 'Express',
@@ -142,7 +142,7 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
         let token = await user.createPreAuthToken(userId);
 
         await res.json([token]);
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -165,7 +165,7 @@ router.get('/ldap/', async (req: Request, res: Response) => {
 
     try {
         await res.json(await Ldap.getAllStudents());
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -219,7 +219,7 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
         };
         let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
         res.json(users);
-    } catch (e){
+    } catch (e) {
         global.logger.log({
             level: 'warn',
             label: 'Express',
@@ -239,7 +239,7 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
  * @security JWT
  */
 router.post('/:username/courses', async (req: Request, res: Response) => {
-    if(!req.decoded.permissions.usersAdmin){
+    if (!req.decoded.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
             label: 'Express',
@@ -250,33 +250,33 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
     let user: User | null = null;
     try {
         user = await User.getUserByUsername(req.params.username);
-    }catch (e) {
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
             message: '/users/' + req.params.username + '/courses;1: ' + JSON.stringify(e)
         });
     }
-    if(user == null){
+    if (user == null) {
         await User.createUserFromLdap(req.params.username);
         user = await User.getUserByUsername(req.params.username);
     }
-    if(user != null){
+    if (user != null) {
         try {
             await user.deleteCourses();
             let courses = [];
-            for (const courseData of req.body){
+            for (const courseData of req.body) {
                 try {
-                    let course: Course = await TimeTable.getCourseByFields(courseData["subject"],courseData["grade"], courseData["group"])
+                    let course: Course = await TimeTable.getCourseByFields(courseData["subject"], courseData["grade"], courseData["group"])
                     course.exams = courseData["exams"];
                     courses.push(course);
-                }catch (e) {
+                } catch (e) {
                     //TODO add logger
                 }
             }
             await user.addCourse(courses);
             res.sendStatus(200);
-        } catch(e){
+        } catch (e) {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
@@ -284,7 +284,7 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
             });
             res.sendStatus(500);
         }
-    }else {
+    } else {
         global.logger.log({
             level: 'debug',
             label: 'Express',
@@ -304,7 +304,7 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
  * @security JWT
  */
 router.get('/teacher/reload', async (req: Request, res: Response) => {
-    if(!req.decoded.permissions.usersAdmin){
+    if (!req.decoded.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
             label: 'Express',
@@ -317,7 +317,7 @@ router.get('/teacher/reload', async (req: Request, res: Response) => {
         let teacher = teachers[teacherKey];
         try {
             await teacher.createToDB();
-        }catch (e) {
+        } catch (e) {
             global.logger.log({
                 level: 'error',
                 label: 'Express',

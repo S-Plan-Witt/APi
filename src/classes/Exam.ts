@@ -60,6 +60,13 @@ export class Exam {
                 reject("err");
                 return;
             }
+            if (teacher === undefined) {
+                teacher = "";
+            }
+            if (students === undefined) {
+                students = 0;
+            }
+
             let linkId = avilRoomLinks[0]["iddata_exam_rooms"];
             let conn;
             try {

@@ -53,7 +53,7 @@ export class Announcements {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM `data_announcements`");
                 resolve(this.convertSqlRowsToObjects(rows));
-            }catch (e) {
+            } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'Announcements',
@@ -66,7 +66,7 @@ export class Announcements {
         });
     }
 
-     /**
+    /**
      * Retrieves the Announcement with the corresponding id from the Database
      * @param id
      * @returns {Promise<Announcement>}
@@ -84,7 +84,7 @@ export class Announcements {
                 } else {
                     reject("no row");
                 }
-            }catch (e) {
+            } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'Announcements',

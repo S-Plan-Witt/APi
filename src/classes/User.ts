@@ -28,7 +28,7 @@ export class User {
     courses: Course[];
     secondFactor: number | null;
     permissions: Permissions;
-    moodleUID: number |null;
+    moodleUID: number | null;
 
 
     /**
@@ -102,7 +102,7 @@ export class User {
         });
     }
 
-    static getUserById(id: number) : Promise<User> {
+    static getUserById(id: number): Promise<User> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -139,7 +139,7 @@ export class User {
      * @param username {String}
      * @returns Promise resolves if user is created
      */
-     static createUserFromLdap(username: string) {
+    static createUserFromLdap(username: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let user: User = await Ldap.getUserByUsername(username);
 
@@ -152,7 +152,8 @@ export class User {
                     level: 'error',
                     label: 'User',
                     message: 'Class: User; Function: createUserFromLdap: ' + JSON.stringify(e)
-                });                reject(e);
+                });
+                reject(e);
             } finally {
                 await conn.end();
             }
@@ -205,7 +206,7 @@ export class User {
         });
     }
 
-    static getEMails(userId: number): any{
+    static getEMails(userId: number): any {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -222,7 +223,7 @@ export class User {
                     }
 
 
-                    mails.push(new EMail(userId, row["mail"],confirmed, row["added"],primary));
+                    mails.push(new EMail(userId, row["mail"], confirmed, row["added"], primary));
                 });
                 global.logger.log({
                     level: 'silly',
@@ -248,7 +249,7 @@ export class User {
      * @param course {Course}
      * @returns Promise {device}
      */
-    static getStudentDevicesByCourse(course: Course){
+    static getStudentDevicesByCourse(course: Course) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -337,7 +338,7 @@ export class User {
      * @param deviceId {String}
      * @returns Promise
      */
-    static removeDevice(deviceId: string) {
+    static removeDevice(deviceId: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -576,7 +577,7 @@ export class User {
      * @param courses {Course[]}
      * @returns Promise
      */
-    addCourse(courses: Course[]) {
+    addCourse(courses: Course[]): Promise<void> {
         let userId = this.id;
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -611,7 +612,7 @@ export class User {
      * Delete all course associations from user
      * @returns Promise
      */
-    deleteCourses() {
+    deleteCourses(): Promise<void> {
         let username = this.username;
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -675,7 +676,7 @@ export class User {
      * @param userId {Integer}
      * @returns Promise
      */
-    removeAllDevicesByUser(userId: number) {
+    removeAllDevicesByUser(userId: number): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -715,7 +716,7 @@ export class User {
     /**
      * @returns {Promise<boolean>}
      */
-    isActive(){
+    isActive() {
         let active = this.active;
         return new Promise(async (resolve, reject) => {
             if (active) {
@@ -729,7 +730,7 @@ export class User {
     /**
      *
      */
-    enableMoodleAccount(){
+    enableMoodleAccount() {
         let uid = this.id;
         let username: string = this.username;
         let firstname: string = this.firstName;
@@ -752,10 +753,10 @@ export class User {
                 let conn;
                 try {
                     conn = await global.mySQLPool.getConnection();
-                    let result = await conn.query("INSERT INTO `moodle_mapping` (`userid`, `moodleid`) VALUES (?, ?);",[uid,muid]);
+                    let result = await conn.query("INSERT INTO `moodle_mapping` (`userid`, `moodleid`) VALUES (?, ?);", [uid, muid]);
                     console.log(result);
                     resolve(muid);
-                }catch (e) {
+                } catch (e) {
                     console.log(e);
                 } finally {
                     await conn.end();
@@ -764,7 +765,7 @@ export class User {
         });
     }
 
-    disableMoodleAccount(){
+    disableMoodleAccount() {
         let mUID: number | null = this.moodleUID;
         let uid: number | null = this.id;
         return new Promise(async (resolve, reject) => {
@@ -778,10 +779,10 @@ export class User {
                     await conn.end();
                     console.log(result);
                     resolve(mUID);
-                }catch (e) {
+                } catch (e) {
                     console.log(e);
                 }
-            }else {
+            } else {
                 console.log("NO account");
             }
         });

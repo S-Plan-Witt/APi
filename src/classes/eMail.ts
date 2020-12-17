@@ -6,7 +6,7 @@ declare const global: ApiGlobal;
 
 
 export class SendGrid {
-    static createMailConfirmation (userId: number,mail: string): Promise<never> {
+    static createMailConfirmation(userId: number, mail: string): Promise<void> {
 
         return new Promise(async (resolve, reject) => {
             let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -14,17 +14,17 @@ export class SendGrid {
             try {
                 conn = await global.mySQLPool.getConnection();
 
-                let rows = await conn.query("SELECT * FROM users_mails WHERE mail = ?",[mail]);
+                let rows = await conn.query("SELECT * FROM users_mails WHERE mail = ?", [mail]);
 
-                if(rows.length >0){
+                if (rows.length > 0) {
                     if (rows[0].userid === userId) {
                         //TODO add where clause
                         //await conn.query("UPDATE splan.users_mails SET token = ?",[token]);
                     } else {
                         reject("assigned to other user");
                     }
-                }else {
-                    await conn.query("INSERT INTO users_mails (mail, token, userid) VALUES (?, ?, ?)",[mail, token, userId]);
+                } else {
+                    await conn.query("INSERT INTO users_mails (mail, token, userid) VALUES (?, ?, ?)", [mail, token, userId]);
                 }
 
                 await conn.end();
@@ -66,7 +66,7 @@ export class SendGrid {
                                     {
                                         header: 'Email bestätigen',
                                         text: '',
-                                        c2a_link: 'https://splan.nils-witt.de/pages/verify_email.html?token='+ token,
+                                        c2a_link: 'https://splan.nils-witt.de/pages/verify_email.html?token=' + token,
                                         c2a_button: 'Bestätigen'
                                     }
                             }
@@ -85,9 +85,9 @@ export class SendGrid {
         });
     }
 
-    static async test(){
+    static async test() {
         try {
-            await SendGrid.createMailConfirmation(2,'nils@nils-witt.de');
+            await SendGrid.createMailConfirmation(2, 'nils@nils-witt.de');
 
         } catch (e) {
 
@@ -98,6 +98,7 @@ export class SendGrid {
 export class EMails {
 
 }
+
 /**
  * @typedef EMail
  * @property {number} userId.required

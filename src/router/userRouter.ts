@@ -24,6 +24,7 @@ export let router = express.Router();
  * @group User - Operations about logged in user
  * @returns {User.model} 200
  * @returns {Error} 401 - Wrong Credentials
+ * @security JWT
  */
 router.get('/', async (req, res) => {
     try {
@@ -56,20 +57,20 @@ router.post('/login', async (req, res) => {
         username = username.toLowerCase();
 
     } else if (token != null) {
-        try{
+        try {
             username = await Jwt.preAuth(token);
             preauth = true;
 
-        }catch(e){
+        } catch (e) {
             global.logger.log({
                 level: 'error',
                 label: 'Login',
                 message: 'token Error : ' + e
             });
             res.sendStatus(601);
-            return ;
+            return;
         }
-    }else{
+    } else {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -81,16 +82,17 @@ router.post('/login', async (req, res) => {
     let user: User | null = null;
     try {
         user = await User.getUserByUsername(username);
-    }catch (e) {
+    } catch (e) {
         //TODO User not in DB
     }
-    if(user == null){
+
+    if (user == null) {
         try {
             user = await Ldap.getUserByUsername(username);
             await User.createUserFromLdap(username);
             user = await User.getUserByUsername(username);
             console.log(user)
-        }catch (e) {
+        } catch (e) {
             res.sendStatus(401);
             global.logger.log({
                 level: 'error',
@@ -102,35 +104,37 @@ router.post('/login', async (req, res) => {
         }
     }
 
-    try{
+    try {
         await user.isActive();
-        if(!preauth){
-            await user.verifyPassword(password);
-            if(user.secondFactor === 1){
-                if(req.body.hasOwnProperty("secondFactor")){
-                    let code = req.body["secondFactor"];
-                    try {
-                        if (user.id != null) {
-                            await Totp.verifyUserCode(code, user.id);
+        if (!preauth) {
+            if (global.config.ldapConfig.enabled) {
+                await user.verifyPassword(password);
+                if (user.secondFactor === 1) {
+                    if (req.body.hasOwnProperty("secondFactor")) {
+                        let code = req.body["secondFactor"];
+                        try {
+                            if (user.id != null) {
+                                await Totp.verifyUserCode(code, user.id);
+                            }
+                            console.log("ERROR")
+                        } catch (e) {
+                            res.sendStatus(401);
+                            global.logger.log({
+                                level: 'info',
+                                label: 'Login',
+                                message: 'SecondFactor failed : ' + username
+                            });
+                            return;
                         }
-                        console.log("ERROR")
-                    }catch (e) {
-                        res.sendStatus(401);
+                    } else {
+                        res.sendStatus(602);
                         global.logger.log({
                             level: 'info',
                             label: 'Login',
-                            message: 'SecondFactor failed : ' + username
+                            message: 'Further information required : ' + username
                         });
-                        return ;
+                        return;
                     }
-                }else {
-                    res.sendStatus(602);
-                    global.logger.log({
-                        level: 'info',
-                        label: 'Login',
-                        message: 'Futher information required : ' + username
-                    });
-                    return;
                 }
             }
         }
@@ -144,7 +148,7 @@ router.post('/login', async (req, res) => {
             label: 'Login',
             message: 'Loggedin : ' + username
         });
-    }catch(e){
+    } catch (e) {
         console.log(e);
         global.logger.log({
             level: 'error',
@@ -153,6 +157,7 @@ router.post('/login', async (req, res) => {
         });
         res.sendStatus(601);
     }
+
 });
 
 /**
@@ -177,7 +182,7 @@ router.get('/courses', async (req, res) => {
             //Get courses for user
             courses = user.courses;
             await res.json(courses);
-        }else{
+        } else {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
@@ -185,7 +190,7 @@ router.get('/courses', async (req, res) => {
             });
             res.sendStatus(401);
         }
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -216,11 +221,11 @@ router.get('/lessons', async (req, res) => {
                 try {
                     //Get lesson for course as array
                     let lessons: any = await TimeTable.getLessonsByCourse(course);
-                    lessons.forEach((lesson:any) => {
+                    lessons.forEach((lesson: any) => {
                         //Add lesson to response array
                         response.push(lesson);
                     });
-                } catch(e){
+                } catch (e) {
                     console.log(e);
                     global.logger.log({
                         level: 'error',
@@ -232,7 +237,7 @@ router.get('/lessons', async (req, res) => {
             }
         }
         res.json(response);
-    } catch(e){
+    } catch (e) {
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -271,9 +276,9 @@ router.get('/replacementlessons', async (req, res) => {
     try {
         let courses;
         let response: any = [];
-        if(req.decoded.userType === "student" || req.decoded.userType === "teacher"){
+        if (req.decoded.userType === "student" || req.decoded.userType === "teacher") {
             courses = req.user.courses;
-        }else{
+        } else {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
@@ -284,7 +289,7 @@ router.get('/replacementlessons', async (req, res) => {
             return;
         }
 
-        for(const course of courses){
+        for (const course of courses) {
             //Get replacement lessons with today and today + 6 days
             let data: any = await ReplacementLessons.getByCourse(course);
             data.forEach((replacementLesson: ReplacementLesson) => {
@@ -293,18 +298,18 @@ router.get('/replacementlessons', async (req, res) => {
                 response.push(dataset);
             });
         }
-        if(req.decoded.userType === "teacher"){
+        if (req.decoded.userType === "teacher") {
             //Get replacement lessons hold by teacher
             assert(req.user.id != null)
             let data: any = await ReplacementLessons.getByTeacher(req.user.id, dateToday, dateEnd);
             data.forEach((replacementLesson: any) => {
-                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject,teacherId: replacementLesson.teacherId, info: replacementLesson.info, date: replacementLesson.date}
+                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, teacherId: replacementLesson.teacherId, info: replacementLesson.info, date: replacementLesson.date}
                 response.push(dataset);
             });
         }
 
         await res.json(response);
-    }catch(e){
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500);
@@ -320,18 +325,18 @@ router.get('/replacementlessons', async (req, res) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.get('/announcements',  async (req: Request, res: Response) => {
+router.get('/announcements', async (req: Request, res: Response) => {
     let courses = req.user.courses;
     let response: any = [];
-    for(const course of courses){
-        try{
+    for (const course of courses) {
+        try {
             let data: Announcements[] = await Announcements.getByCourse(course);
             for (let i = 0; i < data.length; i++) {
                 let announcement: any = data[i];
                 response.push({courseId: announcement.course.id, authorId: announcement.authorId, editorId: announcement.editorId, date: announcement.date, id: announcement.id, content: announcement.content})
             }
 
-        } catch(e){
+        } catch (e) {
             //TODO add logger
             //TODO add handler
             console.log(e);
@@ -373,19 +378,19 @@ router.get('/exams', async (req, res) => {
                             response.push(exam);
                         });
                     }
-                } catch(e){
+                } catch (e) {
                     //TODO add logger
                     //TODO add handler
                     console.log(e)
                 }
             }
 
-        }else if(req.decoded.userType === "teacher"){
+        } else if (req.decoded.userType === "teacher") {
             response = await Exams.getByTeacher(req.user.username);
         }
         //TODO add else
         res.json(response);
-    }catch(e){
+    } catch (e) {
         //TODO add logger
         console.log(e);
         res.sendStatus(500);
@@ -511,22 +516,22 @@ router.post('/auth/totp', async (req, res) => {
             await user.verifyPassword(req.body["password"]);
 
         } catch (e) {
-            res.json({"error":"Invalid Password"});
-            return ;
+            res.json({"error": "Invalid Password"});
+            return;
         }
 
         try {
             let key = req.body["key"];
             let alias = req.body["alias"];
-            if(user.id != null){
+            if (user.id != null) {
                 tokenId = await Totp.saveTokenForUser(key, user.id, alias)
             }
         } catch (e) {
 
         }
         res.json(tokenId)
-    }else{
-        res.json({"err":"Invalid Parameters"});
+    } else {
+        res.json({"err": "Invalid Parameters"});
     }
 });
 
@@ -551,8 +556,8 @@ router.post('/auth/totp/verify', async (req, res) => {
             console.log(e);
             await res.json({err: e})
         }
-    }else{
-        res.json({"err":"Invalid Parameters",body: req.body});
+    } else {
+        res.json({"err": "Invalid Parameters", body: req.body});
     }
 });
 
@@ -586,11 +591,11 @@ router.delete('/auth/totp/id/:id', async (req, res) => {
  * @security JWT
  */
 router.get('/profile/emails', async (req, res) => {
-        try {
-            res.json(req.user.mails);
-        }catch (e) {
-            res.sendStatus(500);
-        }
+    try {
+        res.json(req.user.mails);
+    } catch (e) {
+        res.sendStatus(500);
+    }
 });
 
 /**
@@ -603,11 +608,11 @@ router.get('/profile/emails', async (req, res) => {
  * @security JWT
  */
 router.post('/profile/emails', async (req, res) => {
-        try {
-            res.json(req.user.mails);
-        }catch (e) {
-            res.sendStatus(500);
-        }
+    try {
+        res.json(req.user.mails);
+    } catch (e) {
+        res.sendStatus(500);
+    }
 });
 
 /**
@@ -619,11 +624,11 @@ router.post('/profile/emails', async (req, res) => {
  * @security JWT
  */
 router.delete('/profile/emails/:id', async (req, res) => {
-        try {
-            res.json(req.user.mails);
-        }catch (e) {
-            res.sendStatus(500);
-        }
+    try {
+        res.json(req.user.mails);
+    } catch (e) {
+        res.sendStatus(500);
+    }
 });
 
 /**
@@ -635,11 +640,11 @@ router.delete('/profile/emails/:id', async (req, res) => {
  * @security JWT
  */
 router.delete('/jwt', async (req, res) => {
-        try {
-            await Jwt.revokeById(req.decoded.jwtId);
-            console.log("revoke")
-            res.sendStatus(200);
-        }catch (e) {
-            res.sendStatus(500);
-        }
+    try {
+        await Jwt.revokeById(req.decoded.jwtId);
+        console.log("revoke")
+        res.sendStatus(200);
+    } catch (e) {
+        res.sendStatus(500);
+    }
 });

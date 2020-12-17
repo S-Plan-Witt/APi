@@ -40,13 +40,13 @@ router.post('/', async (req, res) => {
             try {
                 let teacherId: number | null = null;
                 if (teacher != null) {
-                    if (teacher.id != null){
+                    if (teacher.id != null) {
                         teacherId = teacher.id;
                     }
                 }
                 let date = new Date(postDataSet["date"]);
                 let weekday = date.getDay();
-                replacementLesson = new ReplacementLesson(null, course,await TimeTable.getLessonsByCourseAndLessonAndDay(course,postDataSet["lessonNumber"], weekday), teacherId, postDataSet["room"], postDataSet["subject"], postDataSet["info"], postDataSet["date"]);
+                replacementLesson = new ReplacementLesson(null, course, await TimeTable.getLessonsByCourseAndLessonAndDay(course, postDataSet["lessonNumber"], weekday), teacherId, postDataSet["room"], postDataSet["subject"], postDataSet["info"], postDataSet["date"]);
             } catch (e) {
                 console.log(e)
             }
@@ -66,7 +66,7 @@ router.post('/', async (req, res) => {
                 }
             }
 
-        } catch(e){
+        } catch (e) {
             global.logger.log({
                 level: 'warn',
                 label: 'ReplacementLessons',
@@ -190,7 +190,7 @@ router.delete('/id/:id', async (req, res) => {
             }
         }
         res.sendStatus(200);
-    } catch(e){
+    } catch (e) {
         console.log(e);
         res.sendStatus(500);
     }

@@ -23,7 +23,7 @@ const rotateFile = new (winston.transports.DailyRotateFile)({
 });
 
 //Logger output format
-const myFormat = printf(({ level, message, label, timestamp: timestamp}) => {
+const myFormat = printf(({level, message, label, timestamp: timestamp}) => {
     return `${timestamp} [${label}] ${level}: ${message}`;
 });
 
@@ -94,7 +94,7 @@ if (global.config.webServerConfig.apiDocumentation) {
             produces: [
                 "application/json"
             ],
-            schemes: ['http','https'],
+            schemes: ['http', 'https'],
             securityDefinitions: {
                 JWT: {
                     type: 'apiKey',
@@ -117,7 +117,7 @@ if (global.config.webServerConfig.apiDocumentation) {
 
 
 //Setting headers for WI
-const header = (req : Request, res : Response, next : NextFunction) => {
+const header = (req: Request, res: Response, next: NextFunction) => {
     res.set({
         'Access-Control-Allow-Credentials': 'true',
         'Access-Control-Allow-Origin': global.config.webServerConfig.serverOrigin,
@@ -127,7 +127,7 @@ const header = (req : Request, res : Response, next : NextFunction) => {
     next();
 };
 
-let reqLogger = (req : Request, res : Response, next : NextFunction) => {
+let reqLogger = (req: Request, res: Response, next: NextFunction) => {
     let token = req.headers['x-access-token'] || req.headers['authorization'];
     global.logger.log({
         level: 'debug',
@@ -184,13 +184,13 @@ app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     }
 });
 
-async function clearDB(){
-    let tablesToTruncate = ["data_exams","data_exam_supervisors","users_mails","permissions","student_courses","totp","moodle_mapping","token_calendar","preAuth_Token","data_announcements","data_courses","jwt_Token","devices","lessons_teacher","data_vertretungen","data_lessons","data_aufsichten","telegramLinks","data_entschuldigungen","users","data_exam_rooms"];
+async function clearDB() {
+    let tablesToTruncate = ["data_exams", "data_exam_supervisors", "users_mails", "permissions", "student_courses", "totp", "moodle_mapping", "token_calendar", "preAuth_Token", "data_announcements", "data_courses", "jwt_Token", "devices", "lessons_teacher", "data_vertretungen", "data_lessons", "data_aufsichten", "telegramLinks", "data_entschuldigungen", "users", "data_exam_rooms"];
 
     let conn;
     try {
         conn = await global.mySQLPool.getConnection();
-        for(let i = 0; i < tablesToTruncate.length; i++) {
+        for (let i = 0; i < tablesToTruncate.length; i++) {
             let tableName = tablesToTruncate[i];
             let result = await conn.query(`DELETE FROM ${tableName}`);
         }

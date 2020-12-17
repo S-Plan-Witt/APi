@@ -24,13 +24,13 @@ export class Totp {
                 console.log(e);
                 reject(e);
             } finally {
-                if(conn) await conn.end();
+                if (conn) await conn.end();
             }
         });
 
     }
 
-    static async verifyKey(tokenId: number,code: string){
+    static async verifyKey(tokenId: number, code: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
@@ -50,7 +50,7 @@ export class Totp {
 
                     if (!valid) {
                         reject("Invalid code");
-                        return ;
+                        return;
                     }
                     await conn.query("UPDATE totp SET verified = 1 WHERE id_totp = ?", [tokenId]);
                     resolve();
@@ -60,12 +60,12 @@ export class Totp {
                 console.log(e);
                 reject(e);
             } finally {
-                if(conn) await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
 
-    static checkKeyCode(key: string,code: number){
+    static checkKeyCode(key: string, code: number): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
                 speakeasy.totp.verify({token: code.toString(), secret: key});
@@ -76,7 +76,7 @@ export class Totp {
         });
     }
 
-    static verifyUserCode(code: number,userId: number){
+    static verifyUserCode(code: number, userId: number): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
@@ -96,15 +96,15 @@ export class Totp {
                     }
                 }
                 reject();
-            }catch (e) {
+            } catch (e) {
                 reject(e);
             } finally {
-                if(conn) await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
 
-    static removeById(id: number, userId: number){
+    static removeById(id: number, userId: number): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
@@ -118,7 +118,7 @@ export class Totp {
                     }
                 }
                 resolve();
-            }catch (e) {
+            } catch (e) {
                 reject(e);
             } finally {
                 if (conn) await conn.end();

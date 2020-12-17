@@ -221,7 +221,7 @@ export class Ldap {
         });
     }
 
-    static getAllStudents(): Promise<Student[]>{
+    static getAllStudents(): Promise<Student[]> {
         return new Promise(async (resolve, reject) => {
             let opts: SearchOptions = {
                 filter: '(objectClass=user)',
@@ -244,7 +244,7 @@ function ldapErrorHandler(err: Error) {
     });
 }
 
-export class LdapSearch{
+export class LdapSearch {
 
     _firstName: string;
     _lastName: string;

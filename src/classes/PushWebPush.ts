@@ -12,7 +12,7 @@ export class PushWebPush {
      * @param body
      * @returns Promise resolves on successful send message
      */
-    sendPush(subscription: any, title: string, body: string) {
+    sendPush(subscription: any, title: string, body: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
                 await webPush.sendNotification(subscription, JSON.stringify({title: title, body: body}), {});
@@ -37,7 +37,7 @@ export class PushWebPush {
      * @param endpoint
      * @returns Promise resolves true if deleted
      */
-    deleteSubscription(endpoint: any) {
+    deleteSubscription(endpoint: any): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {

@@ -67,7 +67,7 @@ export class PushTelegram {
      * @param body
      * @returns Promise resolves on successful send message
      */
-    sendPush(chatID: number, body: string) {
+    sendPush(chatID: number, body: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
                 this.bot.telegram.sendMessage(chatID, body);

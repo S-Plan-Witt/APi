@@ -40,47 +40,47 @@ export class PushNotifications {
      * @param message
      * @returns Promise resolves when push is send
      */
-    send(type: any, deviceInfo: any, title: any, message: any) {
+    send(type: any, deviceInfo: any, title: any, message: any): Promise<void> {
         let pushFCM = this.pushFCM;
         let pushWebPush = this.pushWebPush;
         let pushTelegram = this.pushTelegram;
-            return new Promise(async (resolve, reject) => {
-                try {
+        return new Promise(async (resolve, reject) => {
+            try {
 
-                    if (type === "FCM") {
-                        try {
-                            await pushFCM.sendPush(deviceInfo, title, message);
-                            resolve();
-                        } catch (e) {
-                            reject();
-                        }
-                    } else if (type === "WP") {
-                        try {
-                            await pushWebPush.sendPush(JSON.parse(deviceInfo), title, message);
-                            resolve();
-                        } catch (e) {
-                            if (e.statusCode === 410 || e.statusCode === 403) {
-                                await pushWebPush.deleteSubscription(e.endpoint);
-                                resolve();
-                                return;
-                            }
-                            reject(e);
-                        }
-                    } else if (type === "TG") {
-                        try {
-                            await pushTelegram.sendPush(deviceInfo, title + ": " + message);
-                            resolve();
-                        } catch (e) {
-                            reject();
-                        }
+                if (type === "FCM") {
+                    try {
+                        await pushFCM.sendPush(deviceInfo, title, message);
+                        resolve();
+                    } catch (e) {
+                        reject();
                     }
-                } catch (e) {
-                    reject(e);
+                } else if (type === "WP") {
+                    try {
+                        await pushWebPush.sendPush(JSON.parse(deviceInfo), title, message);
+                        resolve();
+                    } catch (e) {
+                        if (e.statusCode === 410 || e.statusCode === 403) {
+                            await pushWebPush.deleteSubscription(e.endpoint);
+                            resolve();
+                            return;
+                        }
+                        reject(e);
+                    }
+                } else if (type === "TG") {
+                    try {
+                        await pushTelegram.sendPush(deviceInfo, title + ": " + message);
+                        resolve();
+                    } catch (e) {
+                        reject();
+                    }
                 }
-            });
+            } catch (e) {
+                reject(e);
+            }
+        });
     }
 
-    sendBulk(devices: any, title: any, message: any) {
+    sendBulk(devices: any, title: any, message: any): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
                 for (let id in devices) {
