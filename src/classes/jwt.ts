@@ -13,8 +13,8 @@ import {NextFunction, Request, Response} from "express";
 declare const global: ApiGlobal;
 
 //Load signing and validation keys
-const privateKey = fs.readFileSync('./keys/jwtRS256.key');
-const publicKey = fs.readFileSync('./keys/jwtRS256.key.pub');
+const privateKey = fs.readFileSync('./keys/jwtRS256.pem');
+const publicKey = fs.readFileSync('./keys/jwtRS256_pub.pem');
 
 //Paths without token validation
 const authFreePaths = [
