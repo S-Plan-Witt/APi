@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Nils-witt/S-Plan-APi.git"
+    "url": "git+https://gitlab.cloud.nils-witt.de/nilswitt/splan-api.git"
   },
   "author": "Nils Witt",
   "contributors": [
@@ -21,10 +21,10 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Nils-witt/S-Plan-APi/issues"
+    "url": "https://gitlab.cloud.nils-witt.de/nilswitt/splan-api/-/issues"
   },
-  "homepage": "https://github.com/Nils-witt/S-Plan-APi#readme",
-  "readme": "https://github.com/Nils-witt/S-Plan-APi#readme",
+  "homepage": "https://gitlab.cloud.nils-witt.de/nilswitt/splan-api/-/blob/master/README.md",
+  "readme": "https://gitlab.cloud.nils-witt.de/nilswitt/splan-api/-/blob/master/README.md",
   "engines": {
     "node": ">= 14.0.0"
   },
