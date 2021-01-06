@@ -18,43 +18,13 @@ export class Device {
     public platform: number;
     public deviceIdentifier: string;
 
-    private _platform: string;
-
-    get platform(): string {
-        return this._platform;
+    constructor(platform: number, id: number, userId: number, timeAdded: string, deviceIdentifier: string) {
+        this.platform = platform;
+        this.id = id;
+        this.userId = userId;
+        this.timeAdded = timeAdded;
+        this.deviceIdentifier = deviceIdentifier;
     }
 
-    set platform(value: string) {
-        this._platform = value;
-    }
 
-    private _id: string;
-
-    get id(): string {
-        return this._id;
-    }
-
-    set id(value: string) {
-        this._id = value;
-    }
-
-    private _userId: number;
-
-    get userId(): number {
-        return this._userId;
-    }
-
-    set userId(value: number) {
-        this._userId = value;
-    }
-
-    private _timeAdded: string;
-
-    get timeAdded(): string {
-        return this._timeAdded;
-    }
-
-    set timeAdded(value: string) {
-        this._timeAdded = value;
-    }
 }

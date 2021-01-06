@@ -191,11 +191,11 @@ export class Exam {
         let id = this.id;
 
         return new Promise(async (resolve, reject) => {
-            let avilRoomLinks: any = await RoomLinks.getRoomLinks(date, room);
+            let avilRoomLinks: any = await RoomLink.getRoomLinks(date, room);
             if (avilRoomLinks.length === 0) {
-                await RoomLinks.add(new RoomLink(room, from, to, date));
+                await RoomLink.add(new RoomLink(room, from, to, date));
             }
-            avilRoomLinks = await RoomLinks.getRoomLinks(date, room);
+            avilRoomLinks = await RoomLink.getRoomLinks(date, room);
             if (avilRoomLinks === 0) {
                 reject("err");
                 return;
@@ -239,32 +239,4 @@ export class Exam {
         });
     }
 
-    /**
-     * @returns {Promise<void>}
-     */
-    delete(): Promise<void> {
-        let id = this.id;
-
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                await conn.query("DELETE FROM `data_exams` WHERE (`iddata_klausuren` = ?);", [id]);
-                global.logger.log({
-                    level: 'silly',
-                    label: 'exams',
-                    message: 'Deleted: ' + JSON.stringify(id)
-                });
-                resolve();
-            } catch (err) {
-                global.logger.log({
-                    level: 'error',
-                    label: 'exams',
-                    message: 'Delete failed: ' + JSON.stringify(id) + " Err: " + JSON.stringify(err)
-                });
-                reject(err);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
 }

@@ -22,6 +22,7 @@ export class PushTelegram {
         this.bot = bot;
     }
 
+    //TODO add jDoc
     startTelegramBot() {
         //Set replay to /start command from TG
         this.bot.start(async (ctx) => {

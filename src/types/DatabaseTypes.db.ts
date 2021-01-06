@@ -8,13 +8,3 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {User} from "./User";
-import {Permissions} from "./Permissions";
-
-export class Teacher extends User {
-
-    constructor(firstName: string, lastName: string, username: string, displayName: string, id: number | null) {
-        super(firstName, lastName, username, id, 2, [], false, null, null, 0, Permissions.getDefault());
-        this.displayName = displayName;
-    }
-}

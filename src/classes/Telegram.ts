@@ -14,12 +14,12 @@ declare const global: ApiGlobal;
 
 
 export class Telegram {
+
     /**
      * Validates a telegram activation token and returns telegram id
      * @param token {String}
      * @returns Promise {Integer} telegram id
      */
-
     static validateRequestToken(token: string): Promise<number> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -41,7 +41,7 @@ export class Telegram {
     }
 
     /**
-     * revokes a telegram activation token
+     * Revokes a telegram activation token
      * @param token
      * @returns Promise
      */
@@ -82,6 +82,12 @@ export class Telegram {
         });
     }
 
+    /**
+     * Logs a message to the database
+     * @param chatId
+     * @param message
+     * @param direction
+     */
     static logMessage(chatId: number, message: string, direction: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -96,6 +102,5 @@ export class Telegram {
         });
     }
 }
-
 
 module.exports.Telegram = Telegram;

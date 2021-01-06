@@ -20,6 +20,9 @@ import {Course} from "./Course";
 
 declare const global: ApiGlobal;
 
+/**
+ * Class User: Is parent to all user types
+ */
 export class User {
     public displayName: string = "";
     public lastName: string;
@@ -50,7 +53,7 @@ export class User {
      * @param permissions
      * @param moodleUID
      */
-    constructor(firstName: string = "", lastName: string = "", username: string = "", id: number = -1, type: number = 0, courses: Course[] = [], active = false, mails = null, devices = null, secondFactor: number | null = null, permissions: Permissions = Permissions.getDefault(), moodleUID: number | null = null) {
+    constructor(firstName: string, lastName: string, username: string, id: number | null = null, type: number = 0, courses: Course[] = [], active = false, mails = null, devices = null, secondFactor: number | null = null, permissions: Permissions = Permissions.getDefault(), moodleUID: number | null = null) {
         this.active = active;
         this.id = id;
         this.firstName = firstName;
@@ -66,6 +69,10 @@ export class User {
 
     }
 
+    /**
+     * Seaches in the database for a user with the given username (no wildcards)
+     * @param username
+     */
     static getUserByUsername(username: string): Promise<User> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -106,6 +113,10 @@ export class User {
         });
     }
 
+    /**
+     * Returns a User with the given id or rejects
+     * @param id {number}
+     */
     static getUserById(id: number): Promise<User> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -132,6 +143,10 @@ export class User {
         });
     }
 
+    /**
+     * Converts a database dataset to a user object
+     * @param sql
+     */
     static async fromSqlUser(sql: any): Promise<User> {
         return new Promise(async (resolve, reject) => {
             resolve(new User(sql["firstname"], sql["lastname"], sql["username"], sql["idusers"], parseInt(sql["type"]), await User.getCoursesByUser(sql["idusers"], parseInt(sql["type"])), sql["active"], await User.getEMails(sql["idusers"]), await User.getDevices(sql["idusers"]), sql["twoFactor"], await Permissions.getByUID(parseInt(sql["idusers"])), sql["moodleid"]))
@@ -210,6 +225,10 @@ export class User {
         });
     }
 
+    /**
+     * returns the emailaddresses by the given userid
+     * @param userId
+     */
     static getEMails(userId: number): any {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -225,7 +244,6 @@ export class User {
                     if (row["primary"] === 1) {
                         primary = true;
                     }
-
 
                     mails.push(new EMail(userId, row["mail"], confirmed, row["added"], primary));
                 });
@@ -249,7 +267,7 @@ export class User {
     }
 
     /**
-     * Get all student devices associated with course
+     * Get all student devices associated with the given course
      * @param course {Course}
      * @returns Promise {device}
      */
@@ -311,11 +329,12 @@ export class User {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM devices WHERE `userID`= ?;", [userId]);
+                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userID`= ?;", [userId]);
                 let devices: Device[] = [];
                 rows.forEach((row: any) => {
                     if (row.deviceID != null) {
-                        devices.push(new Device(row.plattform, row.deviceID, row.userId, row.added));
+                        //TODO add table id
+                        devices.push(new Device(row.plattform, 0, row.userId, row.added, row.deviceID));
                     }
                 });
                 global.logger.log({
@@ -358,30 +377,9 @@ export class User {
     }
 
     /**
-     * Get username for Calender token
-     * @param token {String}
-     * @returns {Promise(username)}
+     * Returns all users with the given type
+     * @param type
      */
-    static getUserByCalToken(token: string) {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let rows = await conn.query("SELECT * FROM token_calendar WHERE `calendar_token`= ? ", [token]);
-                if (rows.length === 1) {
-                    resolve(await User.getUserById(rows[0].user_id));
-                } else {
-                    //TODO add logger
-                    reject();
-                }
-            } catch (e) {
-                //TODO add logger
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
     static getUsersByType(type: any) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -398,7 +396,7 @@ export class User {
     }
 
     /**
-     *
+     * Load all students from ldap directory
      */
     static getAllStudentsLDAP(): Promise<Student[]> {
         return new Promise(async (resolve, reject) => {
@@ -412,6 +410,9 @@ export class User {
         });
     }
 
+    /**
+     * creates the user in the database if not exists
+     */
     createToDB() {
         let firstName = this.firstName;
         let lastName = this.lastName;
@@ -439,7 +440,7 @@ export class User {
     }
 
     /**
-     *
+     * Checks if the given user is a teacher of the given course
      * @param needle {Course}
      */
     isTeacherOf(needle: Course) {
@@ -470,7 +471,7 @@ export class User {
                     let typeString = "";
                     if (type === 1) typeString = "student";
                     if (type === 2) typeString = "teacher";
-                    resolve(await Jwt.createJWT(id, typeString, tokenId));
+                    resolve(await JWTInterface.createJWT(id, typeString, tokenId));
                 }
                 reject("NAN UID")
             } catch (e) {
@@ -508,7 +509,7 @@ export class User {
     }
 
     /**
-     *
+     * resolves if user is saved in db
      * @param username {String}
      * @returns Promise resolves if user is in database
      */
@@ -545,6 +546,9 @@ export class User {
         });
     }
 
+    /**
+     * Returns all Announcements for the user
+     */
     getAnnouncements() {
         let userId: number;
         return new Promise(async (resolve, reject) => {
@@ -654,7 +658,7 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 console.log(device)
-                let rows = await conn.query("SELECT * FROM devices WHERE `deviceID`= ?;", [device]);
+                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `deviceID`= ?;", [device]);
                 if (rows.length !== 0) {
                     //TODO add new handler
                     resolve(false);
@@ -732,7 +736,7 @@ export class User {
     }
 
     /**
-     *
+     * Planned feature
      */
     enableMoodleAccount() {
         let uid = this.id;
@@ -769,6 +773,9 @@ export class User {
         });
     }
 
+    /**
+     * Planned feature
+     */
     disableMoodleAccount() {
         let mUID: number | null = this.moodleUID;
         let uid: number | null = this.id;

@@ -66,7 +66,7 @@ router.post('/', async (req, res) => {
  */
 router.get('/', async (req, res) => {
 
-    let rows = await Exams.getAll();
+    let rows = await Exam.getAll();
     await res.json(rows);
 });
 
@@ -110,7 +110,7 @@ router.get('/exams/supervisors/:id', async (req, res) => {
     }
 
     try {
-        let data = await Supervisors.getById(parseInt(req.params.id));
+        let data = await Supervisor.getById(parseInt(req.params.id));
         await res.json(data);
     } catch (e) {
         global.logger.log({

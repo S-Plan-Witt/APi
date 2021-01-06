@@ -20,6 +20,7 @@ declare const global: ApiGlobal;
 
 export class Ldap {
 
+    //TODO add jDoc
     static async bindTest() {
         try {
             let ldapClient: Client = await Ldap.bindLDAP();
@@ -58,6 +59,7 @@ export class Ldap {
         });
     }
 
+    //TODO add jDoc
     static startTlsClient(client: Client) {
         return new Promise((resolve, reject) => {
             global.logger.log({
@@ -83,6 +85,7 @@ export class Ldap {
         });
     }
 
+    //TODO add jDoc
     static bindLDAP(): Promise<Client> {
         return new Promise(async (resolve, reject) => {
             if (global.config.ldapConfig.enabled) {
@@ -102,6 +105,7 @@ export class Ldap {
         });
     }
 
+    //TODO add jDoc
     static bindLDAPAsUser(username: string, password: string): Promise<Client> {
         return new Promise(async (resolve, reject) => {
             if (global.config.ldapConfig.enabled) {
@@ -120,6 +124,7 @@ export class Ldap {
         });
     }
 
+    //TODO add jDoc
     static searchUsers(opts: SearchOptions, searchRoot: string): Promise<User[]> {
         return new Promise(async (resolve, reject) => {
             let ldapClient: Client = await Ldap.bindLDAP();
@@ -231,6 +236,7 @@ export class Ldap {
         });
     }
 
+    //TODO add jDoc
     static getAllStudents(): Promise<Student[]> {
         return new Promise(async (resolve, reject) => {
             let opts: SearchOptions = {
@@ -246,6 +252,7 @@ export class Ldap {
     }
 }
 
+//TODO add jDoc
 function ldapErrorHandler(err: Error) {
     global.logger.log({
         level: 'error',

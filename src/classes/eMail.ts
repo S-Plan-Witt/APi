@@ -13,13 +13,15 @@ import {ApiGlobal} from "../types/global";
 
 declare const global: ApiGlobal;
 
-
 export class SendGrid {
-    static createMailConfirmation(userId: number, mail: string): Promise<void> {
 
+    //TODO add jDoc
+    static createMailConfirmation(userId: number, mail: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
+
             let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             let conn;
+
             try {
                 conn = await global.mySQLPool.getConnection();
 
@@ -86,26 +88,12 @@ export class SendGrid {
                 resolve();
             } catch (e) {
                 //TODO add logger
-                if (conn) await conn.end();
                 reject(e);
             } finally {
                 await conn.end();
             }
         });
     }
-
-    static async test() {
-        try {
-            await SendGrid.createMailConfirmation(2, 'nils@nils-witt.de');
-
-        } catch (e) {
-
-        }
-    }
-}
-
-export class EMails {
-
 }
 
 /**
@@ -117,11 +105,11 @@ export class EMails {
  * @property {boolean} primary
  */
 export class EMail {
-    userId: number;
-    address: string;
-    verified: boolean;
-    dateAdded: any;
-    primary: boolean;
+    public userId: number;
+    public address: string;
+    public verified: boolean;
+    public dateAdded: any;
+    public primary: boolean;
 
     /**
      *

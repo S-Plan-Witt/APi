@@ -39,10 +39,12 @@ export class Permissions {
         this.globalAdmin = globalAdmin;
     }
 
+    //TODO add jDoc
     static getDefault() {
         return new Permissions(false, false, true, false, true, false, true, false, true, false, false);
     }
 
+    //TODO add jDoc
     static getByUID(userId: number): Promise<Permissions> {
         return new Promise(async (resolve, reject) => {
             let conn;

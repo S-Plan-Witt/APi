@@ -17,7 +17,6 @@ export class Course {
     public teacherId: number | null;
 
     /**
-     *
      * @param grade {String}
      * @param subject {String}
      * @param group {String}

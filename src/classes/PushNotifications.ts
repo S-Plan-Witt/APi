@@ -89,6 +89,7 @@ export class PushNotifications {
         });
     }
 
+    //TODO add jDoc
     sendBulk(devices: any, title: any, message: any): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {

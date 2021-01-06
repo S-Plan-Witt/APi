@@ -15,6 +15,7 @@ import {TimeTable} from "./TimeTable";
 
 declare const global: ApiGlobal;
 
+
 /**
  * @typedef Announcement
  * @property {Course.model} course.required
@@ -23,7 +24,6 @@ declare const global: ApiGlobal;
  * @property {string} date.required
  * @property {string} id
  */
-
 export class Announcement {
     public course: Course;
     public authorId: number;
@@ -33,7 +33,6 @@ export class Announcement {
     public id: number | null;
 
     /**
-     * Constructor
      * @param course {Course}
      * @param authorId
      * @param editorId
@@ -41,8 +40,6 @@ export class Announcement {
      * @param date {String}
      * @param id {number}
      */
-
-
     constructor(course: Course, authorId: number, editorId: number, content: string, date: string, id: number | null) {
         this.course = course;
         this.authorId = authorId;

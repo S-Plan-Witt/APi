@@ -38,7 +38,9 @@ const myFormat = printf(({level, message, label, timestamp: timestamp}) => {
 });
 
 
-//Add Logger to global logger scope
+/**
+ * Creates a global Logger
+ */
 let logger = winston.createLogger({
     format: combine(
         timestamp(),
@@ -58,7 +60,14 @@ logger.log({
     message: 'Logger init success'
 });
 
+/**
+ * Load Env file to environment if exists
+ */
 dot.config({path: "./.env"});
+
+/**
+ * Load config from environment
+ */
 global.config = Config.loadFromEnv();
 
 logger.log({
@@ -70,7 +79,9 @@ logger.log({
 
 global.pushNotifications = new PushNotifications();
 
-//++ Mysql Pool
+/**
+ * Initiate mysql connection
+ */
 global.mySQLPool = mySQL.createPool({
     host: global.config.mysqlConfig.hostname,
     port: global.config.mysqlConfig.port,
@@ -87,9 +98,14 @@ logger.log({
     message: 'MySql Connected'
 });
 
-//Creating Web-Server
+/**
+ * creating Http Server
+ */
 const app = express();
 if (global.config.webServerConfig.apiDocumentation) {
+    /**
+     * Generate and display Api documentation under host/api-docs/
+     */
     const expressSwagger = require('express-swagger-generator')(app);
 
     let options = {
@@ -126,7 +142,12 @@ if (global.config.webServerConfig.apiDocumentation) {
 }
 
 
-//Setting headers for WI
+/**
+ * Function to set on a response headers for compatibility with client JS
+ * @param req
+ * @param res
+ * @param next
+ */
 const header = (req: Request, res: Response, next: NextFunction) => {
     res.set({
         'Access-Control-Allow-Credentials': 'true',
@@ -137,6 +158,12 @@ const header = (req: Request, res: Response, next: NextFunction) => {
     next();
 };
 
+/**
+ * Function to log a request to the logger
+ * @param req
+ * @param res
+ * @param next
+ */
 let reqLogger = (req: Request, res: Response, next: NextFunction) => {
     let token = req.headers['x-access-token'] || req.headers['authorization'];
     global.logger.log({
@@ -151,26 +178,35 @@ if (global.config.pushFrameWorks.telegramBot) {
     global.pushNotifications.pushTelegram.startTelegramBot();
 }
 
-//++ HTTP
+/**
+ * Enable middleware for headers and logging
+ */
 app.use(header);
 app.use(reqLogger);
 
-//add parser to webServer for json payload
+/**
+ * Add parser for request payload in json format with a max size of 50mb
+ */
 app.use(express.json({limit: '50mb'}));
 
-//Validation of request auth tokens 
-app.use(Jwt.checkToken);
+/**
+ * Add Function to validate request auth Headers
+ */
+app.use(JWTInterface.checkToken);
 
-/*
-Send status 200 OK if options from JS are requested
+/**
+ * Response with a 200 OK status if it is a options preflight request
  */
 app.options('*', (req: Request, res: Response) => {
     res.sendStatus(200);
 });
 
-//++++ Router
+/**
+ * Loading the main router
+ */
 app.use("/", require('./router/mainRouter').router);
 
+//TODO move to router
 app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     let token = req.params.token;
 
@@ -194,24 +230,9 @@ app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     }
 });
 
-async function clearDB() {
-    let tablesToTruncate = ["data_exams", "data_exam_supervisors", "users_mails", "permissions", "student_courses", "totp", "moodle_mapping", "token_calendar", "preAuth_Token", "data_announcements", "data_courses", "jwt_Token", "devices", "lessons_teacher", "data_vertretungen", "data_lessons", "data_aufsichten", "telegramLinks", "data_entschuldigungen", "users", "data_exam_rooms"];
-
-    let conn;
-    try {
-        conn = await global.mySQLPool.getConnection();
-        for (let i = 0; i < tablesToTruncate.length; i++) {
-            let tableName = tablesToTruncate[i];
-            let result = await conn.query(`DELETE FROM ${tableName}`);
-        }
-    } catch (e) {
-        console.log(e);
-    } finally {
-        if (conn) conn.end();
-    }
-
-}
-
+/**
+ * Start HTTP Server to listen for in-bound requests
+ */
 app.listen(global.config.webServerConfig.port, () => {
     global.logger.log({
         level: 'silly',
