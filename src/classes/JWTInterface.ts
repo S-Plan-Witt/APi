@@ -8,15 +8,9 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-"use strict";
-//JWToken
 import jwt from 'jsonwebtoken';
-//Filesystem
 import fs from 'fs';
 import {User} from './User';
-
-
-//Create Database connection pool for requests
 import {ApiGlobal} from "../types/global";
 import {NextFunction, Request, Response} from "express";
 
@@ -31,9 +25,9 @@ const authFreePaths = [
     '/user/login',
 ];
 
-export class Jwt {
+export class JWTInterface {
+
     /**
-     *
      * @param id {number}
      */
     static verifyId(id: number): Promise<never> {
@@ -57,6 +51,7 @@ export class Jwt {
         });
     }
 
+    //TODO add jDoc
     static saveToken(userId: number, tokenId: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -74,6 +69,7 @@ export class Jwt {
 
     }
 
+    //TODO add jDoc
     static createJWT(userId: number, userType: string, sessionId: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             let payload: any = {};
@@ -81,7 +77,7 @@ export class Jwt {
             payload.session = sessionId;
             payload.userType = userType;
             try {
-                await Jwt.saveToken(userId, sessionId);
+                await JWTInterface.saveToken(userId, sessionId);
                 let token = jwt.sign(payload, privateKey, {algorithm: 'RS256'});
                 resolve(token);
             } catch (e) {
@@ -90,7 +86,7 @@ export class Jwt {
         });
     }
 
-
+    //TODO add jDoc
     static async checkToken(req: Request, res: Response, next: NextFunction) {
         if (authFreePaths.includes(req.path)) {
             global.logger.log({
@@ -116,7 +112,7 @@ export class Jwt {
                 try {
                     let decoded: any = jwt.verify(token, publicKey);
                     if (typeof decoded == 'object') {
-                        decoded['jwtId'] = await Jwt.verifyId(decoded.session)
+                        decoded['jwtId'] = await JWTInterface.verifyId(decoded.session)
                         req.decoded = decoded;
                         req.user = await User.getUserById(req.decoded.userId);
                         req.decoded.permissions = req.user.permissions;
@@ -144,6 +140,7 @@ export class Jwt {
 
     }
 
+    //TODO add jDoc
     static revokeById(tokenId: number): Promise<void> {
         //Delete token from DB
         return new Promise(async (resolve, reject) => {
@@ -171,6 +168,7 @@ export class Jwt {
         });
     }
 
+    //TODO add jDoc
     static getByUser(username: string) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -192,6 +190,7 @@ export class Jwt {
         });
     }
 
+    //TODO add jDoc
     static getAll() {
         //Load all issued tokens from DB
         return new Promise(async (resolve, reject) => {
@@ -212,6 +211,7 @@ export class Jwt {
         });
     }
 
+    //TODO add jDoc
     static revokeUser(username: string): Promise<void> {
         //Delete all tokens for specified user
         return new Promise(async (resolve, reject) => {
@@ -237,6 +237,7 @@ export class Jwt {
         });
     }
 
+    //TODO add jDoc
     static preAuth(token: string) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();

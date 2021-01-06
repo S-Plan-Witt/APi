@@ -9,50 +9,22 @@
  */
 
 export class Device {
-    constructor(platform: string, id: string, userId: number, timeAdded: string) {
-        this._platform = platform;
-        this._id = id;
-        this._userId = userId;
-        this._timeAdded = timeAdded;
+    public static TYPE_TELEGRAM = 1;
+    public static TYPE_APNS = 2;
+    public static TYPE_WEBPUSH = 3;
+    public timeAdded: string;
+    public id: number;
+    public userId: number;
+    public platform: number;
+    public deviceIdentifier: string;
+
+    constructor(platform: number, id: number, userId: number, timeAdded: string, deviceIdentifier: string) {
+        this.platform = platform;
+        this.id = id;
+        this.userId = userId;
+        this.timeAdded = timeAdded;
+        this.deviceIdentifier = deviceIdentifier;
     }
 
-    private _platform: string;
 
-    get platform(): string {
-        return this._platform;
-    }
-
-    set platform(value: string) {
-        this._platform = value;
-    }
-
-    private _id: string;
-
-    get id(): string {
-        return this._id;
-    }
-
-    set id(value: string) {
-        this._id = value;
-    }
-
-    private _userId: number;
-
-    get userId(): number {
-        return this._userId;
-    }
-
-    set userId(value: number) {
-        this._userId = value;
-    }
-
-    private _timeAdded: string;
-
-    get timeAdded(): string {
-        return this._timeAdded;
-    }
-
-    set timeAdded(value: string) {
-        this._timeAdded = value;
-    }
 }

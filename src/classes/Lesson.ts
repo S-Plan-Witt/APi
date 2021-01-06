@@ -11,11 +11,11 @@
 import {Course} from "./Course";
 
 export class Lesson {
-    course: Course;
-    lessonNumber: number;
-    day: number;
-    room: string;
-    id: number | null;
+    public course: Course;
+    public lessonNumber: number;
+    public day: number;
+    public room: string;
+    public id: number | null;
 
     /**
      *

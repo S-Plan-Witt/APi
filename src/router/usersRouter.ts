@@ -38,7 +38,6 @@ router.use((req, res, next) => {
     return res.sendStatus(401);
 });
 
-
 /**
  * Returns all users
  * @route GET /users/
@@ -303,7 +302,6 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
         res.send("user not found")
     }
 });
-
 
 /**
  * Loads all teachers from AD Server

@@ -9,11 +9,10 @@
  */
 
 import express from 'express';
-import {Exams} from '../classes/Exams';
 import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
 import {Exam} from "../classes/Exam";
-import {Supervisors} from "../classes/Supervisors";
+import {Supervisor} from "../classes/Supervisor";
 
 declare const global: ApiGlobal;
 
@@ -67,7 +66,7 @@ router.post('/', async (req, res) => {
  */
 router.get('/', async (req, res) => {
 
-    let rows = await Exams.getAll();
+    let rows = await Exam.getAll();
     await res.json(rows);
 });
 
@@ -111,7 +110,7 @@ router.get('/exams/supervisors/:id', async (req, res) => {
     }
 
     try {
-        let data = await Supervisors.getById(parseInt(req.params.id));
+        let data = await Supervisor.getById(parseInt(req.params.id));
         await res.json(data);
     } catch (e) {
         global.logger.log({

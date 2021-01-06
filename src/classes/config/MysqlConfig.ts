@@ -9,9 +9,9 @@
  */
 
 export class MysqlConfig {
-    port: number = 0;
-    hostname: string = "";
-    username: string = "";
-    password: string = "";
-    database: string = "";
+    public port: number = 0;
+    public hostname: string = "";
+    public username: string = "";
+    public password: string = "";
+    public database: string = "";
 }

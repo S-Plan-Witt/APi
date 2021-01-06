@@ -211,11 +211,10 @@ class TotpVerifyRequest {
  * @property {number} userId.required
  */
 
-//TODO complete class Grade
 /**
  * @typedef Grade
  */
-class Grade {
+interface Grade {
 
 }
 

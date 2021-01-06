@@ -18,7 +18,7 @@ declare const global: ApiGlobal;
 
 export class Totp {
 
-
+    //TODO add jDoc
     static async saveTokenForUser(token: string, userId: number, alias: string) {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -40,6 +40,7 @@ export class Totp {
 
     }
 
+    //TODO add jDoc
     static async verifyKey(tokenId: number, code: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -75,6 +76,7 @@ export class Totp {
         });
     }
 
+    //TODO add jDoc
     static checkKeyCode(key: string, code: number): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
@@ -86,6 +88,7 @@ export class Totp {
         });
     }
 
+    //TODO add jDoc
     static verifyUserCode(code: number, userId: number): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -114,6 +117,7 @@ export class Totp {
         });
     }
 
+    //TODO add jDoc
     static removeById(id: number, userId: number): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn;

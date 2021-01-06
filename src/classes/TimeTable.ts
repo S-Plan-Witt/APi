@@ -44,6 +44,10 @@ export class TimeTable {
         });
     }
 
+    /**
+     * Returns the lesson with the given id or rejects if not available
+     * @param id
+     */
     static getLessonById(id: number): Promise<Lesson> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -96,7 +100,7 @@ export class TimeTable {
     }
 
     /**
-     * Get all Lessons
+     * Returns all Lessons
      * @returns Promise {[Lesson]}
      */
     static getAllLessons(): Promise<Lesson[]> {
@@ -122,7 +126,7 @@ export class TimeTable {
     }
 
     /**
-     * Add lesson
+     * Adds one lesson
      * @param lesson {Lesson}
      * @returns Promise
      */
@@ -141,6 +145,10 @@ export class TimeTable {
         });
     }
 
+    /**
+     * Adds one course
+     * @param course
+     */
     static addCourse(course: Course): Promise<Course> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -158,7 +166,7 @@ export class TimeTable {
     }
 
     /**
-     *
+     * Returns all Courses from a teacher
      * @param teacherId
      * @param weekday
      * @param lesson
@@ -184,6 +192,12 @@ export class TimeTable {
         });
     }
 
+    /**
+     * Returns a course if found else rejects
+     * @param subject
+     * @param grade
+     * @param group
+     */
     static getCourseByFields(subject: string, grade: string, group: string): Promise<Course> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -204,6 +218,10 @@ export class TimeTable {
         });
     }
 
+    /**
+     * Returns a course with the given id or rejects
+     * @param id
+     */
     static getCourseById(id: number): Promise<Course> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -225,7 +243,7 @@ export class TimeTable {
     }
 
     /**
-     *
+     * Returns all Courses
      * @returns {Promise<Course[]>}
      */
     static getAllCourses(): Promise<Course[]> {

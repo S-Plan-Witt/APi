@@ -9,15 +9,14 @@
  */
 
 export class Course {
-    grade: any;
-    subject: any;
-    group: any;
-    exams: boolean;
-    id: number | null;
-    teacherId: number | null;
+    public grade: any;
+    public subject: any;
+    public group: any;
+    public exams: boolean;
+    public id: number | null;
+    public teacherId: number | null;
 
     /**
-     *
      * @param grade {String}
      * @param subject {String}
      * @param group {String}

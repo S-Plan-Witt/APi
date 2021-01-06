@@ -11,7 +11,6 @@
 import {TimeTable} from "../classes/TimeTable";
 
 import express from 'express';
-import {Announcements} from '../classes/announcements';
 import {User} from '../classes/User';
 import {PushNotifications} from '../classes/PushNotifications';
 import {ApiGlobal} from "../types/global";
@@ -22,6 +21,7 @@ declare const global: ApiGlobal;
 
 export let router = express.Router();
 
+//TODO add jDoc
 router.use((req, res, next) => {
     if (req.decoded.permissions.announcements) {
         next();
@@ -39,7 +39,6 @@ router.use((req, res, next) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-
 router.post('/', async (req, res) => {
     let body = req.body;
     try {
@@ -71,6 +70,7 @@ router.post('/', async (req, res) => {
         res.sendStatus(500);
     }
 });
+
 /**
  * Lists all Announcements
  * @route GET /announcements/
@@ -81,7 +81,7 @@ router.post('/', async (req, res) => {
  */
 router.get('/', async (req, res) => {
 
-    await res.json(await Announcements.getAll());
+    await res.json(await Announcement.getAll());
 });
 
 /**
@@ -98,7 +98,7 @@ router.put('/id/:id', async (req, res) => {
     }
     let body = req.body;
     let id: number = parseInt(req.params.id);
-    let announcement: Announcement = await Announcements.getById(id);
+    let announcement: Announcement = await Announcement.getById(id);
 
     announcement.course = new Course(body["course"]["grade"], body["course"]["subject"], body["course"]["group"], false);
     announcement.content = body["content"];
@@ -123,7 +123,7 @@ router.put('/id/:id', async (req, res) => {
  */
 router.get('/id/:id', async (req, res) => {
     let id = parseInt(req.params.id);
-    let announcement = await Announcements.getById(id);
+    let announcement = await Announcement.getById(id);
     res.json(announcement)
 });
 
@@ -141,7 +141,7 @@ router.delete('/id/:id', async (req, res) => {
     }
     try {
         let id = parseInt(req.params.id);
-        let announcement: Announcement = await Announcements.getById(id);
+        let announcement: Announcement = await Announcement.getById(id);
 
         if (!req.decoded.admin) {
             if (!req.user.isTeacherOf(announcement.course)) {

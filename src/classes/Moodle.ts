@@ -12,6 +12,7 @@ import https from 'https';
 
 export class Moodle {
 
+    //TODO add jDoc
     static apiRequest(wsToken: string, host: string, wsfunction: string, parameters: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             let options = {
@@ -56,6 +57,7 @@ export class Moodle {
 
     }
 
+    //TODO add jDoc
     static getUserByUsername(username: string) {
         return new Promise(async (resolve, reject) => {
             if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {

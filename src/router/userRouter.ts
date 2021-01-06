@@ -9,10 +9,7 @@
  */
 
 import {TimeTable} from '../classes/TimeTable';
-import {Jwt} from '../classes/jwt';
-import {ReplacementLessons} from '../classes/ReplacementLessons';
-import {Announcements} from '../classes/announcements';
-import {Exams} from '../classes/Exams';
+import {JWTInterface} from '../classes/JWTInterface';
 import express, {Request, Response} from 'express';
 import {User} from '../classes/User';
 import {Totp} from '../classes/Totp';
@@ -21,12 +18,12 @@ import assert from "assert";
 import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Exam} from "../classes/Exam";
-import {Supervisors} from "../classes/Supervisors";
+import {Announcement} from "../classes/Announcement";
+import {Supervisor} from "../classes/Supervisor";
 
 declare const global: ApiGlobal;
 
 export let router = express.Router();
-
 
 /**
  * Return the current user
@@ -43,7 +40,6 @@ router.get('/', async (req, res) => {
         await res.sendStatus(500)
     }
 });
-
 
 /**
  * Return the JWT to access the Api
@@ -68,7 +64,7 @@ router.post('/login', async (req, res) => {
 
     } else if (token != null) {
         try {
-            username = await Jwt.preAuth(token);
+            username = await JWTInterface.preAuth(token);
             preauth = true;
 
         } catch (e) {
@@ -301,7 +297,7 @@ router.get('/replacementlessons', async (req, res) => {
 
         for (const course of courses) {
             //Get replacement lessons with today and today + 6 days
-            let data: any = await ReplacementLessons.getByCourse(course);
+            let data: any = await ReplacementLesson.getByCourse(course);
             data.forEach((replacementLesson: ReplacementLesson) => {
                 //Add replacement lesson to all replacement lessons
                 let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, info: replacementLesson.info, date: replacementLesson.date}
@@ -311,7 +307,7 @@ router.get('/replacementlessons', async (req, res) => {
         if (req.decoded.userType === "teacher") {
             //Get replacement lessons hold by teacher
             assert(req.user.id != null)
-            let data: any = await ReplacementLessons.getByTeacher(req.user.id, dateToday, dateEnd);
+            let data: any = await ReplacementLesson.getByTeacher(req.user.id, dateToday, dateEnd);
             data.forEach((replacementLesson: any) => {
                 let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, teacherId: replacementLesson.teacherId, info: replacementLesson.info, date: replacementLesson.date}
                 response.push(dataset);
@@ -340,7 +336,7 @@ router.get('/announcements', async (req: Request, res: Response) => {
     let response: any = [];
     for (const course of courses) {
         try {
-            let data: Announcements[] = await Announcements.getByCourse(course);
+            let data: Announcement[] = await Announcement.getByCourse(course);
             for (let i = 0; i < data.length; i++) {
                 let announcement: any = data[i];
                 response.push({courseId: announcement.course.id, authorId: announcement.authorId, editorId: announcement.editorId, date: announcement.date, id: announcement.id, content: announcement.content})
@@ -377,13 +373,13 @@ router.get('/exams', async (req, res) => {
                     //if user should see exams in this course
                     if (course.exams) {
                         //Get exams by course
-                        let data = await Exams.getByCourse(course);
+                        let data = await Exam.getByCourse(course);
                         data.forEach(exam => {
                             response.push(exam);
                         });
                     } else if (req.user.type === 2) {
                         //Get exams by course
-                        let data: Exam[] = await Exams.getByCourse(course);
+                        let data: Exam[] = await Exam.getByCourse(course);
                         data.forEach(exam => {
                             response.push(exam);
                         });
@@ -396,7 +392,7 @@ router.get('/exams', async (req, res) => {
             }
 
         } else if (req.decoded.userType === "teacher") {
-            response = await Exams.getByTeacher(req.user.username);
+            response = await Exam.getByTeacher(req.user.username);
         }
         //TODO add else
         res.json(response);
@@ -419,7 +415,9 @@ router.get('/exams', async (req, res) => {
 router.get('/supervisors', async (req, res) => {
     let username = req.user.username;
     try {
-        let data = await Supervisors.getByTeacherUsername(username);
+        let data: any[] = [];
+        //TODO change to id based
+        //let data = await Supervisor.getByTeacherUsername(username);
         res.json(data);
     } catch (e) {
         //TODO add logger
@@ -651,7 +649,7 @@ router.delete('/profile/emails/:id', async (req, res) => {
  */
 router.delete('/jwt', async (req, res) => {
     try {
-        await Jwt.revokeById(req.decoded.jwtId);
+        await JWTInterface.revokeById(req.decoded.jwtId);
         console.log("revoke")
         res.sendStatus(200);
     } catch (e) {

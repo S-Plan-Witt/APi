@@ -10,7 +10,6 @@
 
 import express from 'express';
 
-import {ReplacementLessons} from '../classes/ReplacementLessons';
 import {User} from '../classes/User';
 import {PushNotifications} from '../classes/PushNotifications';
 import {TimeTable} from "../classes/TimeTable";
@@ -65,7 +64,7 @@ router.post('/', async (req, res) => {
 
             if (replacementLesson != null) {
 
-                let status = await ReplacementLessons.add(replacementLesson);
+                let status = await ReplacementLesson.add(replacementLesson);
                 let devices = await User.getStudentDevicesByCourse(replacementLesson.course);
                 console.log(status + ":" + JSON.stringify(replacementLesson))
                 let pushNotifications = new PushNotifications();
@@ -97,7 +96,7 @@ router.post('/', async (req, res) => {
  */
 router.get('/', async (req, res) => {
     try {
-        await res.json(await ReplacementLessons.getAll());
+        await res.json(await ReplacementLesson.getAll());
     } catch (e) {
         //TODO add logger
         console.log(e);
@@ -117,7 +116,7 @@ router.get('/', async (req, res) => {
 router.get('/date/:date', async (req, res) => {
     try {
         let date = req.params.date;
-        let data: ReplacementLesson[] = await ReplacementLessons.getByDate(date);
+        let data: ReplacementLesson[] = await ReplacementLesson.getByDate(date);
         let response: any[] = [];
         data.forEach((replacementLesson: any) => {
             let dataset = {
@@ -154,7 +153,7 @@ router.get('/id/:id', async (req, res) => {
     }
     let id = parseInt(req.params.id);
     try {
-        let lesson = await ReplacementLessons.getById(id);
+        let lesson = await ReplacementLesson.getById(id);
         res.json(lesson);
     } catch (e) {
         //TODO add logger
@@ -167,7 +166,7 @@ router.get('/id/:id', async (req, res) => {
 router.post('/find', async (req, res) => {
     let info = req.body.info;
     try {
-        let lessons = await ReplacementLessons.search(info);
+        let lessons = await ReplacementLesson.search(info);
         res.json(lessons);
     } catch (e) {
         //TODO add logger
@@ -188,7 +187,7 @@ router.delete('/id/:id', async (req, res) => {
     let id = req.params.id;
     console.log(id)
     try {
-        let replacementLesson: ReplacementLesson = await ReplacementLessons.deleteById(id.toString());
+        let replacementLesson: ReplacementLesson = await ReplacementLesson.deleteById(id.toString());
 
         let push = new PushNotifications();
         let devices: any = await User.getStudentDevicesByCourse(replacementLesson.course);

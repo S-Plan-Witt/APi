@@ -19,6 +19,7 @@ import {Lesson} from "../classes/Lesson";
 declare const global: ApiGlobal;
 
 export let router = express.Router();
+
 /**
  * Checks if base permission for all sub functions is given
  */

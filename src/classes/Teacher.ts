@@ -13,7 +13,7 @@ import {Permissions} from "./Permissions";
 
 export class Teacher extends User {
 
-    constructor(firstName = "", lastName = "", username = "", displayName: string = "", id = 0) {
+    constructor(firstName: string, lastName: string, username: string, displayName: string, id: number | null) {
         super(firstName, lastName, username, id, 2, [], false, null, null, 0, Permissions.getDefault());
         this.displayName = displayName;
     }

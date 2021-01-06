@@ -20,10 +20,9 @@ declare const global: ApiGlobal;
 
 
 export class PushNotifications {
-    pushTelegram: PushTelegram;
-    pushWebPush: PushWebPush;
-    pushFCM: PushFCM;
-
+    public pushTelegram: PushTelegram;
+    public pushWebPush: PushWebPush;
+    public pushFCM: PushFCM;
 
     constructor() {
         this.pushWebPush = new PushWebPush();
@@ -90,6 +89,7 @@ export class PushNotifications {
         });
     }
 
+    //TODO add jDoc
     sendBulk(devices: any, title: any, message: any): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
