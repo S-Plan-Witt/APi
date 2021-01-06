@@ -7,39 +7,16 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+/**
+ * This file is run PRE-startup and will ensure all requirements for startup are met.
+ *
+ */
 
-import {exec} from 'child_process';
-
-
-export class Database {
-
-
-    static init() {
-        let host = process.env.SQL_HOST;
-        let port = process.env.SQL_PORT;
-        let user = process.env.SQL_USER;
-        let password = process.env.SQL_PASS;
-        let db = process.env.SQL_DB;
-        return new Promise(async (resolve, reject) => {
-            try {
-                exec('mysql -h ' + host + ' -P ' + port + ' -u ' + user + ' --password=' + password + ' ' + db + ' < setup.sql', (err) => {
-                    if (err) {
-                        console.error(`exec error: ${err}`);
-                        reject("Error: " + err);
-                        return;
-                    }
-
-                    resolve("Done");
-                    console.log("DB init done");
-                });
-            } catch (e) {
-                console.log("DB init failed");
-                //console.log(e);
-            }
-
-        });
-    }
+function checksToStart() {
 
 }
 
-module.exports.Database = Database;
+
+function setMySqlDBUp() {
+
+}

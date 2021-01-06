@@ -10,7 +10,6 @@
 
 import express from 'express';
 
-import {ReplacementLessons} from '../classes/ReplacementLessons';
 import {User} from '../classes/User';
 import {PushNotifications} from '../classes/PushNotifications';
 import {TimeTable} from "../classes/TimeTable";

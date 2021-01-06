@@ -11,7 +11,6 @@
 import {TimeTable} from "../classes/TimeTable";
 
 import express from 'express';
-import {Announcements} from '../classes/announcements';
 import {User} from '../classes/User';
 import {PushNotifications} from '../classes/PushNotifications';
 import {ApiGlobal} from "../types/global";

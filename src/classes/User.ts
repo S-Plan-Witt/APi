@@ -10,8 +10,7 @@
 
 import {Ldap} from './Ldap';
 import {EMail} from './eMail';
-import {Jwt} from './jwt';
-
+import {JWTInterface} from './JWTInterface';
 import {ApiGlobal} from "../types/global";
 import {Moodle} from "./Moodle";
 import {Device} from "./Device";

@@ -9,10 +9,7 @@
  */
 
 import {TimeTable} from '../classes/TimeTable';
-import {Jwt} from '../classes/jwt';
-import {ReplacementLessons} from '../classes/ReplacementLessons';
-import {Announcements} from '../classes/announcements';
-import {Exams} from '../classes/Exams';
+import {JWTInterface} from '../classes/JWTInterface';
 import express, {Request, Response} from 'express';
 import {User} from '../classes/User';
 import {Totp} from '../classes/Totp';
@@ -21,7 +18,8 @@ import assert from "assert";
 import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Exam} from "../classes/Exam";
-import {Supervisors} from "../classes/Supervisors";
+import {Announcement} from "../classes/Announcement";
+import {Supervisor} from "../classes/Supervisor";
 
 declare const global: ApiGlobal;
 
