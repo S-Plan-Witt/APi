@@ -9,16 +9,16 @@
  */
 
 export class LdapConfig {
-    enabled: boolean = false;
-    tls: boolean = false;
-    host: string = "";
-    root: string = "";
-    user: string = "";
-    password: string = "";
-    studentPath: string = "";
-    teacherPath: string = "";
-    domain: string = "";
-    teacherGroup: string = "";
-    studentGroup: string = "";
-    caCertPath: string = "";
+    public enabled: boolean = false;
+    public tls: boolean = false;
+    public host: string = "";
+    public root: string = "";
+    public user: string = "";
+    public password: string = "";
+    public studentPath: string = "";
+    public teacherPath: string = "";
+    public domain: string = "";
+    public teacherGroup: string = "";
+    public studentGroup: string = "";
+    public caCertPath: string = "";
 }

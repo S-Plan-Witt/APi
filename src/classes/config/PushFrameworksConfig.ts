@@ -9,12 +9,12 @@
  */
 
 export class PushFrameworksConfig {
-    telegramBot: boolean = false;
-    telegramBotToken: string = "";
-    sendgridToken: string = "";
-    firebaseCertificatePath: string = "";
-    vapidKeyPublic: string = "";
-    vapidKeyPrivate: string = "";
-    vapidKeyMail: string = "";
+    public telegramBot: boolean = false;
+    public telegramBotToken: string = "";
+    public sendgridToken: string = "";
+    public firebaseCertificatePath: string = "";
+    public vapidKeyPublic: string = "";
+    public vapidKeyPrivate: string = "";
+    public vapidKeyMail: string = "";
 
 }

@@ -17,11 +17,11 @@
  * @property {string} id
  */
 export class RoomLink {
-    room: any;
-    from: any;
-    to: any;
-    date: any;
-    id: number;
+    public room: any;
+    public from: any;
+    public to: any;
+    public date: any;
+    public id: number;
 
     constructor(room: any, from: any, to: any, date: any) {
         this.room = room;

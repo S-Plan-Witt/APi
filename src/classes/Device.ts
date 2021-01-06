@@ -9,12 +9,14 @@
  */
 
 export class Device {
-    constructor(platform: string, id: string, userId: number, timeAdded: string) {
-        this._platform = platform;
-        this._id = id;
-        this._userId = userId;
-        this._timeAdded = timeAdded;
-    }
+    public static TYPE_TELEGRAM = 1;
+    public static TYPE_APNS = 2;
+    public static TYPE_WEBPUSH = 3;
+    public timeAdded: string;
+    public id: number;
+    public userId: number;
+    public platform: number;
+    public deviceIdentifier: string;
 
     private _platform: string;
 

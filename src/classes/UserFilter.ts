@@ -9,10 +9,10 @@
  */
 
 export class UserFilter {
-    username: string;
-    firstName: string;
-    lastName: string;
-    birthday: string;
+    public username: string;
+    public firstName: string;
+    public lastName: string;
+    public birthday: string;
 
     constructor(username: string, firstName: string, lastName: string, birthday: string) {
         this.username = username;

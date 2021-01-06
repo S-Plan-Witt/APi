@@ -14,10 +14,10 @@ import {PushFrameworksConfig} from "./PushFrameworksConfig";
 import {WebServerConfig} from "./WebServerConfig";
 
 export class Config {
-    ldapConfig: LdapConfig = new LdapConfig();
-    mysqlConfig: MysqlConfig = new MysqlConfig();
-    pushFrameWorks: PushFrameworksConfig = new PushFrameworksConfig();
-    webServerConfig: WebServerConfig = new WebServerConfig();
+    public ldapConfig: LdapConfig = new LdapConfig();
+    public mysqlConfig: MysqlConfig = new MysqlConfig();
+    public pushFrameWorks: PushFrameworksConfig = new PushFrameworksConfig();
+    public webServerConfig: WebServerConfig = new WebServerConfig();
 
     static loadFromEnv(): Config {
         let config = new Config();

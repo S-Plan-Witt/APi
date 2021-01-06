@@ -9,7 +9,7 @@
  */
 
 export class WebServerConfig {
-    port: number = 3000;
-    apiDocumentation: boolean = false;
-    serverOrigin: string = "";
+    public port: number = 3000;
+    public apiDocumentation: boolean = false;
+    public serverOrigin: string = "";
 }

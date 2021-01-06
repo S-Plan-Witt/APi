@@ -23,12 +23,12 @@ declare const global: ApiGlobal;
  */
 
 export class Announcement {
-    course: Course;
-    authorId: number;
-    editorId: number;
-    content: string;
-    date: string;
-    id: number | null;
+    public course: Course;
+    public authorId: number;
+    public editorId: number;
+    public content: string;
+    public date: string;
+    public id: number | null;
 
     /**
      * Constructor

@@ -16,8 +16,7 @@ import {ApiGlobal} from "../types/global";
 declare const global: ApiGlobal;
 
 export class PushTelegram {
-    bot: Telegraf<any>;
-
+    public bot: Telegraf<any>;
 
     constructor(bot: Telegraf<any>) {
         this.bot = bot;

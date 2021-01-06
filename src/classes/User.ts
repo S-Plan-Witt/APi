@@ -22,20 +22,19 @@ import {Course} from "./Course";
 declare const global: ApiGlobal;
 
 export class User {
-    displayName: string = "";
-    lastName: string;
-    active: boolean;
-    firstName: string;
-    username: string;
-    type: number;
-    devices: any;
-    mails: any;
-    id: number;
-    courses: Course[];
-    secondFactor: number | null;
-    permissions: Permissions;
-    moodleUID: number | null;
-
+    public displayName: string = "";
+    public lastName: string;
+    public active: boolean;
+    public firstName: string;
+    public username: string;
+    public type: number;
+    public devices: any;
+    public mails: any;
+    public id: number | null;
+    public courses: Course[];
+    public secondFactor: number | null;
+    public permissions: Permissions;
+    public moodleUID: number | null;
 
     /**
      *

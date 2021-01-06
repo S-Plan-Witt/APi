@@ -20,10 +20,9 @@ declare const global: ApiGlobal;
 
 
 export class PushNotifications {
-    pushTelegram: PushTelegram;
-    pushWebPush: PushWebPush;
-    pushFCM: PushFCM;
-
+    public pushTelegram: PushTelegram;
+    public pushWebPush: PushWebPush;
+    public pushFCM: PushFCM;
 
     constructor() {
         this.pushWebPush = new PushWebPush();

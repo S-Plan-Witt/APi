@@ -16,18 +16,17 @@ import {RoomLinks} from "./RoomLinks";
 declare const global: ApiGlobal;
 
 export class Exam {
-    display: boolean;
-    date: string;
-    course: Course;
-    from: string;
-    to: string;
-    teacher: string;
-    students: number;
-    roomLink: RoomLink | null;
-    room: string;
-    id: number;
-    uniqueIdentifier: string;
-
+    public display: boolean;
+    public date: string;
+    public course: Course;
+    public from: string;
+    public to: string;
+    public teacher: string;
+    public students: number;
+    public roomLink: RoomLink | null;
+    public room: string;
+    public id: number;
+    public uniqueIdentifier: string;
 
     constructor(display: boolean, date: string, course: Course, from: string, to: string, teacher: string, students: number, roomLink: RoomLink | null, id: number, uniqueIdentifier: string) {
         this.display = display;

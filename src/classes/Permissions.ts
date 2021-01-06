@@ -13,18 +13,17 @@ import {ApiGlobal} from "../types/global";
 declare const global: ApiGlobal;
 
 export class Permissions {
-    users: boolean;
-    usersAdmin: boolean;
-    replacementLessons: boolean;
-    replacementLessonsAdmin: boolean;
-    announcements: boolean;
-    announcementsAdmin: boolean;
-    timeTable: boolean;
-    timeTableAdmin: boolean;
-    moodle: boolean;
-    moodleAdmin: boolean;
-    globalAdmin: boolean;
-
+    public users: boolean;
+    public usersAdmin: boolean;
+    public replacementLessons: boolean;
+    public replacementLessonsAdmin: boolean;
+    public announcements: boolean;
+    public announcementsAdmin: boolean;
+    public timeTable: boolean;
+    public timeTableAdmin: boolean;
+    public moodle: boolean;
+    public moodleAdmin: boolean;
+    public globalAdmin: boolean;
 
     constructor(users: boolean, usersAdmin: boolean, replacementLessons: boolean, replacementLessonsAdmin: boolean, announcements: boolean, announcementsAdmin: boolean, timeTable: boolean, timeTableAdmin: boolean, moodle: boolean, moodleAdmin: boolean, globalAdmin: boolean) {
         this.users = users;
