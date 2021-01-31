@@ -114,7 +114,12 @@ router.post('/login', async (req, res) => {
         await user.isActive();
         if (!preauth) {
             if (global.config.ldapConfig.enabled) {
-                await user.verifyPassword(password);
+                try {
+                    await user.verifyPassword(password);
+                }catch (e) {
+                    res.sendStatus(401);
+                    return;
+                }
                 if (user.secondFactor === 1) {
                     if (req.body.hasOwnProperty("secondFactor")) {
                         let code = req.body["secondFactor"];

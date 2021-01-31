@@ -112,11 +112,15 @@ export class Ldap {
                 let ldapClient: Client = ldap.createClient({
                     url: global.config.ldapConfig.host
                 });
-                if (global.config.ldapConfig.tls) {
-                    await this.startTlsClient(ldapClient);
-                    resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, username, password));
-                } else {
-                    resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, username, password));
+                try {
+                    if (global.config.ldapConfig.tls) {
+                        await this.startTlsClient(ldapClient);
+                        resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, username, password));
+                    } else {
+                        resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, username, password));
+                    }
+                }catch (e) {
+                    reject(e)
                 }
             } else {
                 reject("LDAP disabled")
@@ -162,15 +166,21 @@ export class Ldap {
                         let grade = dn[1].substr(3, (dn[1].length - 1));
 
                         if (grade !== '_Removed') {
-                            let user: User = new User(obj.givenname, obj.sn, obj.sAMAccountName, 0, 2, [], true, null, null, null, Permissions.getDefault());
+                            let user: User = new User(obj.givenName, obj.sn, obj.sAMAccountName, 0, 2, [], true, null, null, null, Permissions.getDefault());
                             user.displayName = obj.displayName;
-                            if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
-                                user.type = 1;
-                            } else if (obj["memberOf"].includes(global.config.ldapConfig.teacherGroup)) {
-                                user.type = 2;
-                                console.log("teacher")
+                            try {
+                                if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
+                                    user.type = 1;
+                                } else if (obj["memberOf"].includes(global.config.ldapConfig.teacherGroup)) {
+                                    user.type = 2;
+                                    console.log("teacher")
+                                }else{
+                                    reject("membership validation failed")
+                                }
+                                users.push(user);
+                            }catch (e) {
+                                reject("membership validation failed")
                             }
-                            users.push(user);
                         }
                     });
                 }
@@ -227,11 +237,15 @@ export class Ldap {
             let opts: SearchOptions = {
                 filter: '(&(objectClass=user)(samaccountname=' + username + '))'
             };
-            let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
-            if (users.length === 1) {
-                resolve(users[0]);
-            } else {
-                reject("not found");
+            try {
+                let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
+                if (users.length === 1) {
+                    resolve(users[0]);
+                } else {
+                    reject("not found");
+                }
+            }catch (e) {
+                reject(e);
             }
         });
     }
@@ -284,7 +298,7 @@ interface ActiveDirectorySearchEntry extends SearchEntry {
 }
 
 interface ActiveDirectorySearchEntryObject extends SearchEntryObject {
-    givenname: string;
+    givenName: string;
     sn: string;
     sAMAccountName: string;
     displayName: string;
