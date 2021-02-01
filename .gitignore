@@ -5,3 +5,4 @@
 /keys/
 /build/
 /package-lock.json
+/docker/data/
