@@ -10,11 +10,11 @@
 
 import firebaseAdmin from 'firebase-admin';
 import webPush from "web-push";
-import Telegraf from 'telegraf';
 import {ApiGlobal} from "../types/global";
 import {PushTelegram} from "./PushTelegram";
 import {PushWebPush} from "./PushWebPush";
 import {PushFCM} from "./PushFCM";
+import {Telegraf} from "telegraf-ts";
 
 declare const global: ApiGlobal;
 

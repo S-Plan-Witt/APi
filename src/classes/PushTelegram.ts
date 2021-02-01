@@ -8,10 +8,10 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import Telegraf from "telegraf";
 import {Telegram} from "./Telegram";
 import {User} from "./User";
 import {ApiGlobal} from "../types/global";
+import {Telegraf, TelegrafContext} from "telegraf-ts";
 
 declare const global: ApiGlobal;
 
@@ -25,29 +25,35 @@ export class PushTelegram {
     //TODO add jDoc
     startTelegramBot() {
         //Set replay to /start command from TG
-        this.bot.start(async (ctx) => {
-            let token = await Telegram.createRequest(ctx.update.message.from.id);
-            await ctx.reply("Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token);
-            global.logger.log({
-                level: 'silly',
-                label: 'TelegramBot',
-                message: 'created Linking token id:' + ctx.update.message.from.id + " token: " + token
-            });
-            Telegram.logMessage(ctx.update.message.from.id, "Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token, 'out');
-        });
-
-        this.bot.command('stop', async (ctx) => {
-
-            await ctx.reply("Gerät wird gelöscht--->---> ");
-            try {
-
-                await User.removeDevice(ctx.update.message.from.id.toString());
-                await ctx.reply("Abgeschlossen");
+        this.bot.start(async (ctx: TelegrafContext) => {
+            let senderId = ctx.update?.message?.from?.id;
+            if (senderId != undefined) {
+                let token = await Telegram.createRequest(senderId);
+                await ctx.reply("Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token);
                 global.logger.log({
                     level: 'silly',
                     label: 'TelegramBot',
-                    message: 'deleted Device: ' + ctx.update.message.from.id
+                    message: 'created Linking token id:' + senderId + " token: " + token
                 });
+                Telegram.logMessage(senderId, "Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token, 'out');
+            }
+        });
+
+        this.bot.command('stop', async (ctx: TelegrafContext) => {
+
+            await ctx.reply("Gerät wird gelöscht--->---> ");
+            let senderId: number | undefined = ctx.update.message?.from?.id;
+            try {
+                if (senderId != undefined) {
+                    await User.removeDevice(senderId.toString());
+                    await ctx.reply("Abgeschlossen");
+                    global.logger.log({
+                        level: 'silly',
+                        label: 'TelegramBot',
+                        message: 'deleted Device: ' + senderId
+                    });
+                }
+
             } catch (e) {
                 console.log(e);
                 await ctx.reply("Es ist ein Fehler aufgetreten");
@@ -55,7 +61,7 @@ export class PushTelegram {
                 global.logger.log({
                     level: 'silly',
                     label: 'TelegramBot',
-                    message: 'Error while deleting Device: ' + ctx.update.message.from.id
+                    message: 'Error while deleting Device: ' + senderId
                 });
             }
         });
