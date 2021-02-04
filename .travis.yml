@@ -7,10 +7,10 @@ services:
 before_install:
   - npm install
   - npx tsc
-  - docker build -t nilswitt/siks-backend:"$DOCKER_TAG" .
-  - docker tag nilswitt/siks-backend:"$DOCKER_TAG" nilswitt/siks-backend:"$TRAVIS_COMMIT"
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  - docker push nilswitt/siks-backend
+  - docker build -t docker.pkg.github.com/nils-witt/s-plan-api/splan-backend:"$DOCKER_TAG" .
+  - docker tag docker.pkg.github.com/nils-witt/s-plan-api/splan-backend:"$DOCKER_TAG" docker.pkg.github.com/nils-witt/s-plan-api/splan-backend:"$TRAVIS_COMMIT"
+  - echo "$GITHUB_KEY" | docker login https://docker.pkg.github.com -u "$GITHUB_USER" --password-stdin
+  - docker push docker.pkg.github.com/nils-witt/s-plan-api/splan-backend
 
 script:
   - docker ps
