@@ -199,6 +199,7 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
     let firstName = "";
     let lastName = "";
     let birthday = "";
+    let birthdayFilter = "";
 
     if (req.body.hasOwnProperty("firstname")) {
         firstName = req.body.firstname;
@@ -218,13 +219,15 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
             lastName = "*";
         }
         if (birthday === "") {
-            birthday = "*";
+            birthdayFilter = "";
+        }else{
+            birthdayFilter = '(info=' + birthday + ')';
         }
 
         let opts: SearchOptions = {
-            filter: '(&(objectClass=user)(sn=' + lastName + ')(givenname=' + firstName + ')(info=' + birthday + '))',
+            filter: '(&(objectClass=user)(sn=' + lastName + ')(givenname=' + firstName + ')'+ birthdayFilter +')',
             scope: 'sub',
-            attributes: ['sn', 'givenname', 'samaccountname', 'displayName']
+            attributes: ['sn', 'givenname', 'samaccountname', 'displayName','memberOf','info']
         };
         let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
         res.json(users);
@@ -234,7 +237,8 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
             label: 'Express',
             message: 'Error while executing callback : /students/find : ' + e
         });
-        res.sendStatus(500);
+        res.status(500);
+        res.send(e);
     }
 });
 
