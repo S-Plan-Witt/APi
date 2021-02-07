@@ -164,7 +164,7 @@ export class User {
 
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("INSERT INTO `users` (`username`, `firstname`, `lastname`, `type`, `displayname`) VALUES (?, ?, ?, '1', ?);", [username.toLowerCase(), user.firstName, user.lastName, user.displayName]);
+                await conn.query("INSERT INTO `users` (`username`, `firstname`, `lastname`, `type`, `displayname`) VALUES (?, ?, ?, ?, ?);", [username.toLowerCase(), user.firstName, user.lastName, user.type, user.displayName]);
                 resolve();
             } catch (e) {
                 global.logger.log({
