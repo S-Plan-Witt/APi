@@ -80,6 +80,19 @@ logger.log({
 global.pushNotifications = new PushNotifications();
 
 /**
+ * Exception handler
+ */
+process.on('uncaughtException', function (err) {
+    logger.log({
+        level: 'error',
+        label: 'Express',
+        message: 'Unhandled Exception trace: ' + err.stack
+    });
+    console.error(err.stack);
+    console.log("Unhandled Exception trace");
+});
+
+/**
  * Initiate mysql connection
  */
 global.mySQLPool = mySQL.createPool({
