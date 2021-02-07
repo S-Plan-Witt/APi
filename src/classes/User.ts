@@ -657,7 +657,6 @@ export class User {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                console.log(device)
                 let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `deviceID`= ?;", [device]);
                 if (rows.length !== 0) {
                     //TODO add new handler
@@ -753,7 +752,6 @@ export class User {
             let muid = null;
             try {
                 muid = await Moodle.createUser(username, firstname, lastname, mail);
-                console.log(muid)
             } catch (e) {
                 reject(e);
             }
@@ -762,7 +760,6 @@ export class User {
                 try {
                     conn = await global.mySQLPool.getConnection();
                     let result = await conn.query("INSERT INTO `moodle_mapping` (`userid`, `moodleid`) VALUES (?, ?);", [uid, muid]);
-                    console.log(result);
                     resolve(muid);
                 } catch (e) {
                     console.log(e);
@@ -788,7 +785,6 @@ export class User {
                     conn = await global.mySQLPool.getConnection();
                     let result = await conn.query("DELETE FROM `moodle_mapping` WHERE `userid` = ?", [uid]);
                     await conn.end();
-                    console.log(result);
                     resolve(mUID);
                 } catch (e) {
                     console.log(e);

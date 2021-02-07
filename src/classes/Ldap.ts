@@ -92,7 +92,6 @@ export class Ldap {
                 let ldapClient: Client = ldap.createClient({
                     url: global.config.ldapConfig.host
                 });
-                console.log(global.config.ldapConfig.host)
                 if (global.config.ldapConfig.tls) {
                     await this.startTlsClient(ldapClient);
                     resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, global.config.ldapConfig.user, global.config.ldapConfig.password));

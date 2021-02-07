@@ -97,7 +97,6 @@ router.post('/login', async (req, res) => {
             user = await Ldap.getUserByUsername(username);
             await User.createUserFromLdap(username);
             user = await User.getUserByUsername(username);
-            console.log(user)
         } catch (e) {
             res.sendStatus(401);
             global.logger.log({
