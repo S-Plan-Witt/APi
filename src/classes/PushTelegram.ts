@@ -11,7 +11,7 @@
 import {Telegram} from "./Telegram";
 import {User} from "./User";
 import {ApiGlobal} from "../types/global";
-import {Telegraf, TelegrafContext} from "telegraf-ts";
+import {Context, Telegraf} from "telegraf";
 
 declare const global: ApiGlobal;
 
@@ -25,8 +25,11 @@ export class PushTelegram {
     //TODO add jDoc
     startTelegramBot() {
         //Set replay to /start command from TG
-        this.bot.start(async (ctx: TelegrafContext) => {
-            let senderId = ctx.update?.message?.from?.id;
+        this.bot.start(async (ctx: Context) => {
+            let senderId = undefined;
+            if ("message" in ctx.update) {
+                senderId = ctx.update?.message?.from?.id;
+            }
             if (senderId != undefined) {
                 let token = await Telegram.createRequest(senderId);
                 await ctx.reply("Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token);
@@ -39,10 +42,14 @@ export class PushTelegram {
             }
         });
 
-        this.bot.command('stop', async (ctx: TelegrafContext) => {
+        this.bot.command('stop', async (ctx: Context) => {
 
             await ctx.reply("Gerät wird gelöscht--->---> ");
-            let senderId: number | undefined = ctx.update.message?.from?.id;
+
+            let senderId: number | undefined
+            if ("message" in ctx.update) {
+                senderId = ctx.update.message?.from?.id;
+            }
             try {
                 if (senderId != undefined) {
                     await User.removeDevice(senderId.toString());

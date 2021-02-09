@@ -14,7 +14,7 @@ import {ApiGlobal} from "../types/global";
 import {PushTelegram} from "./PushTelegram";
 import {PushWebPush} from "./PushWebPush";
 import {PushFCM} from "./PushFCM";
-import {Telegraf} from "telegraf-ts";
+import {Telegraf} from "telegraf";
 
 declare const global: ApiGlobal;
 
