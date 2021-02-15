@@ -8,9 +8,9 @@ before_install:
   - npm install
   - npx tsc
   - docker build -t ghcr.io/nils-witt/s-plan_api/s-plan_api:"$DOCKER_TAG" .
-  - docker tag ghcr.iom/nils-witt/s-plan_api:"$DOCKER_TAG" ghcr.iom/nils-witt/s-plan_api:"$TRAVIS_COMMIT"
+  - docker tag ghcr.io/nils-witt/s-plan_api:"$DOCKER_TAG" ghcr.io/nils-witt/s-plan_api:"$TRAVIS_COMMIT"
   - echo "$GITHUB_KEY" | docker login ghcr.io -u "$GITHUB_USER" --password-stdin
-  - docker push ghcr.iom/nils-witt/s-plan_api
+  - docker push ghcr.io/nils-witt/s-plan_api
 
 script:
   - docker ps
