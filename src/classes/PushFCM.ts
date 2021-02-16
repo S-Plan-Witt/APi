@@ -14,6 +14,15 @@ import {ApiGlobal} from "../types/global";
 declare const global: ApiGlobal;
 
 export class PushFCM {
+
+
+    constructor() {
+        firebaseAdmin.initializeApp({
+            credential: firebaseAdmin.credential.cert(require(global.config.pushFrameWorks.fcm.certPath)),
+            databaseURL: global.config.pushFrameWorks.fcm.host
+        });
+    }
+
     /**
      * Send a message with FCM to a device
      * @param deviceId

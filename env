@@ -1,39 +1,63 @@
-#Webserver Port
+#API Self
 PORT=3000
+API_URL=https://api.example.com
 
-#API Keys
-API_TELEGRAM=KEY
-API_SENDGRID=KEY
-ORIGIN=https://frontend.example.de
 
+#Developer Settings
+APIDOC=true
+
+#PWA
+PWA_URL=https://pwa.example.com
+
+#Notifications
+
+##Telegram
+TELEGRAM=true
+TELEGRAM_KEY=933041301:AAFLwVl5tJOlw2VpWjhnjPOhAzE6a9W-fMU
+TELEGRAM_VALIDATION_URL=TGVADURL
+
+##FCM
+FCM=true
+FCM_URL=https://url_server.firebaseio.com
+FCM_CREDENTIALS="/path/to/keys/fcm_key.json"
+
+#WebPush
+WEBPUSH=true
+VAPID_PUBLIC=YOUR_VAPID_PUBIC
+VAPID_PRIVATE=YOUR_VAPID_PRIVATE
+VAPID_SUBJECT=YOUR_VAPID_SUBJECT
+
+##Sendgrid
+SENDGRID=true
+SENDGRID_KEY=SG.BEARER_TOKEN
+SENDGRID_HOST=YOUT_SG_HOST
+SENDGRID_PW_VALIDATION_URL=SG_VALIDATION_HOST
 
 #LDAP
 LDAP=true
-LDAP_TLS=true
+
 LDAP_HOST=ldap://127.0.0.1:389
-LDAP_USER=apiUser@example.de
-LDAP_PASS=pass
-LDAP_ROOT=DC=test,DC=lokal
-LDAP_STUDENTS=OU=Students
-LDAP_TEACHER=OU=Teachers
-LDAP_DOMAIN=test
+LDAP_ROOT=DC=example,DC=com
+LDAP_DOMAIN=example
+
+LDAP_STUDENTSGROUP=CN=Students,DC=example,DC=com
+LDAP_TEACHERGROUP=CN=Teacher,DC=example,DC=com
+
+LDAP_USER=user
+LDAP_PASS=password
+
+LDAP_TLS=false
+LDAP_CA_PATH="/path/to/keys/ldap-ca.pem"
 
 #MySQL
 SQL_PORT=3306
 SQL_HOST=127.0.0.1
-SQL_USER=splan
+SQL_USER=user
 SQL_PASS=pass
-SQL_DB=splan
+SQL_DB=database
 
 #Moodle
+MOODLE=false
 MOODLE_URL=https://moodleServer.example.de/webservice/rest/server.php'
-MOODLE_KEY=KEY
-
-#VAPID KEYS
-
-VAPID_PUBLIC=KEY
-VAPID_PRIVATE=zKEY
-VAPID_MAIL=mailto:test@example.de
-
-GOOGLE_APPLICATION_CREDENTIALS=path/keys/fcm_key.json
+MOODLE_KEY=MOODLE_KEY
 

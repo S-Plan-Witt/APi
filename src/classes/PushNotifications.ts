@@ -8,8 +8,6 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import firebaseAdmin from 'firebase-admin';
-import webPush from "web-push";
 import {ApiGlobal} from "../types/global";
 import {PushTelegram} from "./PushTelegram";
 import {PushWebPush} from "./PushWebPush";
@@ -20,25 +18,23 @@ declare const global: ApiGlobal;
 
 
 export class PushNotifications {
-    public pushTelegram: PushTelegram;
-    public pushWebPush: PushWebPush;
-    public pushFCM: PushFCM;
+    public pushTelegram: PushTelegram | undefined;
+    public pushWebPush: PushWebPush | undefined;
+    public pushFCM: PushFCM | undefined;
 
     constructor() {
-        this.pushWebPush = new PushWebPush();
-        this.pushFCM = new PushFCM();
+        if(global.config.pushFrameWorks.fcm.enabled){
+            this.pushFCM = new PushFCM();
+        }
+        if(global.config.pushFrameWorks.telegram.enabled){
+            this.pushTelegram = new PushTelegram(new Telegraf(global.config.pushFrameWorks.telegram.key));
+        }
+        if(global.config.pushFrameWorks.webPush.enabled){
+            this.pushWebPush = new PushWebPush();
+        }
+        if(global.config.pushFrameWorks.sendGrid.enabled){
 
-        firebaseAdmin.initializeApp({
-            credential: firebaseAdmin.credential.cert(require(global.config.pushFrameWorks.firebaseCertificatePath)),
-            databaseURL: "https://fir-plan-194f7.firebaseio.com"
-        });
-
-        webPush.setVapidDetails(
-            "https://splan.nils-witt.de",
-            global.config.pushFrameWorks.vapidKeyPublic,
-            global.config.pushFrameWorks.vapidKeyPrivate
-        );
-        this.pushTelegram = new PushTelegram(new Telegraf(global.config.pushFrameWorks.telegramBotToken));
+        }
     }
 
     /**
@@ -58,27 +54,44 @@ export class PushNotifications {
 
                 if (type === "FCM") {
                     try {
-                        await pushFCM.sendPush(deviceInfo, title, message);
-                        resolve();
+                        if (pushFCM != undefined) {
+                            await pushFCM.sendPush(deviceInfo, title, message);
+                            resolve();
+                        } else {
+                            reject("FCM Offline")
+                        }
+
                     } catch (e) {
                         reject();
                     }
                 } else if (type === "WP") {
                     try {
-                        await pushWebPush.sendPush(JSON.parse(deviceInfo), title, message);
+                        if (pushWebPush != undefined) {
+                            await pushWebPush.sendPush(JSON.parse(deviceInfo), title, message);
+                        } else {
+                            reject("WP Push Offline")
+                        }
                         resolve();
                     } catch (e) {
                         if (e.statusCode === 410 || e.statusCode === 403) {
-                            await pushWebPush.deleteSubscription(e.endpoint);
-                            resolve();
+                            if (pushWebPush != undefined) {
+                                await pushWebPush.deleteSubscription(e.endpoint);
+                                resolve();
+                            } else {
+                                reject("WP Push Offline")
+                            }
                             return;
                         }
                         reject(e);
                     }
                 } else if (type === "TG") {
                     try {
-                        await pushTelegram.sendPush(deviceInfo, title + ": " + message);
-                        resolve();
+                        if (pushTelegram != undefined) {
+                            await pushTelegram.sendPush(deviceInfo, title + ": " + message);
+                            resolve();
+                        } else {
+                            reject("TG Push Offline")
+                        }
                     } catch (e) {
                         reject();
                     }
@@ -101,7 +114,12 @@ export class PushNotifications {
                         try {
                             await this.send(type, deviceInfo, title, message);
                         } catch (e) {
-                            console.log(e);
+                            global.logger.log({
+                                level: 'error',
+                                label: 'PushNotifications',
+                                message: '(sendBulk) error: ' + e,
+                                file: path.basename(__filename)
+                            });
                         }
                     }
                 }

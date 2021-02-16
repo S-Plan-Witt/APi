@@ -47,7 +47,7 @@ export class SendGrid {
                     "path": "/v3/mail/send",
                     "headers": {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer " + "" //TODO add global conf
+                        "Authorization": "Bearer " + global.config.pushFrameWorks.sendGrid.key
                     }
                 };
 

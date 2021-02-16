@@ -12,49 +12,74 @@ import {LdapConfig} from './LdapConfig';
 import {MysqlConfig} from "./MysqlConfig";
 import {PushFrameworksConfig} from "./PushFrameworksConfig";
 import {WebServerConfig} from "./WebServerConfig";
+import {PWAConfig} from "./PWAConfig";
 
 export class Config {
     public ldapConfig: LdapConfig = new LdapConfig();
     public mysqlConfig: MysqlConfig = new MysqlConfig();
     public pushFrameWorks: PushFrameworksConfig = new PushFrameworksConfig();
     public webServerConfig: WebServerConfig = new WebServerConfig();
+    public pwaConfig: PWAConfig = new PWAConfig();
 
     static loadFromEnv(): Config {
         let config = new Config();
-        //LDAP
+        /**
+         * LDAP
+         **/
         if (typeof process.env.LDAP == "string") if (process.env.LDAP === "true") config.ldapConfig.enabled = true;
         if (typeof process.env.LDAP_TLS == "string") if (process.env.LDAP_TLS === "true") config.ldapConfig.tls = true;
         if (typeof process.env.LDAP_HOST == "string") config.ldapConfig.host = process.env.LDAP_HOST;
         if (typeof process.env.LDAP_ROOT == "string") config.ldapConfig.root = process.env.LDAP_ROOT;
         if (typeof process.env.LDAP_USER == "string") config.ldapConfig.user = process.env.LDAP_USER;
         if (typeof process.env.LDAP_PASS == "string") config.ldapConfig.password = process.env.LDAP_PASS;
-        if (typeof process.env.LDAP_STUDENTS == "string") config.ldapConfig.studentPath = process.env.LDAP_STUDENTS;
         if (typeof process.env.LDAP_STUDENTSGROUP == "string") config.ldapConfig.studentGroup = process.env.LDAP_STUDENTSGROUP;
-        if (typeof process.env.LDAP_TEACHER == "string") config.ldapConfig.teacherPath = process.env.LDAP_TEACHER;
         if (typeof process.env.LDAP_TEACHERGROUP == "string") config.ldapConfig.teacherGroup = process.env.LDAP_TEACHERGROUP;
         if (typeof process.env.LDAP_DOMAIN == "string") config.ldapConfig.domain = process.env.LDAP_DOMAIN;
         if (typeof process.env.LDAP_CA_PATH == "string") config.ldapConfig.caCertPath = process.env.LDAP_CA_PATH;
 
-        //MYSQL
+        /**
+         * Mysql
+         **/
         if (typeof process.env.SQL_PORT == "string") config.mysqlConfig.port = parseInt(process.env.SQL_PORT);
         if (typeof process.env.SQL_HOST == "string") config.mysqlConfig.hostname = process.env.SQL_HOST;
         if (typeof process.env.SQL_USER == "string") config.mysqlConfig.username = process.env.SQL_USER;
         if (typeof process.env.SQL_PASS == "string") config.mysqlConfig.password = process.env.SQL_PASS;
         if (typeof process.env.SQL_DB == "string") config.mysqlConfig.database = process.env.SQL_DB;
 
-        //PushFrameworks
-        if (typeof process.env.TGBot == "string") if (process.env.TGBot === "true") config.pushFrameWorks.telegramBot = true;
-        if (typeof process.env.API_TELEGRAM == "string") config.pushFrameWorks.telegramBotToken = process.env.API_TELEGRAM;
-        if (typeof process.env.API_SENDGRID == "string") config.pushFrameWorks.sendgridToken = process.env.API_SENDGRID;
-        if (typeof process.env.VAPID_PUBLIC == "string") config.pushFrameWorks.vapidKeyPublic = process.env.VAPID_PUBLIC;
-        if (typeof process.env.VAPID_PRIVATE == "string") config.pushFrameWorks.vapidKeyPrivate = process.env.VAPID_PRIVATE;
-        if (typeof process.env.VAPID_MAIL == "string") config.pushFrameWorks.vapidKeyMail = process.env.VAPID_MAIL;
-        if (typeof process.env.GOOGLE_APPLICATION_CREDENTIALS == "string") config.pushFrameWorks.firebaseCertificatePath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+        /**
+         * PushFrameworks
+         **/
 
-        //Webserver
+        //Telegram
+        if (typeof process.env.TELEGRAM == "string") if (process.env.TELEGRAM === "true") config.pushFrameWorks.telegram.enabled = true;
+        if (typeof process.env.TELEGRAM_KEY == "string") config.pushFrameWorks.telegram.key = process.env.TELEGRAM_KEY;
+        if (typeof process.env.TELEGRAM_VALIDATION_URL == "string") config.pushFrameWorks.telegram.validationUrl = process.env.TELEGRAM_VALIDATION_URL;
+        //FCM
+        if (typeof process.env.FCM == "string") if (process.env.FCM === "true") config.pushFrameWorks.fcm.enabled = true;
+        if (typeof process.env.FCM_URL == "string") config.pushFrameWorks.fcm.host = process.env.FCM_URL;
+        if (typeof process.env.FCM_CREDENTIALS == "string") config.pushFrameWorks.fcm.certPath = process.env.FCM_CREDENTIALS;
+        //SendGrid
+        if (typeof process.env.SENDGRID == "string") if (process.env.SENDGRID === "true") config.pushFrameWorks.sendGrid.enabled = true;
+        if (typeof process.env.SENDGRID_HOST == "string") config.pushFrameWorks.sendGrid.host = process.env.SENDGRID_HOST;
+        if (typeof process.env.SENDGRID_KEY == "string") config.pushFrameWorks.sendGrid.key = process.env.SENDGRID_KEY;
+
+        //WebPush
+        if (typeof process.env.WEBPUSH == "string") if (process.env.WEBPUSH === "true") config.pushFrameWorks.webPush.enabled = true;
+        if (typeof process.env.VAPID_PRIVATE == "string") config.pushFrameWorks.webPush.vapid_private = process.env.VAPID_PRIVATE;
+        if (typeof process.env.VAPID_PUBLIC == "string") config.pushFrameWorks.webPush.vapid_public = process.env.VAPID_PUBLIC;
+        if (typeof process.env.VAPID_SUBJECT == "string") config.pushFrameWorks.webPush.vapid_subject = process.env.VAPID_SUBJECT;
+
+        /**
+         * API
+         **/
         if (typeof process.env.PORT == "string") config.webServerConfig.port = parseInt(process.env.PORT);
         if (typeof process.env.APIDOC == "string") if (process.env.APIDOC === "true") config.webServerConfig.apiDocumentation = true;
-        if (typeof process.env.ORIGIN == "string") config.webServerConfig.serverOrigin = process.env.ORIGIN;
+        if (typeof process.env.API_URL == "string") config.webServerConfig.url = process.env.API_URL;
+
+        /**
+         * PWA
+         **/
+        if (typeof process.env.PWA_URL == "string") config.pwaConfig.url = process.env.PWA_URL;
 
         return config;
     }

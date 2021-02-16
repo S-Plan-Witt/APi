@@ -11,5 +11,6 @@
 export class WebServerConfig {
     public port: number = 3000;
     public apiDocumentation: boolean = false;
-    public serverOrigin: string = "";
+    public url: string = "";
+
 }

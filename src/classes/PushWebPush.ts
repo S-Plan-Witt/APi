@@ -15,6 +15,14 @@ declare const global: ApiGlobal;
 
 export class PushWebPush {
 
+    constructor() {
+        webPush.setVapidDetails(
+            global.config.pushFrameWorks.webPush.vapid_subject,
+            global.config.pushFrameWorks.webPush.vapid_public,
+            global.config.pushFrameWorks.webPush.vapid_private
+        );
+    }
+
     /**
      * Send a message with WebPush to a device
      * @param subscription

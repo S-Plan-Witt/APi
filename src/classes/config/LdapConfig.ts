@@ -10,15 +10,18 @@
 
 export class LdapConfig {
     public enabled: boolean = false;
-    public tls: boolean = false;
+
     public host: string = "";
     public root: string = "";
+    public domain: string = "";
+
+    public tls: boolean = false;
+    public caCertPath: string = "";
+
     public user: string = "";
     public password: string = "";
-    public studentPath: string = "";
-    public teacherPath: string = "";
-    public domain: string = "";
+
     public teacherGroup: string = "";
     public studentGroup: string = "";
-    public caCertPath: string = "";
+
 }

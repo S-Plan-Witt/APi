@@ -18,6 +18,7 @@ import express, {Express, NextFunction, Request, Response} from "express";
 import {JWTInterface} from './classes/JWTInterface';
 import {Telegram} from './classes/Telegram';
 import {PushNotifications} from './classes/PushNotifications';
+import path from "path";
 
 declare const global: ApiGlobal;
 const {combine, timestamp, printf} = format;
@@ -124,8 +125,8 @@ if (global.config.webServerConfig.apiDocumentation) {
     let options = {
         swaggerDefinition: {
             info: {
-                description: 'SIKS',
-                title: 'SIKS',
+                description: 'S-Plan',
+                title: 'S-Plan',
                 version: '1.0.2',
             },
             host: 'localhost:3000',
@@ -187,8 +188,10 @@ let reqLogger = (req: Request, res: Response, next: NextFunction) => {
     next();
 };
 
-if (global.config.pushFrameWorks.telegramBot) {
-    global.pushNotifications.pushTelegram.startTelegramBot();
+if (global.config.pushFrameWorks.telegram.enabled) {
+    if (global.pushNotifications.pushTelegram) {
+        global.pushNotifications.pushTelegram.startTelegramBot();
+    }
 }
 
 /**
@@ -235,7 +238,9 @@ app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     try {
         await req.user.addDevice(tgId.toString(), "TG");
         await Telegram.revokeRequest(token);
-        await global.pushNotifications.pushTelegram.sendPush(tgId, "Connected to user " + req.user.username);
+        if (global.pushNotifications.pushTelegram) {
+            await global.pushNotifications.pushTelegram.sendPush(tgId, "Connected to user " + req.user.username);
+        }
         res.sendStatus(200);
     } catch (e) {
         console.log(e);
@@ -250,6 +255,7 @@ app.listen(global.config.webServerConfig.port, () => {
     global.logger.log({
         level: 'silly',
         label: 'Express',
-        message: 'Listening on port: ' + global.config.webServerConfig.port
+        message: 'Listening on port: ' + global.config.webServerConfig.port,
+        file: path.basename(__filename)
     });
 });

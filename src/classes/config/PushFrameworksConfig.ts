@@ -9,12 +9,34 @@
  */
 
 export class PushFrameworksConfig {
-    public telegramBot: boolean = false;
-    public telegramBotToken: string = "";
-    public sendgridToken: string = "";
-    public firebaseCertificatePath: string = "";
-    public vapidKeyPublic: string = "";
-    public vapidKeyPrivate: string = "";
-    public vapidKeyMail: string = "";
+    public fcm: FcmConfig = new FcmConfig();
+    public telegram: TelegramConfig = new TelegramConfig();
+    public webPush: WebPushConfig = new WebPushConfig();
+    public sendGrid: SendGridConfig = new SendGridConfig();
 
+}
+
+export class FcmConfig {
+    public enabled: boolean = false;
+    public certPath: string = "";
+    public host: string = "";
+}
+
+export class TelegramConfig {
+    public enabled: boolean = false;
+    public key: string = "";
+    public validationUrl: string = "";
+}
+
+export class WebPushConfig {
+    public enabled: boolean = false;
+    public vapid_public: string = "";
+    public vapid_private: string = "";
+    public vapid_subject: string = "";
+}
+
+export class SendGridConfig {
+    public enabled: boolean = false;
+    public host: string = "";
+    public key: string = "";
 }
