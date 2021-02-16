@@ -9,6 +9,7 @@
  */
 
 import {ApiGlobal} from "../types/global";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -31,8 +32,12 @@ export class Telegram {
                     reject("Token Invalid");
                 }
             } catch (e) {
-                console.log(e);
-                //TODO add logger
+                global.logger.log({
+                    level: 'error',
+                    label: 'Telegram',
+                    message: '(validateRequestToken) error: ' + e,
+                    file: path.basename(__filename)
+                });
                 reject(e)
             } finally {
                 await conn.end();
@@ -52,7 +57,12 @@ export class Telegram {
                 await conn.query("DELETE FROM `telegramLinks` WHERE (`token` = ?);", [token]);
                 resolve();
             } catch (e) {
-                console.log(e);
+                global.logger.log({
+                    level: 'error',
+                    label: 'Telegram',
+                    message: '(revokeRequest) error: ' + e,
+                    file: path.basename(__filename)
+                });
                 reject(e)
             } finally {
                 await conn.end();

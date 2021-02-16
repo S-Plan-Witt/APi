@@ -112,7 +112,6 @@ export class TimeTable {
                 let rows = await conn.query("SELECT data_lessons.idlessons, data_lessons.room, data_lessons.lesson, data_lessons.weekday, data_lessons.identifier, data_courses.teacherId, data_lessons.courseId, data_courses.iddata_courses, data_courses.grade, data_courses.subject, data_courses.`group`, data_courses.coursename FROM data_lessons LEFT JOIN data_courses ON data_lessons.courseId = data_courses.iddata_courses");
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
-                    console.log(row)
                     lessons.push(new Lesson(new Course(row["grade"], row["subject"], row["group"], false, row["iddata_courses"]), row["lesson"], row["weekday"], row["room"], row["idlessons"]));
                 }
                 resolve(lessons);

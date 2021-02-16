@@ -17,6 +17,7 @@ import {UserFilter} from "../classes/UserFilter";
 import {Course} from "../classes/Course";
 import {Teacher} from "../classes/Teacher";
 import {SearchOptions} from "ldapjs";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -33,7 +34,8 @@ router.use((req, res, next) => {
     global.logger.log({
         level: 'notice',
         label: 'Privileges violation',
-        message: `Path: ${req.path} By UserId ${req.decoded.userId}`
+        message: `Path: ${req.path} By UserId ${req.decoded.userId}`,
+        file: path.basename(__filename)
     });
     return res.sendStatus(401);
 });
@@ -54,7 +56,8 @@ router.get('/', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /users ; ' + JSON.stringify(e)
+            message: 'Routing: /users ; ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(500);
     }
@@ -77,7 +80,8 @@ router.get('/type/:type', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /users/type/ : ' + JSON.stringify(e)
+            message: 'Routing: /users/type/ : ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(500);
     }
@@ -99,7 +103,8 @@ router.get('/username/:username', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /users/username ; ' + JSON.stringify(e)
+            message: 'Routing: /users/username ; ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(500);
     }
@@ -121,7 +126,8 @@ router.get('/id/:id', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /users/username ; ' + JSON.stringify(e)
+            message: 'Routing: /users/username ; ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(500);
     }
@@ -140,7 +146,8 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'debug',
             label: 'Express',
-            message: 'No permissions : /students/find'
+            message: 'No permissions : /students/find',
+            file: path.basename(__filename)
         });
         return res.sendStatus(401);
     }
@@ -155,7 +162,8 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /users/:username/preAuth ; ' + JSON.stringify(e)
+            message: 'Routing: /users/:username/preAuth ; ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
 
         res.sendStatus(500);
@@ -178,7 +186,8 @@ router.get('/ldap/', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /users/ldap/ ; ' + JSON.stringify(e)
+            message: 'Routing: /users/ldap/ ; ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(500);
     }
@@ -220,14 +229,14 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
         }
         if (birthday === "") {
             birthdayFilter = "";
-        }else{
+        } else {
             birthdayFilter = '(info=' + birthday + ')';
         }
 
         let opts: SearchOptions = {
-            filter: '(&(objectClass=user)(sn=' + lastName + ')(givenname=' + firstName + ')'+ birthdayFilter +')',
+            filter: '(&(objectClass=user)(sn=' + lastName + ')(givenname=' + firstName + ')' + birthdayFilter + ')',
             scope: 'sub',
-            attributes: ['sn', 'givenname', 'samaccountname', 'displayName','memberOf','info']
+            attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'memberOf', 'info']
         };
         let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
         res.json(users);
@@ -235,7 +244,8 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'warn',
             label: 'Express',
-            message: 'Error while executing callback : /students/find : ' + e
+            message: 'Error while executing callback : /students/find : ' + e,
+            file: path.basename(__filename)
         });
         res.status(500);
         res.send(e);
@@ -256,7 +266,8 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'debug',
             label: 'Express',
-            message: 'No permissions : /users/' + req.params.username + '/courses'
+            message: 'No permissions : /users/' + req.params.username + '/courses',
+            file: path.basename(__filename)
         });
         return res.sendStatus(401);
     }
@@ -267,7 +278,8 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: '/users/' + req.params.username + '/courses;1: ' + JSON.stringify(e)
+            message: '/users/' + req.params.username + '/courses;1: ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
     }
     if (user == null) {
@@ -293,7 +305,8 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: '/users/' + req.params.username + '/courses;2: ' + JSON.stringify(e)
+                message: '/users/' + req.params.username + '/courses;2: ' + JSON.stringify(e),
+                file: path.basename(__filename)
             });
             res.sendStatus(500);
         }
@@ -301,7 +314,8 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'debug',
             label: 'Express',
-            message: '/users/' + req.params.username + '/courses;3: User not found'
+            message: '/users/' + req.params.username + '/courses;3: User not found',
+            file: path.basename(__filename)
         });
         res.send("user not found")
     }
@@ -320,7 +334,8 @@ router.get('/teacher/reload', async (req: Request, res: Response) => {
         global.logger.log({
             level: 'debug',
             label: 'Express',
-            message: 'No permissions : /students/' + req.params.username + '/courses'
+            message: 'No permissions : /students/' + req.params.username + '/courses',
+            file: path.basename(__filename)
         });
         return res.sendStatus(401);
     }
@@ -333,7 +348,8 @@ router.get('/teacher/reload', async (req: Request, res: Response) => {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: '/teacher/reload: ' + JSON.stringify(e)
+                message: '/teacher/reload: ' + JSON.stringify(e),
+                file: path.basename(__filename)
             });
         }
     }

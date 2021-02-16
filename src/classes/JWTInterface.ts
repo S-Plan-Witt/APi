@@ -13,6 +13,7 @@ import fs from 'fs';
 import {User} from './User';
 import {ApiGlobal} from "../types/global";
 import {NextFunction, Request, Response} from "express";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -38,12 +39,22 @@ export class JWTInterface {
                 if (rows.length === 1) {
                     resolve(rows[0]['idjwt_Token']);
                 } else {
-                    console.log("revoked: " + rows.length);
+                    global.logger.log({
+                        level: 'debug',
+                        label: 'JWT',
+                        message: '(verifyId) ' + id + ' not vaild',
+                        file: path.basename(__filename)
+                    });
                     reject();
                 }
 
             } catch (e) {
-                console.log(e);
+                global.logger.log({
+                    level: 'error',
+                    label: 'JWT',
+                    message: '(verifyId) ' + id + ' e: ' + e,
+                    file: path.basename(__filename)
+                });
                 reject(e);
             } finally {
                 await conn.end();
@@ -92,7 +103,8 @@ export class JWTInterface {
             global.logger.log({
                 level: 'silly',
                 label: 'JWT',
-                message: 'auth validation free path: ' + req.path
+                message: 'auth validation free path: ' + req.path,
+                file: path.basename(__filename)
             });
             next();
         } else if (req.method === "OPTIONS") {
@@ -118,8 +130,12 @@ export class JWTInterface {
                         req.decoded.permissions = req.user.permissions;
                         next();
                     } else {
-                        console.log("JWT decode error");
-                        console.log(token);
+                        global.logger.log({
+                            level: 'error',
+                            label: 'JWT',
+                            message: '(checkToken) error: ' + token,
+                            file: path.basename(__filename)
+                        });
                         res.sendStatus(500);
                     }
 
@@ -128,7 +144,8 @@ export class JWTInterface {
                     global.logger.log({
                         level: 'warn',
                         label: 'JWT',
-                        message: 'validation of token failed: ' + e
+                        message: 'validation of token failed: ' + e,
+                        file: path.basename(__filename)
                     });
                     return res.sendStatus(401);
                 }
@@ -152,14 +169,16 @@ export class JWTInterface {
                 global.logger.log({
                     level: 'silly',
                     label: 'JWT',
-                    message: 'token revoked: ' + tokenId
+                    message: 'token revoked: ' + tokenId,
+                    file: path.basename(__filename)
                 });
                 resolve();
             } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'JWT',
-                    message: 'revoke of token failed ' + tokenId + '; e:' + e
+                    message: 'revoke of token failed ' + tokenId + '; e:' + e,
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -181,7 +200,8 @@ export class JWTInterface {
                 global.logger.log({
                     level: 'error',
                     label: 'JWT',
-                    message: 'Get by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e)
+                    message: 'Get by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -202,7 +222,8 @@ export class JWTInterface {
                 global.logger.log({
                     level: 'error',
                     label: 'JWT',
-                    message: 'Get all failed: ' + JSON.stringify(e)
+                    message: 'Get all failed: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -221,14 +242,16 @@ export class JWTInterface {
                 global.logger.log({
                     level: 'silly',
                     label: 'JWT',
-                    message: 'Revoked by username: ' + username
+                    message: 'Revoked by username: ' + username,
+                    file: path.basename(__filename)
                 });
                 resolve();
             } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'JWT',
-                    message: 'Revoke by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e)
+                    message: 'Revoke by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -250,7 +273,8 @@ export class JWTInterface {
                     global.logger.log({
                         level: 'error',
                         label: 'JWT',
-                        message: 'PreAuth failed: ' + JSON.stringify(token) + " Err: not in database"
+                        message: 'PreAuth failed: ' + JSON.stringify(token) + " Err: not in database",
+                        file: path.basename(__filename)
                     });
                     reject("not found in db");
                 }
@@ -258,7 +282,8 @@ export class JWTInterface {
                 global.logger.log({
                     level: 'error',
                     label: 'JWT',
-                    message: 'PreAuth failed: ' + JSON.stringify(token) + " Err: " + JSON.stringify(e)
+                    message: 'PreAuth failed: ' + JSON.stringify(token) + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {

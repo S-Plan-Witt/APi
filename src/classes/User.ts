@@ -17,6 +17,7 @@ import {Device} from "./Device";
 import {Permissions} from "./Permissions";
 import {Student} from "./Student";
 import {Course} from "./Course";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -83,20 +84,23 @@ export class User {
                     global.logger.log({
                         level: 'silly',
                         label: 'User',
-                        message: 'Class: User; Function: getUserByUsername(' + username + '): found'
+                        message: 'Class: User; Function: getUserByUsername(' + username + '): found',
+                        file: path.basename(__filename)
                     });
                     let loadedUser: User = await User.fromSqlUser(rows[0]);
                     global.logger.log({
                         level: 'silly',
                         label: 'User',
-                        message: 'Class: User; Function: getUserByUsername(' + username + '): loaded'
+                        message: 'Class: User; Function: getUserByUsername(' + username + '): loaded',
+                        file: path.basename(__filename)
                     });
                     resolve(loadedUser);
                 } else {
                     global.logger.log({
                         level: 'error',
                         label: 'User',
-                        message: 'Class: User; Function: getUserByUsername(' + username + '): no user found'
+                        message: 'Class: User; Function: getUserByUsername(' + username + '): no user found',
+                        file: path.basename(__filename)
                     });
                     reject("User not found");
                 }
@@ -104,7 +108,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getUserByUsername(' + username + '): ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getUserByUsername(' + username + '): ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -134,7 +139,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getUserById: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getUserById: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -170,7 +176,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: createUserFromLdap: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: createUserFromLdap: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -209,14 +216,16 @@ export class User {
                 global.logger.log({
                     level: 'silly',
                     label: 'User',
-                    message: 'Class: User; Function: getCourses: loaded'
+                    message: 'Class: User; Function: getCourses: loaded',
+                    file: path.basename(__filename)
                 });
                 resolve(courses);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getCourses: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getCourses: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -250,7 +259,8 @@ export class User {
                 global.logger.log({
                     level: 'silly',
                     label: 'User',
-                    message: 'Class: User; Function: getMails: loaded'
+                    message: 'Class: User; Function: getMails: loaded',
+                    file: path.basename(__filename)
                 });
                 resolve(mails);
             } catch (e) {
@@ -288,7 +298,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getStudentDevicesByCourse: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getStudentDevicesByCourse: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 })
                 reject(e);
             } finally {
@@ -311,7 +322,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getAllUsers: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getAllUsers: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e)
             } finally {
@@ -340,14 +352,16 @@ export class User {
                 global.logger.log({
                     level: 'silly',
                     label: 'User',
-                    message: 'Class: User; Function: getDevices: loaded'
+                    message: 'Class: User; Function: getDevices: loaded',
+                    file: path.basename(__filename)
                 });
                 resolve(devices);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getDevices: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getDevices: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -404,7 +418,12 @@ export class User {
                 let users: Student[] = await Ldap.getAllStudents();
                 resolve(users);
             } catch (e) {
-                console.log(e);
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: '(saveTokenForUser) error: ' + e,
+                    file: path.basename(__filename)
+                });
                 reject(e);
             }
         });
@@ -429,7 +448,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: createToDB: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: createToDB: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 console.log(e);
                 reject(e);
@@ -447,9 +467,7 @@ export class User {
         if (this.courses != null) {
             for (let i = 0; i < this.courses.length; i++) {
                 let course = this.courses[i];
-
                 if (course.grade === needle.grade && course.subject === needle.subject && course.group === needle.group) {
-                    console.log("Found");
                     return true;
                 }
             }
@@ -478,7 +496,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: generateToken: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: generateToken: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             }
@@ -501,7 +520,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: verifyPassword: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: verifyPassword: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             }
@@ -536,10 +556,10 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: userInDB: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: userInDB: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
-                reject();
-                console.log(e)
+                reject(e);
             } finally {
                 await conn.end();
             }
@@ -571,7 +591,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getAnnouncements: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: getAnnouncements: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -597,9 +618,11 @@ export class User {
                         global.logger.log({
                             level: 'error',
                             label: 'User',
-                            message: 'Class: User; Function: addCourse(Mysql): ' + JSON.stringify(e)
-                        })
-                        console.log(e)
+                            message: 'Class: User; Function: addCourse(Mysql): ' + JSON.stringify(e),
+                            file: path.basename(__filename)
+                        });
+                        reject(e);
+                        return;
                     }
                 }
                 resolve()
@@ -607,7 +630,8 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: addCourse: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: addCourse: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -635,9 +659,9 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: deleteCourse: ' + JSON.stringify(e)
+                    message: 'Class: User; Function: deleteCourse: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 })
-                console.log(e);
                 reject(e);
             } finally {
                 await conn.end();
@@ -670,8 +694,9 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: addDevice: ' + JSON.stringify(e)
-                })
+                    message: 'Class: User; Function: addDevice: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
             } finally {
                 await conn.end();
             }
@@ -691,9 +716,8 @@ export class User {
                 resolve();
             } catch (e) {
                 reject(e);
-                //TODO add logger
             } finally {
-                await conn.end()
+                await conn.end();
             }
         });
     }
@@ -712,7 +736,6 @@ export class User {
 
                 resolve(token);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -724,9 +747,8 @@ export class User {
      * @returns {Promise<boolean>}
      */
     isActive() {
-        let active = this.active;
         return new Promise(async (resolve, reject) => {
-            if (active) {
+            if (this.status == UserStatus.ENABLED) {
                 resolve(true);
             } else {
                 reject("disabled");

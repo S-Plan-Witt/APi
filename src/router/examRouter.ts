@@ -13,6 +13,7 @@ import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
 import {Exam} from "../classes/Exam";
 import {Supervisor} from "../classes/Supervisor";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -49,7 +50,8 @@ router.post('/', async (req, res) => {
         global.logger.log({
             level: 'error',
             label: 'ExamsRouter',
-            message: 'Err: ' + JSON.stringify(e)
+            message: 'Err: ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(500);
     }
@@ -116,7 +118,8 @@ router.get('/exams/supervisors/:id', async (req, res) => {
         global.logger.log({
             level: 'error',
             label: 'ExamsRouter',
-            message: 'Err: ' + JSON.stringify(e)
+            message: 'Err: ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(500);
     }

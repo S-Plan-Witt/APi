@@ -11,6 +11,7 @@
 import {Course} from "./Course";
 import {RoomLink} from "./RoomLink";
 import {ApiGlobal} from "../types/global";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -54,7 +55,8 @@ export class Exam {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Get All failed: ' + JSON.stringify(err)
+                    message: 'Get All failed: ' + JSON.stringify(err),
+                    file: path.basename(__filename)
                 });
                 reject();
             } finally {
@@ -77,7 +79,8 @@ export class Exam {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Get by course failed: ' + JSON.stringify(course) + " Err: " + JSON.stringify(e)
+                    message: 'Get by course failed: ' + JSON.stringify(course) + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject();
             } finally {
@@ -135,7 +138,8 @@ export class Exam {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Get supervisors by exam failed: ' + roomLinkId + " Err: " + JSON.stringify(e)
+                    message: 'Get supervisors by exam failed: ' + roomLinkId + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -157,14 +161,16 @@ export class Exam {
                 global.logger.log({
                     level: 'silly',
                     label: 'exams',
-                    message: 'Deleted: ' + JSON.stringify(id)
+                    message: 'Deleted: ' + JSON.stringify(id),
+                    file: path.basename(__filename)
                 });
                 resolve();
             } catch (err) {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Delete failed: ' + JSON.stringify(id) + " Err: " + JSON.stringify(err)
+                    message: 'Delete failed: ' + JSON.stringify(id) + " Err: " + JSON.stringify(err),
+                    file: path.basename(__filename)
                 });
                 reject(err);
             } finally {
@@ -230,7 +236,8 @@ export class Exam {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Err: ' + JSON.stringify(e)
+                    message: 'Err: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {

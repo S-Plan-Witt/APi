@@ -10,6 +10,7 @@
 
 import firebaseAdmin from "firebase-admin";
 import {ApiGlobal} from "../types/global";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -44,7 +45,8 @@ export class PushFCM {
                 global.logger.log({
                     level: 'silly',
                     label: 'FCM',
-                    message: 'Successfully send message: ' + JSON.stringify(response)
+                    message: 'Successfully send message: ' + JSON.stringify(response),
+                    file: path.basename(__filename)
                 });
                 resolve(response);
             } catch (e) {
@@ -54,7 +56,8 @@ export class PushFCM {
                 global.logger.log({
                     level: 'error',
                     label: 'FCM',
-                    message: 'Error sending message: ' + JSON.stringify(e)
+                    message: 'Error sending message: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             }

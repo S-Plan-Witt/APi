@@ -15,6 +15,7 @@ import {User} from "../classes/User";
 import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
 import {Lesson} from "../classes/Lesson";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -31,7 +32,8 @@ router.use((req, res, next) => {
     global.logger.log({
         level: 'notice',
         label: 'Privileges violation',
-        message: `Path: ${req.path} By UserId ${req.decoded.userId}`
+        message: `Path: ${req.path} By UserId ${req.decoded.userId}`,
+        file: path.basename(__filename)
     });
     return res.sendStatus(401);
 });

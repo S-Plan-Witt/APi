@@ -12,6 +12,7 @@ import {Telegram} from "./Telegram";
 import {User} from "./User";
 import {ApiGlobal} from "../types/global";
 import {Context, Telegraf} from "telegraf";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -32,13 +33,15 @@ export class PushTelegram {
             }
             if (senderId != undefined) {
                 let token = await Telegram.createRequest(senderId);
-                await ctx.reply("Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token);
+                let messageText = "Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token;
+                await ctx.reply(messageText);
                 global.logger.log({
                     level: 'silly',
                     label: 'TelegramBot',
-                    message: 'created Linking token id:' + senderId + " token: " + token
+                    message: 'created Linking token id:' + senderId + " token: " + token,
+                    file: path.basename(__filename)
                 });
-                Telegram.logMessage(senderId, "Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token, 'out');
+                Telegram.logMessage(senderId, messageText, 'out');
             }
         });
 
@@ -57,18 +60,19 @@ export class PushTelegram {
                     global.logger.log({
                         level: 'silly',
                         label: 'TelegramBot',
-                        message: 'deleted Device: ' + senderId
+                        message: 'deleted Device: ' + senderId,
+                        file: path.basename(__filename)
                     });
                 }
 
             } catch (e) {
-                console.log(e);
                 await ctx.reply("Es ist ein Fehler aufgetreten");
 
                 global.logger.log({
                     level: 'silly',
                     label: 'TelegramBot',
-                    message: 'Error while deleting Device: ' + senderId
+                    message: 'Error while deleting Device: ' + senderId + ' e: ' + e,
+                    file: path.basename(__filename)
                 });
             }
         });
@@ -78,7 +82,8 @@ export class PushTelegram {
             global.logger.log({
                 level: 'silly',
                 label: 'TelegramBot',
-                message: 'started'
+                message: 'started',
+                file: path.basename(__filename)
             });
         });
     }
@@ -97,7 +102,8 @@ export class PushTelegram {
                 global.logger.log({
                     level: 'silly',
                     label: 'TelegramPush',
-                    message: 'sent message: ' + body + " ;to: " + chatID
+                    message: 'sent message: ' + body + " ;to: " + chatID,
+                    file: path.basename(__filename)
                 });
                 Telegram.logMessage(chatID, body, 'out');
                 resolve();
@@ -105,7 +111,8 @@ export class PushTelegram {
                 global.logger.log({
                     level: 'warn',
                     label: 'TelegramPush',
-                    message: 'sent message: ' + body + " ;to: " + chatID + ' Error: ' + JSON.stringify(e)
+                    message: 'sent message: ' + body + " ;to: " + chatID + ' Error: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             }

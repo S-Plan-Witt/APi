@@ -12,6 +12,7 @@
 
 import {ApiGlobal} from "../types/global";
 import speakeasy from "speakeasy";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -26,12 +27,16 @@ export class Totp {
                 conn = await global.mySQLPool.getConnection();
                 let res = await conn.query("INSERT INTO `totp` (`user_id`, `totp_key`, alias) VALUES (?, ?, ?);", [userId, token, alias]);
                 await conn.query("UPDATE users SET twoFactor = 1 WHERE idusers = ?", [userId]);
-                console.log(res);
                 if (res.warningStatus === 0) {
                     resolve(res.insertId);
                 }
             } catch (e) {
-                console.log(e);
+                global.logger.log({
+                    level: 'error',
+                    label: 'TOTP',
+                    message: '(saveTokenForUser) error: ' + e,
+                    file: path.basename(__filename)
+                });
                 reject(e);
             } finally {
                 if (conn) await conn.end();
@@ -51,7 +56,6 @@ export class Totp {
 
                     reject("Key is not available");
                 } else {
-                    console.log(rows[0]);
                     let key = rows[0]["totp_key"];
                     let valid = speakeasy.totp.verify({
                         secret: key,
@@ -68,7 +72,12 @@ export class Totp {
                 }
 
             } catch (e) {
-                console.log(e);
+                global.logger.log({
+                    level: 'error',
+                    label: 'TOTP',
+                    message: '(verifyKey) error: ' + e,
+                    file: path.basename(__filename)
+                });
                 reject(e);
             } finally {
                 if (conn) await conn.end();

@@ -16,6 +16,7 @@ import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Course} from "../classes/Course";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -79,7 +80,8 @@ router.post('/', async (req, res) => {
             global.logger.log({
                 level: 'warn',
                 label: 'ReplacementLessons',
-                message: 'Error while processing post ' + e + '; at: ' + JSON.stringify(postDataSet)
+                message: 'Error while processing post ' + e + '; at: ' + JSON.stringify(postDataSet),
+                file: path.basename(__filename)
             });
         }
     }

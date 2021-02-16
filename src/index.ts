@@ -58,7 +58,8 @@ global.logger = logger;
 logger.log({
     level: 'silly',
     label: 'Express',
-    message: 'Logger init success'
+    message: 'Logger init success',
+    file: path.basename(__filename)
 });
 
 /**
@@ -74,7 +75,8 @@ global.config = Config.loadFromEnv();
 logger.log({
     level: 'debug',
     label: 'Express',
-    message: 'ENV loaded'
+    message: 'ENV loaded',
+    file: path.basename(__filename)
 });
 //-- ENV
 
@@ -87,10 +89,9 @@ process.on('uncaughtException', function (err) {
     logger.log({
         level: 'error',
         label: 'Express',
-        message: 'Unhandled Exception trace: ' + err.stack
+        message: 'Unhandled Exception trace: ' + err.stack,
+        file: path.basename(__filename)
     });
-    console.error(err.stack);
-    console.log("Unhandled Exception trace");
 });
 
 /**
@@ -109,7 +110,8 @@ global.mySQLPool = mySQL.createPool({
 logger.log({
     level: 'debug',
     label: 'Express',
-    message: 'MySql Connected'
+    message: 'MySql Connected',
+    file: path.basename(__filename)
 });
 
 /**
@@ -165,7 +167,7 @@ if (global.config.webServerConfig.apiDocumentation) {
 const header = (req: Request, res: Response, next: NextFunction) => {
     res.set({
         'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Origin': global.config.webServerConfig.serverOrigin,
+        'Access-Control-Allow-Origin': global.config.pwaConfig.url,
         'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma',
         'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
     });
@@ -183,7 +185,8 @@ let reqLogger = (req: Request, res: Response, next: NextFunction) => {
     global.logger.log({
         level: 'debug',
         label: 'Express',
-        message: 'Received request to ' + req.path + ' By ' + token
+        message: 'Received request to ' + req.path + ' By ' + token,
+        file: path.basename(__filename)
     });
     next();
 };

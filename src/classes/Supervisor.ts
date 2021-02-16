@@ -11,6 +11,7 @@
 import {User} from "./User";
 import {ApiGlobal} from "../types/global";
 import {Exam} from "./Exam";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -36,7 +37,8 @@ export class Supervisor extends User {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Get supervisors by exam failed: ' + id + " Err: " + JSON.stringify(e)
+                    message: 'Get supervisors by exam failed: ' + id + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -68,7 +70,8 @@ export class Supervisor extends User {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Get supervisor by id failed: ' + id + " Err: " + JSON.stringify(e)
+                    message: 'Get supervisor by id failed: ' + id + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {

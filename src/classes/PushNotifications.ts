@@ -13,6 +13,7 @@ import {PushTelegram} from "./PushTelegram";
 import {PushWebPush} from "./PushWebPush";
 import {PushFCM} from "./PushFCM";
 import {Telegraf} from "telegraf";
+import path from "path";
 
 declare const global: ApiGlobal;
 

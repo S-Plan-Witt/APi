@@ -15,6 +15,7 @@ import {User} from './User';
 import {Permissions} from "./Permissions";
 import {Teacher} from "./Teacher";
 import {Student} from "./Student";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -30,7 +31,8 @@ export class Ldap {
             global.logger.log({
                 level: 'error',
                 label: 'LDAP',
-                message: "LDAP init failed: " + JSON.stringify(e)
+                message: "LDAP init failed: " + JSON.stringify(e),
+                file: path.basename(__filename)
             });
         }
     }
@@ -47,14 +49,21 @@ export class Ldap {
                         global.logger.log({
                             level: 'error',
                             label: 'LDAP',
-                            message: 'bind failed: ' + err
+                            message: 'bind failed: ' + err,
+                            file: path.basename(__filename)
                         });
                     } else {
                         resolve(ldapClient);
                     }
                 });
             } catch (e) {
-                console.log(e)
+                global.logger.log({
+                    level: 'error',
+                    label: 'LDAP',
+                    message: '(bindClient) error: ' + e,
+                    file: path.basename(__filename)
+                });
+                reject(e);
             }
         });
     }
@@ -75,10 +84,11 @@ export class Ldap {
                     global.logger.log({
                         level: 'error',
                         label: 'LDAP',
-                        message: 'starting TLS: ' + err
+                        message: 'starting TLS: ' + err,
+                        file: path.basename(__filename)
                     });
-                    reject(err)
-                    return
+                    reject(err);
+                    return;
                 }
                 resolve(client);
             });
@@ -118,11 +128,11 @@ export class Ldap {
                     } else {
                         resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, username, password));
                     }
-                }catch (e) {
-                    reject(e)
+                } catch (e) {
+                    reject(e);
                 }
             } else {
-                reject("LDAP disabled")
+                reject("LDAP disabled");
             }
         });
     }
@@ -142,9 +152,10 @@ export class Ldap {
                     global.logger.log({
                         level: 'error',
                         label: 'LDAP',
-                        message: 'search failed'
+                        message: 'search failed',
+                        file: path.basename(__filename)
                     });
-                    reject(err)
+                    reject(err);
                 } else {
                     let users: User[] = [];
                     res.on('error', ldapErrorHandler);
@@ -158,7 +169,8 @@ export class Ldap {
                         global.logger.log({
                             level: 'silly',
                             label: 'LDAP',
-                            message: 'Got entry : ' + JSON.stringify(entry.object)
+                            message: 'Got entry : ' + JSON.stringify(entry.object),
+                            file: path.basename(__filename)
                         });
                         let obj: ActiveDirectorySearchEntryObject = entry.object;
                         let dn = obj["dn"].toString().split(",");
@@ -174,8 +186,8 @@ export class Ldap {
                                     user.type = 2;
                                 }
                                 users.push(user);
-                            }catch (e) {
-                                reject("membership validation failed")
+                            } catch (e) {
+                                reject("membership validation failed");
                             }
                         }
                     });
@@ -212,12 +224,12 @@ export class Ldap {
                     filter: '(&(objectClass=user)(samaccountname=' + username + '))'
                 }, global.config.ldapConfig.root);
                 if (users.length === 1) {
-                    resolve()
+                    resolve();
                 } else {
-                    reject("User not found")
+                    reject("User not found");
                 }
             } catch (e) {
-                reject("password check failed")
+                reject("password check failed");
             }
 
         });
@@ -240,7 +252,7 @@ export class Ldap {
                 } else {
                     reject("not found");
                 }
-            }catch (e) {
+            } catch (e) {
                 reject(e);
             }
         });
@@ -267,7 +279,8 @@ function ldapErrorHandler(err: Error) {
     global.logger.log({
         level: 'error',
         label: 'LDAP',
-        message: 'search error : ' + err.message
+        message: 'search error : ' + err.message,
+        file: path.basename(__filename)
     });
 }
 

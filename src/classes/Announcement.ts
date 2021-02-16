@@ -12,6 +12,7 @@ import {Course} from "./Course";
 import {ApiGlobal} from "../types/global";
 import {Utils} from "./Utils";
 import {TimeTable} from "./TimeTable";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -62,7 +63,6 @@ export class Announcement {
                 let rows = await conn.query("SELECT * FROM `data_announcements` WHERE `courseId`= ? ", [course.id]);
                 resolve(this.convertSqlRowsToObjects(rows));
             } catch (e) {
-                console.log(e);
                 reject(e);
             } finally {
                 await conn.end();
@@ -99,7 +99,8 @@ export class Announcement {
                 global.logger.log({
                     level: 'error',
                     label: 'Announcements',
-                    message: '(getAll)) ' + e
+                    message: '(getAll)) ' + e,
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -130,7 +131,8 @@ export class Announcement {
                 global.logger.log({
                     level: 'error',
                     label: 'Announcements',
-                    message: '(getById)) ' + e
+                    message: '(getById)) ' + e,
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -161,7 +163,8 @@ export class Announcement {
                 global.logger.log({
                     level: 'error',
                     label: 'Announcement',
-                    message: '(create) ' + e
+                    message: '(create) ' + e,
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -190,7 +193,8 @@ export class Announcement {
                 global.logger.log({
                     level: 'error',
                     label: 'Announcement',
-                    message: '(update) ' + e
+                    message: '(update) ' + e,
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {
@@ -215,7 +219,8 @@ export class Announcement {
                 global.logger.log({
                     level: 'error',
                     label: 'Announcement',
-                    message: '(delete) ' + e
+                    message: '(delete) ' + e,
+                    file: path.basename(__filename)
                 });
                 reject(e);
             } finally {

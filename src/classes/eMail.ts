@@ -61,7 +61,6 @@ export class SendGrid {
 
                     res.on("end", () => {
                         let body = Buffer.concat(chunks);
-                        console.log(body.toString())
                     });
                 });
 
@@ -77,6 +76,7 @@ export class SendGrid {
                                     {
                                         header: 'Email bestätigen',
                                         text: '',
+                                        //TODO replace with conf
                                         c2a_link: 'https://splan.nils-witt.de/pages/verify_email.html?token=' + token,
                                         c2a_button: 'Bestätigen'
                                     }

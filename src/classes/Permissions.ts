@@ -9,6 +9,7 @@
  */
 
 import {ApiGlobal} from "../types/global";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -44,6 +45,7 @@ export class Permissions {
         return new Permissions(false, false, true, false, true, false, true, false, true, false, false);
     }
 
+    //TODO update
     //TODO add jDoc
     static getByUID(userId: number): Promise<Permissions> {
         return new Promise(async (resolve, reject) => {
@@ -97,7 +99,8 @@ export class Permissions {
                     global.logger.log({
                         level: 'silly',
                         label: 'Permissions',
-                        message: 'Class: Permissions; Function: getByUID: loaded'
+                        message: 'Class: Permissions; Function: getByUID: loaded',
+                        file: path.basename(__filename)
                     });
                     resolve(permissions);
                 } else {
@@ -107,7 +110,12 @@ export class Permissions {
                     resolve(permissions);
                 }
             } catch (e) {
-                console.log(e);
+                global.logger.log({
+                    level: 'error',
+                    label: 'Permissions',
+                    message: '(getByUID) error: ' + e,
+                    file: path.basename(__filename)
+                });
             } finally {
                 if (conn) await conn.end();
             }

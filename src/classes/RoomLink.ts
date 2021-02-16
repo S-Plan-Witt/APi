@@ -9,6 +9,7 @@
  */
 
 import {ApiGlobal} from "../types/global";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -54,7 +55,8 @@ export class RoomLink {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Get by course failed:  Err: ' + JSON.stringify(e)
+                    message: 'Get by course failed:  Err: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject();
             } finally {
@@ -104,7 +106,8 @@ export class RoomLink {
                 global.logger.log({
                     level: 'error',
                     label: 'roomLink',
-                    message: 'RoomLink Save failed: ' + JSON.stringify(roomLink) + " Err: " + JSON.stringify(e)
+                    message: 'RoomLink Save failed: ' + JSON.stringify(roomLink) + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
                 });
                 reject();
             } finally {

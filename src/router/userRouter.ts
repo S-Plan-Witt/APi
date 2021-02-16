@@ -20,6 +20,7 @@ import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Exam} from "../classes/Exam";
 import {Announcement} from "../classes/Announcement";
 import {Supervisor} from "../classes/Supervisor";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -71,7 +72,8 @@ router.post('/login', async (req, res) => {
             global.logger.log({
                 level: 'error',
                 label: 'Login',
-                message: 'token Error : ' + e
+                message: 'token Error : ' + e,
+                file: path.basename(__filename)
             });
             res.sendStatus(601);
             return;
@@ -80,7 +82,8 @@ router.post('/login', async (req, res) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /user/login : No method provided '
+            message: 'Routing: /user/login : No method provided ',
+            file: path.basename(__filename)
         });
         res.sendStatus(601);
         return;
@@ -102,7 +105,8 @@ router.post('/login', async (req, res) => {
             global.logger.log({
                 level: 'error',
                 label: 'User',
-                message: ' Login: /user/login : user not found (' + username + ') e:' + JSON.stringify(e)
+                message: ' Login: /user/login : user not found (' + username + ') e:' + JSON.stringify(e),
+                file: path.basename(__filename)
             });
             //res.send("User not available")
             return;
@@ -115,7 +119,7 @@ router.post('/login', async (req, res) => {
             if (global.config.ldapConfig.enabled) {
                 try {
                     await user.verifyPassword(password);
-                }catch (e) {
+                } catch (e) {
                     res.sendStatus(401);
                     return;
                 }
@@ -132,7 +136,8 @@ router.post('/login', async (req, res) => {
                             global.logger.log({
                                 level: 'info',
                                 label: 'Login',
-                                message: 'SecondFactor failed : ' + username
+                                message: 'SecondFactor failed : ' + username,
+                                file: path.basename(__filename)
                             });
                             return;
                         }
@@ -141,7 +146,8 @@ router.post('/login', async (req, res) => {
                         global.logger.log({
                             level: 'info',
                             label: 'Login',
-                            message: 'Further information required : ' + username
+                            message: 'Further information required : ' + username,
+                            file: path.basename(__filename)
                         });
                         return;
                     }
@@ -156,14 +162,16 @@ router.post('/login', async (req, res) => {
         global.logger.log({
             level: 'info',
             label: 'Login',
-            message: 'Loggedin : ' + username
+            message: 'Loggedin : ' + username,
+            file: path.basename(__filename)
         });
     } catch (e) {
         console.log(e);
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /user/login/ ; ' + JSON.stringify(e)
+            message: 'Routing: /user/login/ ; ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(601);
     }
@@ -196,7 +204,8 @@ router.get('/courses', async (req, res) => {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: 'Routing: /user/courses : invalid usertype :' + req.decoded.userType
+                message: 'Routing: /user/courses : invalid usertype :' + req.decoded.userType,
+                file: path.basename(__filename)
             });
             res.sendStatus(401);
         }
@@ -240,7 +249,8 @@ router.get('/lessons', async (req, res) => {
                     global.logger.log({
                         level: 'error',
                         label: 'Express',
-                        message: 'Routing: /user/lessons : processinf courses: ' + JSON.stringify(e)
+                        message: 'Routing: /user/lessons : processinf courses: ' + JSON.stringify(e),
+                        file: path.basename(__filename)
                     });
                     //TODO add handler
                 }
@@ -251,7 +261,8 @@ router.get('/lessons', async (req, res) => {
         global.logger.log({
             level: 'error',
             label: 'Express',
-            message: 'Routing: /user/lessons : ' + JSON.stringify(e)
+            message: 'Routing: /user/lessons : ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
         res.sendStatus(500);
     }
@@ -292,7 +303,8 @@ router.get('/replacementlessons', async (req, res) => {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: 'Routing: /user/replacementlessons : rej (503)(' + req.decoded.userType + ')'
+                message: 'Routing: /user/replacementlessons : rej (503)(' + req.decoded.userType + ')',
+                file: path.basename(__filename)
             });
 
             res.sendStatus(503);

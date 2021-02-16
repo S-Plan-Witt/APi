@@ -16,6 +16,7 @@ import {PushNotifications} from '../classes/PushNotifications';
 import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
 import {Announcement} from "../classes/Announcement";
+import path from "path";
 
 declare const global: ApiGlobal;
 
@@ -64,7 +65,8 @@ router.post('/', async (req, res) => {
         global.logger.log({
             level: 'error',
             label: 'announcementsRouter',
-            message: 'Error while processing request ' + JSON.stringify(e)
+            message: 'Error while processing request ' + JSON.stringify(e),
+            file: path.basename(__filename)
         });
 
         res.sendStatus(500);
