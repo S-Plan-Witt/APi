@@ -27,10 +27,10 @@ declare const global: ApiGlobal;
 export class User {
     public displayName: string = "";
     public lastName: string;
-    public active: boolean;
+    public status: UserStatus;
     public firstName: string;
     public username: string;
-    public type: number;
+    public type: UserType;
     public devices: any;
     public mails: any;
     public id: number | null;
@@ -47,15 +47,15 @@ export class User {
      * @param id {Integer}
      * @param type {number}
      * @param courses
-     * @param active
+     * @param status {UserStatus}
      * @param mails
      * @param devices
      * @param secondFactor
      * @param permissions
      * @param moodleUID
      */
-    constructor(firstName: string, lastName: string, username: string, id: number | null = null, type: number = 0, courses: Course[] = [], active = false, mails = null, devices = null, secondFactor: number | null = null, permissions: Permissions = Permissions.getDefault(), moodleUID: number | null = null) {
-        this.active = active;
+    constructor(firstName: string, lastName: string, username: string, id: number | null = null, type: UserType, courses: Course[] = [], status: UserStatus = UserStatus.DISABLED, mails = null, devices = null, secondFactor: number | null = null, permissions: Permissions = Permissions.getDefault(), moodleUID: number | null = null) {
+        this.status = status;
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
@@ -451,7 +451,6 @@ export class User {
                     message: 'Class: User; Function: createToDB: ' + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
-                console.log(e);
                 reject(e);
             } finally {
                 await conn.end();
@@ -818,8 +817,14 @@ export class User {
     }
 }
 
+export enum UserStatus {
+    ENABLED,
+    DISABLED,
+    BLOCKED,
+    DELETED
+}
 
-
-
-
-
+export enum UserType {
+    STUDENT,
+    TEACHER
+}

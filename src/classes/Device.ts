@@ -8,23 +8,32 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @typedef Device
+ * @property {number} id
+ * @property {string} userId.required
+ * @property {string} platform.required
+ * @property {number} device.required
+ */
 export class Device {
-    public static TYPE_TELEGRAM = 1;
-    public static TYPE_APNS = 2;
-    public static TYPE_WEBPUSH = 3;
     public timeAdded: string;
     public id: number;
     public userId: number;
-    public platform: number;
+    public platform: DeviceType;
     public deviceIdentifier: string;
 
-    constructor(platform: number, id: number, userId: number, timeAdded: string, deviceIdentifier: string) {
+    constructor(platform: DeviceType, id: number, userId: number, timeAdded: string, deviceIdentifier: string) {
         this.platform = platform;
         this.id = id;
         this.userId = userId;
         this.timeAdded = timeAdded;
         this.deviceIdentifier = deviceIdentifier;
     }
+}
 
-
+enum DeviceType {
+    TELEGRAM,
+    APNS,
+    FIREBASE,
+    WEBPUSH
 }

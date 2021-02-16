@@ -11,7 +11,7 @@
 import ldap, {Client, Error, SearchCallbackResponse, SearchEntry, SearchEntryObject, SearchOptions} from 'ldapjs';
 import fs from 'fs';
 import {ApiGlobal} from "../types/global";
-import {User} from './User';
+import {User, UserStatus} from './User';
 import {Permissions} from "./Permissions";
 import {Teacher} from "./Teacher";
 import {Student} from "./Student";
@@ -177,7 +177,7 @@ export class Ldap {
                         let grade = dn[1].substr(3, (dn[1].length - 1));
 
                         if (grade !== '_Removed') {
-                            let user: User = new User(obj.givenName, obj.sn, obj.sAMAccountName, 0, 0, [], true, null, null, null, Permissions.getDefault());
+                            let user: User = new User(obj.givenName, obj.sn, obj.sAMAccountName, 0, 0, [], UserStatus.ENABLED, null, null, null, Permissions.getDefault());
                             user.displayName = obj.displayName;
                             try {
                                 if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
@@ -286,18 +286,18 @@ function ldapErrorHandler(err: Error) {
 
 export class LdapSearch {
 
-    _firstName: string;
-    _lastName: string;
-    _birthDate: string;
-    _username: string;
-    _ou: string;
+    firstName: string;
+    lastName: string;
+    birthDate: string;
+    username: string;
+    ou: string;
 
     constructor(firstName: string, lastName: string, birthDate: string, username: string, ou: string) {
-        this._firstName = firstName;
-        this._lastName = lastName;
-        this._birthDate = birthDate;
-        this._username = username;
-        this._ou = ou;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.birthDate = birthDate;
+        this.username = username;
+        this.ou = ou;
     }
 }
 

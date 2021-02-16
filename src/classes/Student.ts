@@ -8,15 +8,15 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {User} from "./User";
+import {User, UserStatus, UserType} from "./User";
 import {Permissions} from "./Permissions";
 
 export class Student extends User {
     public grade: string;
     public birthday: string;
 
-    constructor(firstName = "", lastName = "", displayName: string, username = "", id = 0, grade = "", birthday: string,) {
-        super(firstName, lastName, username, id, 1, [], false, null, null, 0, Permissions.getDefault());
+    constructor(firstName = "", lastName = "", displayName: string, username = "", id = 0, grade = "", birthday: string) {
+        super(firstName, lastName, username, id, UserType.STUDENT, [], UserStatus.DISABLED, null, null, 0, Permissions.getDefault());
         this.grade = grade;
         this.birthday = birthday;
         this.displayName = displayName;
