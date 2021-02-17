@@ -672,10 +672,9 @@ export class User {
     /**
      * Add device to user
      * @param device {String}
-     * @param platform {String}
      * @returns Promise
      */
-    addDevice(device: string, platform: string) {
+    addDevice(device: Device) {
         let username = this.username;
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -686,7 +685,7 @@ export class User {
                     resolve(false);
                     return
                 }
-                await conn.query("INSERT INTO `devices` (`userID`, `deviceID`, `plattform`) VALUES ((SELECT idusers FROM users WHERE username = ?), ?, ?)", [username, device, platform]);
+                await conn.query("INSERT INTO `devices` (`userID`, `deviceID`, `plattform`) VALUES ((SELECT idusers FROM users WHERE username = ?), ?, ?)", [username, device.deviceIdentifier, device.platform]);
                 resolve(true);
             } catch (e) {
                 reject(e);

@@ -17,12 +17,12 @@
  */
 export class Device {
     public timeAdded: string;
-    public id: number;
-    public userId: number;
+    public id: number | null;
+    public userId: number | null;
     public platform: DeviceType;
     public deviceIdentifier: string;
 
-    constructor(platform: DeviceType, id: number, userId: number, timeAdded: string, deviceIdentifier: string) {
+    constructor(platform: DeviceType, id: number | null, userId: number | null, timeAdded: string, deviceIdentifier: string) {
         this.platform = platform;
         this.id = id;
         this.userId = userId;
@@ -31,7 +31,7 @@ export class Device {
     }
 }
 
-enum DeviceType {
+export enum DeviceType {
     TELEGRAM,
     APNS,
     FIREBASE,

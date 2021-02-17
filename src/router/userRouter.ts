@@ -21,6 +21,7 @@ import {Exam} from "../classes/Exam";
 import {Announcement} from "../classes/Announcement";
 import {Supervisor} from "../classes/Supervisor";
 import path from "path";
+import {Device} from "../classes/Device";
 
 declare const global: ApiGlobal;
 
@@ -476,7 +477,8 @@ router.post('/devices', async (req: Request, res: Response) => {
     let platform = req.body.plattform;
 
     try {
-        if (await req.user.addDevice(deviceId, platform)) {
+        let device = new Device(parseInt(platform),null,req.user.id,Date.now().toString(),deviceId);
+        if (await req.user.addDevice(device)) {
             res.sendStatus(200);
         } else {
             res.sendStatus(200);
