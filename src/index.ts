@@ -19,6 +19,7 @@ import {JWTInterface} from './classes/JWTInterface';
 import {Telegram} from './classes/Telegram';
 import {PushNotifications} from './classes/PushNotifications';
 import path from "path";
+import {Device, DeviceType} from "./classes/Device";
 
 declare const global: ApiGlobal;
 const {combine, timestamp, printf} = format;
@@ -239,7 +240,8 @@ app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     }
 
     try {
-        await req.user.addDevice(tgId.toString(), "TG");
+        let device = new Device(DeviceType.TELEGRAM,null,req.user.id,"",tgId.toString())
+        await req.user.addDevice(device);
         await Telegram.revokeRequest(token);
         if (global.pushNotifications.pushTelegram) {
             await global.pushNotifications.pushTelegram.sendPush(tgId, "Connected to user " + req.user.username);
