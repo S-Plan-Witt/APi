@@ -514,14 +514,14 @@ export class User {
         let username = this.username;
         return new Promise(async (resolve, reject) => {
             try {
-                if (global.config.ldapConfig.enabled) {
+                ///if (global.config.ldapConfig.enabled) {
+                if (false) {
                     await Ldap.checkPassword(username, password);
 
                     let hash = bcrypt.hashSync(password, global.config.bCrypt.rounds);
-                    console.log(hash);
-                    //
-                    let conn;
                     resolve();
+
+                    let conn;
                     try {
                         conn = await global.mySQLPool.getConnection();
                         await conn.query("UPDATE users SET hashedpassword = ? WHERE idusers = ?", [hash, this.id]);
@@ -543,10 +543,29 @@ export class User {
                         message: 'Class: User; Function: verifyPassword: using cache',
                         file: path.basename(__filename)
                     });
-                    //load from db;
 
-                    //compare
-                    resolve()
+                    let hashedpassword;
+                    let conn;
+                    try {
+                        conn = await global.mySQLPool.getConnection();
+                        let res = await conn.query("SELECT hashedpassword FROM users WHERE idusers = ?", [this.id]);
+                        hashedpassword = res[0]["hashedpassword"];
+                    } catch (e) {
+                        global.logger.log({
+                            level: 'error',
+                            label: 'User',
+                            message: 'Class: User; Function: verifyPassword: hashtoDB: ' + JSON.stringify(e),
+                            file: path.basename(__filename)
+                        });
+                    } finally {
+                        await conn.end();
+                    }
+
+                    if(bcrypt.compareSync(password, hashedpassword)){
+                        resolve()
+                    }else {
+                        reject("Failed")
+                    }
                 }
             } catch (e) {
                 global.logger.log({
