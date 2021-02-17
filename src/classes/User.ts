@@ -18,6 +18,7 @@ import {Permissions} from "./Permissions";
 import {Student} from "./Student";
 import {Course} from "./Course";
 import path from "path";
+const bcrypt = require('bcrypt');
 
 declare const global: ApiGlobal;
 
@@ -509,12 +510,44 @@ export class User {
      * @param password {String}
      * @returns Promise resolves if password is correct
      */
-    verifyPassword(password: string) {
+    verifyPassword(password: string): Promise<void> {
         let username = this.username;
         return new Promise(async (resolve, reject) => {
             try {
-                await Ldap.checkPassword(username, password);
-                resolve("Ldap")
+                if (global.config.ldapConfig.enabled) {
+                    await Ldap.checkPassword(username, password);
+
+                    let hash = bcrypt.hashSync(password, global.config.bCrypt.rounds);
+                    console.log(hash);
+                    //
+                    let conn;
+                    resolve();
+                    try {
+                        conn = await global.mySQLPool.getConnection();
+                        await conn.query("UPDATE users SET hashedpassword = ? WHERE idusers = ?", [hash, this.id]);
+                    } catch (e) {
+                        global.logger.log({
+                            level: 'error',
+                            label: 'User',
+                            message: 'Class: User; Function: verifyPassword: hashtoDB: ' + JSON.stringify(e),
+                            file: path.basename(__filename)
+                        });
+                    } finally {
+                        await conn.end();
+                    }
+
+                }else{
+                    global.logger.log({
+                        level: 'debug',
+                        label: 'User auth',
+                        message: 'Class: User; Function: verifyPassword: using cache',
+                        file: path.basename(__filename)
+                    });
+                    //load from db;
+
+                    //compare
+                    resolve()
+                }
             } catch (e) {
                 global.logger.log({
                     level: 'error',
@@ -817,8 +850,8 @@ export class User {
 }
 
 export enum UserStatus {
-    ENABLED,
     DISABLED,
+    ENABLED,
     BLOCKED,
     DELETED
 }

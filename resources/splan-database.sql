@@ -131,6 +131,7 @@ create table if not exists users
     displayname varchar(45) charset latin1 null,
     active      int default 1              null,
     twoFactor   int default 0              null,
+    hashedpassword varchar(100) charset latin1 null,
     constraint users_username_uindex
         unique (username)
 )

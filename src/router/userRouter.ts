@@ -109,7 +109,7 @@ router.post('/login', async (req, res) => {
                 message: ' Login: /user/login : user not found (' + username + ') e:' + JSON.stringify(e),
                 file: path.basename(__filename)
             });
-            //res.send("User not available")
+            res.send("User not available");
             return;
         }
     }
@@ -117,41 +117,39 @@ router.post('/login', async (req, res) => {
     try {
         await user.isActive();
         if (!preauth) {
-            if (global.config.ldapConfig.enabled) {
-                try {
-                    await user.verifyPassword(password);
-                } catch (e) {
-                    res.sendStatus(401);
-                    return;
-                }
-                if (user.secondFactor === 1) {
-                    if (req.body.hasOwnProperty("secondFactor")) {
-                        let code = req.body["secondFactor"];
-                        try {
-                            if (user.id != null) {
-                                await Totp.verifyUserCode(code, user.id);
-                            }
-                            console.log("ERROR")
-                        } catch (e) {
-                            res.sendStatus(401);
-                            global.logger.log({
-                                level: 'info',
-                                label: 'Login',
-                                message: 'SecondFactor failed : ' + username,
-                                file: path.basename(__filename)
-                            });
-                            return;
+            try {
+                await user.verifyPassword(password);
+            } catch (e) {
+                res.sendStatus(401);
+                return;
+            }
+            if (user.secondFactor === 1) {
+                if (req.body.hasOwnProperty("secondFactor")) {
+                    let code = req.body["secondFactor"];
+                    try {
+                        if (user.id != null) {
+                            await Totp.verifyUserCode(code, user.id);
                         }
-                    } else {
-                        res.sendStatus(602);
+                        console.log("ERROR")
+                    } catch (e) {
+                        res.sendStatus(401);
                         global.logger.log({
                             level: 'info',
                             label: 'Login',
-                            message: 'Further information required : ' + username,
+                            message: 'SecondFactor failed : ' + username,
                             file: path.basename(__filename)
                         });
                         return;
                     }
+                } else {
+                    res.sendStatus(602);
+                    global.logger.log({
+                        level: 'info',
+                        label: 'Login',
+                        message: 'Further information required : ' + username,
+                        file: path.basename(__filename)
+                    });
+                    return;
                 }
             }
         }
@@ -477,7 +475,7 @@ router.post('/devices', async (req: Request, res: Response) => {
     let platform = req.body.plattform;
 
     try {
-        let device = new Device(parseInt(platform),null,req.user.id,Date.now().toString(),deviceId);
+        let device = new Device(parseInt(platform), null, req.user.id, Date.now().toString(), deviceId);
         if (await req.user.addDevice(device)) {
             res.sendStatus(200);
         } else {
