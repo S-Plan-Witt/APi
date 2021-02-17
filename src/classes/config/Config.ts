@@ -13,6 +13,7 @@ import {MysqlConfig} from "./MysqlConfig";
 import {PushFrameworksConfig} from "./PushFrameworksConfig";
 import {WebServerConfig} from "./WebServerConfig";
 import {PWAConfig} from "./PWAConfig";
+import {BcryptConf} from "./BcryptConf";
 
 export class Config {
     public ldapConfig: LdapConfig = new LdapConfig();
@@ -20,6 +21,7 @@ export class Config {
     public pushFrameWorks: PushFrameworksConfig = new PushFrameworksConfig();
     public webServerConfig: WebServerConfig = new WebServerConfig();
     public pwaConfig: PWAConfig = new PWAConfig();
+    public bCrypt: BcryptConf = new BcryptConf();
 
     static loadFromEnv(): Config {
         let config = new Config();
