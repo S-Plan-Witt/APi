@@ -15,8 +15,8 @@ export class Student extends User {
     public grade: string;
     public birthday: string;
 
-    constructor(firstName = "", lastName = "", displayName: string, username = "", id = 0, grade = "", birthday: string) {
-        super(firstName, lastName, username, id, UserType.STUDENT, [], UserStatus.DISABLED, null, null, 0, Permissions.getDefault());
+    constructor(firstName: string, lastName: string, displayName: string, username: string, id: number, grade: string, birthday: string) {
+        super(firstName, lastName, username, displayName, id, UserType.STUDENT, [], UserStatus.DISABLED, [], [], 0, Permissions.getDefault());
         this.grade = grade;
         this.birthday = birthday;
         this.displayName = displayName;

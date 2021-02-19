@@ -177,8 +177,7 @@ export class Ldap {
                         let grade = dn[1].substr(3, (dn[1].length - 1));
 
                         if (grade !== '_Removed') {
-                            let user: User = new User(obj.givenName, obj.sn, obj.sAMAccountName, 0, 0, [], UserStatus.ENABLED, null, null, null, Permissions.getDefault());
-                            user.displayName = obj.displayName;
+                            let user: User = new User(obj.givenName, obj.sn, obj.displayName, obj.sAMAccountName, -1, 0, [], UserStatus.ENABLED, [], [], null, Permissions.getDefault());
                             try {
                                 if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
                                     user.type = 1;

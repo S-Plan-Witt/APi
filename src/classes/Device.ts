@@ -12,7 +12,7 @@
  * @typedef Device
  * @property {number} id
  * @property {string} userId.required
- * @property {string} platform.required
+ * @property {number} platform.required
  * @property {number} device.required
  */
 export class Device {
@@ -32,8 +32,8 @@ export class Device {
 }
 
 export enum DeviceType {
-    TELEGRAM,
-    APNS,
-    FIREBASE,
-    WEBPUSH
+    TELEGRAM = 0,
+    APNS = 1,
+    FIREBASE = 2,
+    WEBPUSH = 3
 }

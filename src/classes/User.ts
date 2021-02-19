@@ -26,15 +26,15 @@ declare const global: ApiGlobal;
  * Class User: Is parent to all user types
  */
 export class User {
-    public displayName: string = "";
+    public displayName: string;
     public lastName: string;
     public status: UserStatus;
     public firstName: string;
     public username: string;
     public type: UserType;
-    public devices: any;
-    public mails: any;
-    public id: number | null;
+    public devices: Device[];
+    public mails: any[];
+    public id: number;
     public courses: Course[];
     public secondFactor: number | null;
     public permissions: Permissions;
@@ -44,6 +44,7 @@ export class User {
      *
      * @param firstName {String}
      * @param lastName {String}
+     * @param displayname {String}
      * @param username {String}
      * @param id {Integer}
      * @param type {number}
@@ -55,11 +56,12 @@ export class User {
      * @param permissions
      * @param moodleUID
      */
-    constructor(firstName: string, lastName: string, username: string, id: number | null = null, type: UserType, courses: Course[] = [], status: UserStatus = UserStatus.DISABLED, mails = null, devices = null, secondFactor: number | null = null, permissions: Permissions = Permissions.getDefault(), moodleUID: number | null = null) {
+    constructor(firstName: string, lastName: string, displayname: string, username: string, id: number = -1, type: UserType, courses: Course[] = [], status: UserStatus = UserStatus.DISABLED, mails: any[] = [], devices: Device[] = [], secondFactor: number | null = null, permissions: Permissions = Permissions.getDefault(), moodleUID: number | null = null) {
         this.status = status;
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.displayName = displayname;
         this.username = username;
         this.type = type;
         this.courses = courses;
@@ -156,7 +158,7 @@ export class User {
      */
     static async fromSqlUser(sql: any): Promise<User> {
         return new Promise(async (resolve, reject) => {
-            resolve(new User(sql["firstname"], sql["lastname"], sql["username"], sql["idusers"], parseInt(sql["type"]), await User.getCoursesByUser(sql["idusers"], parseInt(sql["type"])), sql["active"], await User.getEMails(sql["idusers"]), await User.getDevices(sql["idusers"]), sql["twoFactor"], await Permissions.getByUID(parseInt(sql["idusers"])), sql["moodleid"]))
+            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["idusers"], parseInt(sql["type"]), await User.getCoursesByUser(sql["idusers"], parseInt(sql["type"])), sql["active"], await User.getEMails(sql["idusers"]), await User.getDevices(sql["idusers"]), sql["twoFactor"], await Permissions.getByUID(parseInt(sql["idusers"])), sql["moodleid"]))
         });
     }
 
@@ -346,8 +348,7 @@ export class User {
                 let devices: Device[] = [];
                 rows.forEach((row: any) => {
                     if (row.deviceID != null) {
-                        //TODO add table id
-                        devices.push(new Device(row.plattform, 0, row.userId, row.added, row.deviceID));
+                        devices.push(new Device(row.platform, parseInt(row.idDevices), row.userId, row.added, row.deviceID));
                     }
                 });
                 global.logger.log({
