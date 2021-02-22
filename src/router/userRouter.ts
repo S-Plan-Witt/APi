@@ -56,7 +56,7 @@ router.get('/', async (req, res) => {
  */
 router.post('/login', async (req, res) => {
 
-    let username = req.body.username;
+    let username = req.body.username.toLowerCase();
     let password = req.body.password;
     let token = req.body.token;
     let preauth = false;
