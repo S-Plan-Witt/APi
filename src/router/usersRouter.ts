@@ -9,14 +9,13 @@
  */
 
 import express, {Request, Response} from 'express';
-import {User} from '../classes/User';
+import {User, UserType} from '../classes/User';
 import {Ldap} from '../classes/Ldap';
 import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
 import {UserFilter} from "../classes/UserFilter";
 import {Course} from "../classes/Course";
 import {Teacher} from "../classes/Teacher";
-import {SearchOptions} from "ldapjs";
 import path from "path";
 
 declare const global: ApiGlobal;
@@ -202,13 +201,11 @@ router.get('/ldap/', async (req: Request, res: Response) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/ldap/find', async (req: Request, res: Response) => {
+router.post('/find', async (req: Request, res: Response) => {
 
-    let filter = new UserFilter("", "", "", "");
-    let firstName = "";
-    let lastName = "";
-    let birthday = "";
-    let birthdayFilter = "";
+    let firstName = null;
+    let lastName = null;
+    let username = null;
 
     if (req.body.hasOwnProperty("firstname")) {
         firstName = req.body.firstname;
@@ -216,29 +213,14 @@ router.post('/ldap/find', async (req: Request, res: Response) => {
     if (req.body.hasOwnProperty("lastname")) {
         lastName = req.body.lastname;
     }
-    if (req.body.hasOwnProperty("birthday")) {
-        birthday = req.body.birthday;
+    if (req.body.hasOwnProperty("username")) {
+        username = req.body.username;
     }
 
     try {
-        if (firstName === "") {
-            firstName = "*";
-        }
-        if (lastName === "") {
-            lastName = "*";
-        }
-        if (birthday === "") {
-            birthdayFilter = "";
-        } else {
-            birthdayFilter = '(info=' + birthday + ')';
-        }
+        let filter = new UserFilter(username, firstName, lastName)
 
-        let opts: SearchOptions = {
-            filter: '(&(objectClass=user)(sn=' + lastName + ')(givenname=' + firstName + ')' + birthdayFilter + ')',
-            scope: 'sub',
-            attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'memberOf', 'info']
-        };
-        let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
+        let users: User[] = await User.search(filter);
         res.json(users);
     } catch (e) {
         global.logger.log({
@@ -288,19 +270,24 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
     }
     if (user != null) {
         try {
-            await user.deleteCourses();
-            let courses = [];
-            for (const courseData of req.body) {
-                try {
-                    let course: Course = await TimeTable.getCourseByFields(courseData["subject"], courseData["grade"], courseData["group"])
-                    course.exams = courseData["exams"];
-                    courses.push(course);
-                } catch (e) {
-                    //TODO add logger
+            if (user.type == UserType.STUDENT) {
+                await user.deleteCourses();
+                let courses = [];
+                for (const courseData of req.body) {
+                    try {
+                        let course: Course = await TimeTable.getCourseByFields(courseData["subject"], courseData["grade"], courseData["group"])
+                        course.exams = courseData["exams"];
+                        courses.push(course);
+                    } catch (e) {
+                        //TODO add logger
+                    }
                 }
+                await user.addCourse(courses);
+                res.sendStatus(200);
+            } else {
+                res.send("type: " + user.type);
             }
-            await user.addCourse(courses);
-            res.sendStatus(200);
+
         } catch (e) {
             global.logger.log({
                 level: 'error',
