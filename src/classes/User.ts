@@ -18,6 +18,8 @@ import {Permissions} from "./Permissions";
 import {Student} from "./Student";
 import {Course} from "./Course";
 import path from "path";
+import {UserFilter} from "./UserFilter";
+
 const bcrypt = require('bcrypt');
 
 declare const global: ApiGlobal;
@@ -26,19 +28,21 @@ declare const global: ApiGlobal;
  * Class User: Is parent to all user types
  */
 export class User {
-    public displayName: string;
-    public lastName: string;
-    public status: UserStatus;
-    public firstName: string;
+    public id: number;
+    public moodleUID: number | null;
     public username: string;
+    public firstName: string;
+    public lastName: string;
+    public displayName: string;
+    public status: UserStatus;
     public type: UserType;
     public devices: Device[];
+    //TODO Move into Devices
     public mails: any[];
-    public id: number;
     public courses: Course[];
     public secondFactor: number | null;
-    public permissions: Permissions;
-    public moodleUID: number | null;
+    public permissions: Permissions | null;
+
 
     /**
      *
@@ -56,7 +60,7 @@ export class User {
      * @param permissions
      * @param moodleUID
      */
-    constructor(firstName: string, lastName: string, displayname: string, username: string, id: number = -1, type: UserType, courses: Course[] = [], status: UserStatus = UserStatus.DISABLED, mails: any[] = [], devices: Device[] = [], secondFactor: number | null = null, permissions: Permissions = Permissions.getDefault(), moodleUID: number | null = null) {
+    constructor(firstName: string, lastName: string, displayname: string, username: string, id: number = -1, type: UserType, courses: Course[] = [], status: UserStatus = UserStatus.DISABLED, mails: any[] = [], devices: Device[] = [], secondFactor: number | null = null, permissions: Permissions | null, moodleUID: number | null = null) {
         this.status = status;
         this.id = id;
         this.firstName = firstName;
@@ -133,6 +137,7 @@ export class User {
                 rows = await conn.query("SELECT * FROM users LEFT JOIN moodle_mapping ON users.idusers = moodle_mapping.userid WHERE `idusers`= ?", [id]);
                 if (rows.length > 0) {
                     let loadedUser = await User.fromSqlUser(rows[0]);
+                    await loadedUser.populateUser();
                     resolve(loadedUser);
                 } else {
                     //TODO add logger
@@ -158,7 +163,7 @@ export class User {
      */
     static async fromSqlUser(sql: any): Promise<User> {
         return new Promise(async (resolve, reject) => {
-            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["idusers"], parseInt(sql["type"]), await User.getCoursesByUser(sql["idusers"], parseInt(sql["type"])), sql["active"], await User.getEMails(sql["idusers"]), await User.getDevices(sql["idusers"]), sql["twoFactor"], await Permissions.getByUID(parseInt(sql["idusers"])), sql["moodleid"]))
+            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["idusers"], parseInt(sql["type"]), [], sql["active"], [], [], sql["twoFactor"], null, sql["moodleid"]))
         });
     }
 
@@ -244,6 +249,7 @@ export class User {
     static getEMails(userId: number): any {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
+            console.log(userId)
             try {
                 let mails: EMail[] = [];
                 const rows = await conn.query("SELECT * FROM users_mails WHERE `userid`= ?;", [userId]);
@@ -432,6 +438,73 @@ export class User {
     }
 
     /**
+     *
+     */
+    static search(filter: UserFilter): Promise<User[]> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let users: User[] = [];
+                //Mysql Search
+                let conn = await global.mySQLPool.getConnection();
+                try {
+                    let firstname = filter.firstName;
+                    let lastname = filter.lastName;
+                    let username = filter.username;
+                    if (firstname === null) {
+                        firstname = "%"
+                    }
+                    if (lastname === null) {
+                        lastname = "%"
+                    }
+                    if (username === null) {
+                        username = "%"
+                    }
+                    console.log(filter)
+                    let result = await conn.query("SELECT * FROM users WHERE `firstname` LIKE ? AND lastname LIKE ?", [firstname, lastname])
+                    for (let i = 0; i < result.length; i++) {
+                        let user: User = await User.fromSqlUser(result[i]);
+                        users.push(user);
+
+                    }
+
+                } catch (e) {
+                    reject(e);
+                } finally {
+                    await conn.end()
+                }
+
+                if (global.config.ldapConfig.enabled) {
+                    let ldapUsers = await Ldap.searchUsers(filter);
+                    users.push();
+                }
+
+                resolve(users);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: '(saveTokenForUser) error: ' + e,
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            }
+        });
+    }
+
+    /**
+     * Loads complete profile
+     */
+    populateUser(): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            this.courses = await User.getCoursesByUser(this.id, this.type);
+            this.devices = await User.getDevices(this.id);
+            this.permissions = await Permissions.getByUID(this.id)
+            this.mails = await User.getEMails(this.id);
+            resolve();
+        });
+    }
+
+    /**
      * creates the user in the database if not exists
      */
     createToDB() {
@@ -537,7 +610,7 @@ export class User {
                         await conn.end();
                     }
 
-                }else{
+                } else {
                     global.logger.log({
                         level: 'debug',
                         label: 'User auth',
@@ -562,9 +635,9 @@ export class User {
                         await conn.end();
                     }
 
-                    if(bcrypt.compareSync(password, hashedpassword)){
+                    if (bcrypt.compareSync(password, hashedpassword)) {
                         resolve()
-                    }else {
+                    } else {
                         reject("Failed")
                     }
                 }

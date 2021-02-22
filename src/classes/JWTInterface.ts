@@ -14,6 +14,7 @@ import {User} from './User';
 import {ApiGlobal} from "../types/global";
 import {NextFunction, Request, Response} from "express";
 import path from "path";
+import {Permissions} from "./Permissions";
 
 declare const global: ApiGlobal;
 
@@ -127,7 +128,10 @@ export class JWTInterface {
                         decoded['jwtId'] = await JWTInterface.verifyId(decoded.session)
                         req.decoded = decoded;
                         req.user = await User.getUserById(req.decoded.userId);
-                        req.decoded.permissions = req.user.permissions;
+                        await req.user.populateUser();
+                        if (req.user.permissions instanceof Permissions) {
+                            req.decoded.permissions = req.user.permissions;
+                        }
                         next();
                     } else {
                         global.logger.log({

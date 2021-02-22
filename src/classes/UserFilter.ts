@@ -9,15 +9,13 @@
  */
 
 export class UserFilter {
-    public username: string;
-    public firstName: string;
-    public lastName: string;
-    public birthday: string;
+    public username: string | null;
+    public firstName: string | null;
+    public lastName: string | null;
 
-    constructor(username: string, firstName: string, lastName: string, birthday: string) {
+    constructor(username: string | null, firstName: string | null, lastName: string | null) {
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.birthday = birthday;
     }
 }

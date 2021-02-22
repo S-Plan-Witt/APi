@@ -16,6 +16,7 @@ import {Permissions} from "./Permissions";
 import {Teacher} from "./Teacher";
 import {Student} from "./Student";
 import path from "path";
+import {UserFilter} from "./UserFilter";
 
 declare const global: ApiGlobal;
 
@@ -137,8 +138,40 @@ export class Ldap {
         });
     }
 
+    /**
+     * Returns all users matching the filter from the LDAP Serer
+     * @param filter
+     */
+    static searchUsers(filter: UserFilter): Promise<User[]> {
+        return new Promise(async (resolve, reject) => {
+            let firstname = filter.firstName;
+            let lastname = filter.lastName;
+            let username = filter.username;
+
+            if (firstname === null) {
+                firstname = "*";
+            }
+            if (lastname === null) {
+                lastname = "*";
+            }
+            if (username === null) {
+                username = "*";
+            }
+
+            let opts: SearchOptions = {
+                filter: '(&(objectClass=user)(sn=' + lastname + ')(givenname=' + firstname + ')(samaccountname=' + username + ')',
+                scope: 'sub',
+                attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'memberOf', 'info'],
+                paged: true
+            };
+
+            resolve(await this.searchUsersAdvanced(opts, global.config.ldapConfig.root));
+        });
+    }
+
+
     //TODO add jDoc
-    static searchUsers(opts: SearchOptions, searchRoot: string): Promise<User[]> {
+    static searchUsersAdvanced(opts: SearchOptions, searchRoot: string): Promise<User[]> {
         return new Promise(async (resolve, reject) => {
             let ldapClient: Client = await Ldap.bindLDAP();
             if (opts.paged === undefined) opts.paged = true;
@@ -205,7 +238,7 @@ export class Ldap {
             let opts: SearchOptions = {
                 filter: '(&(objectClass=user)(memberOf=' + global.config.ldapConfig.teacherGroup + '))'
             };
-            resolve(await Ldap.searchUsers(opts, global.config.ldapConfig.root));
+            resolve(await Ldap.searchUsersAdvanced(opts, global.config.ldapConfig.root));
         });
     }
 
@@ -219,9 +252,7 @@ export class Ldap {
         return new Promise(async (resolve, reject) => {
             try {
                 await Ldap.bindLDAPAsUser(username, password);
-                let users = await Ldap.searchUsers({
-                    filter: '(&(objectClass=user)(samaccountname=' + username + '))'
-                }, global.config.ldapConfig.root);
+                let users = await Ldap.searchUsers(new UserFilter(username, null, null));
                 if (users.length === 1) {
                     resolve();
                 } else {
@@ -245,7 +276,7 @@ export class Ldap {
                 filter: '(&(objectClass=user)(samaccountname=' + username + '))'
             };
             try {
-                let users = await Ldap.searchUsers(opts, global.config.ldapConfig.root);
+                let users = await Ldap.searchUsers(new UserFilter(username, null, null));
                 if (users.length === 1) {
                     resolve(users[0]);
                 } else {
@@ -266,7 +297,7 @@ export class Ldap {
                 attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'info', 'dn'],
                 paged: true
             };
-            let users: Student[] = <Student[]>await Ldap.searchUsers(opts, global.config.ldapConfig.root);
+            let users: Student[] = <Student[]>await Ldap.searchUsersAdvanced(opts, global.config.ldapConfig.root);
 
             resolve(users);
         });
