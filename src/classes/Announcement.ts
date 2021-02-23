@@ -152,7 +152,6 @@ export class Announcement {
         let courseId = this.course.id;
         let date = this.date;
 
-
         return new Promise(async (resolve, reject) => {
             let conn;
             try {

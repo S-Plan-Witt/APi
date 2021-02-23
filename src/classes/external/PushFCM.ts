@@ -9,7 +9,7 @@
  */
 
 import firebaseAdmin from "firebase-admin";
-import {ApiGlobal} from "../types/global";
+import {ApiGlobal} from "../../types/global";
 import path from "path";
 
 declare const global: ApiGlobal;

@@ -19,13 +19,13 @@ declare const global: ApiGlobal;
  * @property {string} from.required
  * @property {string} to.required
  * @property {string} room.required
- * @property {string} id
+ * @property {number} id
  */
 export class RoomLink {
-    public room: any;
-    public from: any;
-    public to: any;
-    public date: any;
+    public room: string;
+    public from: string;
+    public to: string;
+    public date: string;
     public id: number;
 
     constructor(room: any, from: any, to: any, date: any) {

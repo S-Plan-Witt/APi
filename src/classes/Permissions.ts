@@ -13,6 +13,20 @@ import path from "path";
 
 declare const global: ApiGlobal;
 
+/**
+ * @typedef Permissions
+ * @param users {boolean}
+ * @param usersAdmin {boolean}
+ * @param replacementLessons {boolean}
+ * @param replacementLessonsAdmin {boolean}
+ * @param announcements {boolean}
+ * @param announcementsAdmin {boolean}
+ * @param timeTable {boolean}
+ * @param timeTableAdmin {boolean}
+ * @param moodle {boolean}
+ * @param moodleAdmin {boolean}
+ * @param globalAdmin {boolean}
+ */
 export class Permissions {
     public users: boolean;
     public usersAdmin: boolean;

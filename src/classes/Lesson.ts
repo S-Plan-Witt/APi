@@ -10,6 +10,14 @@
 
 import {Course} from "./Course";
 
+/**
+ * @typedef Lesson
+ * @property {number} id
+ * @property {Course.model} course.required
+ * @property {string} room.required
+ * @property {number} lesson.required
+ * @property {number} weekday.required
+ */
 export class Lesson {
     public course: Course;
     public lessonNumber: number;
@@ -18,7 +26,6 @@ export class Lesson {
     public id: number | null;
 
     /**
-     *
      * @param course {Course}
      * @param lesson {number}
      * @param day {number}

@@ -11,7 +11,7 @@
 import Global = NodeJS.Global;
 import {Logger} from "winston";
 import {Config} from "../classes/config/Config";
-import {PushNotifications} from "../classes/PushNotifications";
+import {PushNotifications} from "../classes/external/PushNotifications";
 
 export interface ApiGlobal extends Global {
     mySQLPool: any,

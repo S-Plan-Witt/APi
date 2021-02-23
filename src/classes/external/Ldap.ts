@@ -10,13 +10,13 @@
 
 import ldap, {Client, Error, SearchCallbackResponse, SearchEntry, SearchEntryObject, SearchOptions} from 'ldapjs';
 import fs from 'fs';
-import {ApiGlobal} from "../types/global";
-import {User, UserStatus} from './User';
-import {Permissions} from "./Permissions";
-import {Teacher} from "./Teacher";
-import {Student} from "./Student";
+import {ApiGlobal} from "../../types/global";
+import {User, UserStatus} from '../user/User';
+import {Permissions} from "../Permissions";
+import {Teacher} from "../user/Teacher";
+import {Student} from "../user/Student";
 import path from "path";
-import {UserFilter} from "./UserFilter";
+import {UserFilter} from "../user/UserFilter";
 
 declare const global: ApiGlobal;
 

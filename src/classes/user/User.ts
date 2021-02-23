@@ -8,15 +8,15 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {Ldap} from './Ldap';
-import {EMail} from './eMail';
-import {JWTInterface} from './JWTInterface';
-import {ApiGlobal} from "../types/global";
-import {Moodle} from "./Moodle";
-import {Device} from "./Device";
-import {Permissions} from "./Permissions";
+import {Ldap} from '../external/Ldap';
+import {EMail} from '../external/eMail';
+import {JWTInterface} from '../JWTInterface';
+import {ApiGlobal} from "../../types/global";
+import {Moodle} from "../Moodle";
+import {Device} from "../Device";
+import {Permissions} from "../Permissions";
 import {Student} from "./Student";
-import {Course} from "./Course";
+import {Course} from "../Course";
 import path from "path";
 import {UserFilter} from "./UserFilter";
 
@@ -25,7 +25,19 @@ const bcrypt = require('bcrypt');
 declare const global: ApiGlobal;
 
 /**
- * Class User: Is parent to all user types
+ * @typedef User
+ * @property {string} id.required
+ * @property {string} moodleUID
+ * @property {string} username.required
+ * @property {string} firstName.required
+ * @property {string} lastName.required
+ * @property {string} displayName.required
+ * @property {string} status.required
+ * @property {UserType} type.required
+ * @property {Array.<Device>} devices
+ * @property {Array.<Course>} courses
+ * @property {number} secondFactor
+ * @property {Permissions.model} permissions
  */
 export class User {
     public id: number;
@@ -43,22 +55,21 @@ export class User {
     public secondFactor: number | null;
     public permissions: Permissions | null;
 
-
     /**
      *
-     * @param firstName {String}
-     * @param lastName {String}
-     * @param displayname {String}
-     * @param username {String}
-     * @param id {Integer}
-     * @param type {number}
-     * @param courses
+     * @param firstName {string}
+     * @param lastName {string}
+     * @param displayname {string}
+     * @param username {string}
+     * @param id {number}
+     * @param type {UserType}
+     * @param courses {Course[]}
      * @param status {UserStatus}
      * @param mails
-     * @param devices
-     * @param secondFactor
-     * @param permissions
-     * @param moodleUID
+     * @param devices {Device[]}
+     * @param secondFactor {number}
+     * @param permissions {Permissions}
+     * @param moodleUID {number}
      */
     constructor(firstName: string, lastName: string, displayname: string, username: string, id: number = -1, type: UserType, courses: Course[] = [], status: UserStatus = UserStatus.DISABLED, mails: any[] = [], devices: Device[] = [], secondFactor: number | null = null, permissions: Permissions | null, moodleUID: number | null = null) {
         this.status = status;
@@ -299,7 +310,8 @@ export class User {
                 let devices: any = [];
                 rows.forEach((row: any) => {
                     if (row.deviceID != null) {
-                        devices.push({"device": row.deviceID, "platform": row.plattform});
+                        let device = new Device(row.platform, row.idDevices,row.userId, row.added,row.deviceID);
+                        devices.push(device);
                     }
                 });
                 resolve(devices);

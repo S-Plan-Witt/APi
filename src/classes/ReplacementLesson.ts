@@ -16,6 +16,14 @@ import {ApiGlobal} from "../types/global";
 
 declare const global: ApiGlobal;
 
+/**
+ * @typedef ReplacementLesson
+ * @property {number} id
+ * @property {Course.model} course.required
+ * @property {Lesson.model} lesson.required
+ * @property {string} newTeacher.required
+ * @property {string} newRoom.required
+ */
 export class ReplacementLesson {
     public id: number | null;
     public course: Course;

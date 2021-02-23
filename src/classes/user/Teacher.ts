@@ -8,14 +8,12 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-export class UserFilter {
-    public username: string | null;
-    public firstName: string | null;
-    public lastName: string | null;
+import {User, UserStatus, UserType} from "./User";
+import {Permissions} from "../Permissions";
 
-    constructor(username: string | null, firstName: string | null, lastName: string | null) {
-        this.username = username;
-        this.firstName = firstName;
-        this.lastName = lastName;
+export class Teacher extends User {
+
+    constructor(firstName: string, lastName: string, username: string, displayName: string, id: number) {
+        super(firstName, lastName, username, displayName, id, UserType.TEACHER, [], UserStatus.DISABLED, [], [], 0, Permissions.getDefault());
     }
 }

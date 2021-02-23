@@ -9,13 +9,13 @@
  */
 
 import express, {Request, Response} from 'express';
-import {User, UserType} from '../classes/User';
-import {Ldap} from '../classes/Ldap';
+import {User, UserType} from '../classes/user/User';
+import {Ldap} from '../classes/external/Ldap';
 import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
-import {UserFilter} from "../classes/UserFilter";
+import {UserFilter} from "../classes/user/UserFilter";
 import {Course} from "../classes/Course";
-import {Teacher} from "../classes/Teacher";
+import {Teacher} from "../classes/user/Teacher";
 import path from "path";
 
 declare const global: ApiGlobal;

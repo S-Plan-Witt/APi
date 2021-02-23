@@ -9,8 +9,8 @@
  */
 
 import {Telegram} from "./Telegram";
-import {User} from "./User";
-import {ApiGlobal} from "../types/global";
+import {User} from "../user/User";
+import {ApiGlobal} from "../../types/global";
 import {Context, Telegraf} from "telegraf";
 import path from "path";
 

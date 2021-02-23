@@ -8,10 +8,19 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/**
+ * @typedef Course
+ * @property {string} grade.required
+ * @property {string} subject.required
+ * @property {string} group.required
+ * @property {string} exams
+ * @property {number} id
+ * @property {number} teacherId
+ */
 export class Course {
-    public grade: any;
-    public subject: any;
-    public group: any;
+    public grade: string;
+    public subject: string ;
+    public group: string;
     public exams: boolean;
     public id: number | null;
     public teacherId: number | null;
@@ -20,11 +29,11 @@ export class Course {
      * @param grade {String}
      * @param subject {String}
      * @param group {String}
-     * @param exams {String}
-     * @param id
-     * @param teacherId
+     * @param exams {boolean}
+     * @param id {number}
+     * @param teacherId {number}
      */
-    constructor(grade: string | null = null, subject: string | null = null, group: string | null = null, exams = false, id: number | null = null, teacherId: number | null = null) {
+    constructor(grade: string , subject: string, group: string , exams = false, id: number | null = null, teacherId: number | null = null) {
         this.grade = grade;
         this.subject = subject;
         this.group = group;

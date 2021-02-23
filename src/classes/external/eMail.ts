@@ -9,7 +9,7 @@
  */
 
 import http from 'https';
-import {ApiGlobal} from "../types/global";
+import {ApiGlobal} from "../../types/global";
 
 declare const global: ApiGlobal;
 

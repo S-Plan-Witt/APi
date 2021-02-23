@@ -11,15 +11,15 @@
 import {TimeTable} from '../classes/TimeTable';
 import {JWTInterface} from '../classes/JWTInterface';
 import express, {Request, Response} from 'express';
-import {User} from '../classes/User';
+import {User} from '../classes/user/User';
 import {Totp} from '../classes/Totp';
-import {Ldap} from "../classes/Ldap";
+import {Ldap} from "../classes/external/Ldap";
 import assert from "assert";
 import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Exam} from "../classes/Exam";
 import {Announcement} from "../classes/Announcement";
-import {Supervisor} from "../classes/Supervisor";
+import {Supervisor} from "../classes/user/Supervisor";
 import path from "path";
 import {Device} from "../classes/Device";
 

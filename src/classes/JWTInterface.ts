@@ -10,7 +10,7 @@
 
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
-import {User} from './User';
+import {User} from './user/User';
 import {ApiGlobal} from "../types/global";
 import {NextFunction, Request, Response} from "express";
 import path from "path";

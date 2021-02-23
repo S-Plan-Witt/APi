@@ -9,12 +9,21 @@
  */
 
 import {User} from "./User";
-import {ApiGlobal} from "../types/global";
-import {Exam} from "./Exam";
+import {ApiGlobal} from "../../types/global";
+import {Exam} from "../Exam";
 import path from "path";
 
 declare const global: ApiGlobal;
 
+/**
+ * @typedef Supervisor
+ * @property {string} displayName.required
+ * @property {string} lastName.required
+ * @property {string} firstName.required
+ * @property {string} username.required
+ * @property {RoomLink.model} roomLink.required
+ * @property {number} id
+ */
 export class Supervisor extends User {
 
     /**

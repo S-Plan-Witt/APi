@@ -8,12 +8,13 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {ApiGlobal} from "../types/global";
+import {ApiGlobal} from "../../types/global";
 import {PushTelegram} from "./PushTelegram";
 import {PushWebPush} from "./PushWebPush";
 import {PushFCM} from "./PushFCM";
 import {Telegraf} from "telegraf";
 import path from "path";
+import {Device, DeviceType} from "../Device";
 
 declare const global: ApiGlobal;
 
@@ -46,31 +47,33 @@ export class PushNotifications {
      * @param message
      * @returns Promise resolves when push is send
      */
-    send(type: any, deviceInfo: any, title: any, message: any): Promise<void> {
+    send(endpoint: Device, title: any, message: any): Promise<void> {
         let pushFCM = this.pushFCM;
         let pushWebPush = this.pushWebPush;
         let pushTelegram = this.pushTelegram;
         return new Promise(async (resolve, reject) => {
             try {
 
-                if (type === "FCM") {
+                if (endpoint.platform === DeviceType.FIREBASE) {
                     try {
                         if (pushFCM != undefined) {
-                            await pushFCM.sendPush(deviceInfo, title, message);
+                            await pushFCM.sendPush(parseInt(endpoint.deviceIdentifier), title, message);
                             resolve();
                         } else {
-                            reject("FCM Offline")
+                            console.log("FCM offline - no push")
+                            resolve();
                         }
 
                     } catch (e) {
-                        reject();
+                        console.log(e)
+                        reject(e);
                     }
-                } else if (type === "WP") {
+                } else if (endpoint.platform === DeviceType.WEBPUSH) {
                     try {
                         if (pushWebPush != undefined) {
-                            await pushWebPush.sendPush(JSON.parse(deviceInfo), title, message);
+                            await pushWebPush.sendPush(JSON.parse(endpoint.deviceIdentifier), title, message);
                         } else {
-                            reject("WP Push Offline")
+                            console.log("WebPush offline - no push")
                         }
                         resolve();
                     } catch (e) {
@@ -83,17 +86,20 @@ export class PushNotifications {
                             }
                             return;
                         }
+                        console.log(e)
                         reject(e);
                     }
-                } else if (type === "TG") {
+                } else if (endpoint.platform === DeviceType.TELEGRAM) {
                     try {
                         if (pushTelegram != undefined) {
-                            await pushTelegram.sendPush(deviceInfo, title + ": " + message);
+                            await pushTelegram.sendPush(parseInt(endpoint.deviceIdentifier), title + ": " + message);
                             resolve();
                         } else {
-                            reject("TG Push Offline")
+                            console.log("TelegramBot offline - no push")
+                            resolve();
                         }
                     } catch (e) {
+                        console.log(e)
                         reject();
                     }
                 }
@@ -109,11 +115,10 @@ export class PushNotifications {
             try {
                 for (let id in devices) {
                     if (devices.hasOwnProperty(id)) {
+
                         let device = devices[id];
-                        let type = device.platform;
-                        let deviceInfo = device.device;
                         try {
-                            await this.send(type, deviceInfo, title, message);
+                            await this.send(device, title, message);
                         } catch (e) {
                             global.logger.log({
                                 level: 'error',

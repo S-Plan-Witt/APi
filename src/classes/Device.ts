@@ -12,7 +12,7 @@
  * @typedef Device
  * @property {number} id
  * @property {string} userId.required
- * @property {number} platform.required
+ * @property {DeviceType} platform.required
  * @property {number} device.required
  */
 export class Device {

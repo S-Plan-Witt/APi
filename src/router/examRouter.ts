@@ -12,7 +12,7 @@ import express from 'express';
 import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
 import {Exam} from "../classes/Exam";
-import {Supervisor} from "../classes/Supervisor";
+import {Supervisor} from "../classes/user/Supervisor";
 import path from "path";
 
 declare const global: ApiGlobal;

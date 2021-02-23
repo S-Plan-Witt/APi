@@ -11,7 +11,7 @@
 import express, {Request, Response} from 'express';
 
 import {TimeTable} from '../classes/TimeTable';
-import {User} from "../classes/User";
+import {User} from "../classes/user/User";
 import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
 import {Lesson} from "../classes/Lesson";

@@ -16,8 +16,8 @@ import * as dot from 'dotenv';
 import {Config} from "./classes/config/Config";
 import express, {Express, NextFunction, Request, Response} from "express";
 import {JWTInterface} from './classes/JWTInterface';
-import {Telegram} from './classes/Telegram';
-import {PushNotifications} from './classes/PushNotifications';
+import {Telegram} from './classes/external/Telegram';
+import {PushNotifications} from './classes/external/PushNotifications';
 import path from "path";
 import {Device, DeviceType} from "./classes/Device";
 

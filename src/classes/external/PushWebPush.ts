@@ -9,7 +9,7 @@
  */
 
 import webPush from "web-push";
-import {ApiGlobal} from "../types/global";
+import {ApiGlobal} from "../../types/global";
 
 declare const global: ApiGlobal;
 

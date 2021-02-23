@@ -10,8 +10,8 @@
 
 import express from 'express';
 
-import {User} from '../classes/User';
-import {PushNotifications} from '../classes/PushNotifications';
+import {User} from '../classes/user/User';
+import {PushNotifications} from '../classes/external/PushNotifications';
 import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
@@ -193,11 +193,10 @@ router.delete('/id/:id', async (req, res) => {
 
         let push = new PushNotifications();
         let devices: any = await User.getStudentDevicesByCourse(replacementLesson.course);
-        console.log(devices)
         for (const id in devices) {
             if (devices.hasOwnProperty(id)) {
                 const device = devices[id];
-                await push.send(device.platform, device.device, "Entfernt: " + replacementLesson.course.subject, "Entfernt: " + replacementLesson.course.subject + "Datum: " + replacementLesson.date)
+                await push.send(device, "Entfernt: " + replacementLesson.course.subject, "Entfernt: " + replacementLesson.course.subject + "Datum: " + replacementLesson.date)
             }
         }
         res.sendStatus(200);

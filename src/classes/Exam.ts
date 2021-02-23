@@ -15,6 +15,20 @@ import path from "path";
 
 declare const global: ApiGlobal;
 
+/**
+ * @typedef Exam
+ * @property {string} display.required
+ * @property {string} date.required
+ * @property {Course.model} course.required
+ * @property {string} from.required
+ * @property {string} to.required
+ * @property {string} teacher.required
+ * @property {number} students
+ * @property {RoomLink.model} roomLink
+ * @property {string} room.required
+ * @property {number} id
+ * @property {string} uniqueIdentifier
+ */
 export class Exam {
     public display: boolean;
     public date: string;

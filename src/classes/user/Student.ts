@@ -9,7 +9,7 @@
  */
 
 import {User, UserStatus, UserType} from "./User";
-import {Permissions} from "./Permissions";
+import {Permissions} from "../Permissions";
 
 export class Student extends User {
     public grade: string;
