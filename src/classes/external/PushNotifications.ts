@@ -27,13 +27,13 @@ export class PushNotifications {
     public pushSendGrid: PushSendGrid | undefined;
 
     constructor() {
-        if(global.config.pushFrameWorks.fcm.enabled){
+        if (global.config.pushFrameWorks.fcm.enabled) {
             this.pushFCM = new PushFCM();
         }
-        if(global.config.pushFrameWorks.telegram.enabled){
+        if (global.config.pushFrameWorks.telegram.enabled) {
             this.pushTelegram = new PushTelegram(new Telegraf(global.config.pushFrameWorks.telegram.key));
         }
-        if(global.config.pushFrameWorks.webPush.enabled){
+        if (global.config.pushFrameWorks.webPush.enabled) {
             this.pushWebPush = new PushWebPush();
         }
         if (global.config.pushFrameWorks.sendGrid.enabled) {
