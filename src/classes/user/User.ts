@@ -12,7 +12,7 @@ import {Ldap} from '../external/Ldap';
 import {JWTInterface} from '../JWTInterface';
 import {ApiGlobal} from "../../types/global";
 import {Moodle} from "../Moodle";
-import {Device} from "../Device";
+import {Device, DeviceType} from "../Device";
 import {Permissions} from "../Permissions";
 import {Student} from "./Student";
 import {Course} from "../Course";
@@ -304,7 +304,7 @@ export class User {
                 let devices: any = [];
                 rows.forEach((row: any) => {
                     if (row.deviceID != null) {
-                        let device = new Device(row.platform, row.idDevices,row.userId, row.added,row.deviceID);
+                        let device = new Device(row.platform, row.idDevices, row.userId, row.added, row.deviceID);
                         devices.push(device);
                     }
                 });
@@ -817,7 +817,7 @@ export class User {
                     resolve(false);
                     return
                 }
-                await conn.query("INSERT INTO `devices` (`userID`, `deviceID`, `plattform`) VALUES ((SELECT idusers FROM users WHERE username = ?), ?, ?)", [username, device.deviceIdentifier, device.platform]);
+                await conn.query("INSERT INTO `devices` (`userID`, `deviceID`, `platform`) VALUES ((SELECT idusers FROM users WHERE username = ?), ?, ?)", [username, device.deviceIdentifier, device.platform]);
                 resolve(true);
             } catch (e) {
                 reject(e);

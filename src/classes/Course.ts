@@ -19,7 +19,7 @@
  */
 export class Course {
     public grade: string;
-    public subject: string ;
+    public subject: string;
     public group: string;
     public exams: boolean;
     public id: number | null;
@@ -33,7 +33,7 @@ export class Course {
      * @param id {number}
      * @param teacherId {number}
      */
-    constructor(grade: string , subject: string, group: string , exams = false, id: number | null = null, teacherId: number | null = null) {
+    constructor(grade: string, subject: string, group: string, exams = false, id: number | null = null, teacherId: number | null = null) {
         this.grade = grade;
         this.subject = subject;
         this.group = group;
