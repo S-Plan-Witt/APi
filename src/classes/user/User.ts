@@ -9,7 +9,6 @@
  */
 
 import {Ldap} from '../external/Ldap';
-import {EMail} from '../external/eMail';
 import {JWTInterface} from '../JWTInterface';
 import {ApiGlobal} from "../../types/global";
 import {Moodle} from "../Moodle";
@@ -257,24 +256,19 @@ export class User {
      * returns the emailaddresses by the given userid
      * @param userId
      */
-    static getEMails(userId: number): any {
+    static getEMails(userId: number): Promise<Device[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             console.log(userId)
             try {
-                let mails: EMail[] = [];
-                const rows = await conn.query("SELECT * FROM users_mails WHERE `userid`= ?;", [userId]);
+                let mails: Device[] = [];
+                const rows = await conn.query("SELECT * FROM devices WHERE `userid`= ? AND platform ='4';", [userId]);
                 rows.forEach((row: any) => {
-                    let confirmed = false;
-                    let primary = false;
-                    if (row["confirmed"] === 1) {
-                        confirmed = true;
+                    let device = new Device(DeviceType.MAIL, row['idDevices'], userId, row['added'], row['deviceID'])
+                    if (row["confirmed"] !== 1) {
+                        device.verified = false;
                     }
-                    if (row["primary"] === 1) {
-                        primary = true;
-                    }
-
-                    mails.push(new EMail(userId, row["mail"], confirmed, row["added"], primary));
+                    mails.push(device);
                 });
                 global.logger.log({
                     level: 'silly',

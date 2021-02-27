@@ -21,6 +21,7 @@ export class Device {
     public userId: number | null;
     public platform: DeviceType;
     public deviceIdentifier: string;
+    public verified: boolean = true;
 
     constructor(platform: DeviceType, id: number | null, userId: number | null, timeAdded: string, deviceIdentifier: string) {
         this.platform = platform;
@@ -35,5 +36,6 @@ export enum DeviceType {
     TELEGRAM = 0,
     APNS = 1,
     FIREBASE = 2,
-    WEBPUSH = 3
+    WEBPUSH = 3,
+    MAIL = 4
 }
