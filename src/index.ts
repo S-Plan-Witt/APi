@@ -10,8 +10,6 @@
 
 import {ApiGlobal} from "./types/global";
 import mySQL from "mariadb";
-import winston, {format, transports} from 'winston';
-import 'winston-daily-rotate-file';
 import * as dot from 'dotenv';
 import {Config} from "./classes/config/Config";
 import express, {Express, NextFunction, Request, Response} from "express";
@@ -211,7 +209,7 @@ app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     }
 
     try {
-        let device = new Device(DeviceType.TELEGRAM,null,req.user.id,"",tgId.toString())
+        let device = new Device(DeviceType.TELEGRAM, null, req.user.id, "", tgId.toString())
         await req.user.addDevice(device);
         await Telegram.revokeRequest(token);
         if (global.pushNotifications.pushTelegram) {
