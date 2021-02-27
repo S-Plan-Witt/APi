@@ -22,7 +22,9 @@ declare const global: ApiGlobal;
 
 export let router = express.Router();
 
-//TODO add jDoc
+/**
+ * checks if the users has permission to access the endpoints
+ */
 router.use((req, res, next) => {
     if (req.decoded.permissions.announcements) {
         next();
@@ -158,7 +160,6 @@ router.delete('/id/:id', async (req, res) => {
 
         res.sendStatus(200);
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500);
     }

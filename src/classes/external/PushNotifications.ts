@@ -43,8 +43,7 @@ export class PushNotifications {
 
     /**
      * Handler for all push subscriptions. Determines with service handles message
-     * @param type
-     * @param deviceInfo
+     * @param endpoint {Device}
      * @param title
      * @param message
      * @returns Promise resolves when push is send
@@ -111,7 +110,12 @@ export class PushNotifications {
         });
     }
 
-    //TODO add jDoc
+    /**
+     * Similar to send() but accepts a Array of recipient devices
+     * @param devices
+     * @param title
+     * @param message
+     */
     sendBulk(devices: any, title: any, message: any): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {

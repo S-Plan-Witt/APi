@@ -113,9 +113,7 @@ export class Exam {
                 let rows = await conn.query("SELECT * FROM `data_exams` WHERE `teacher`= ?", [teacher]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
-                //TODO add logger
                 reject(e);
-
             } finally {
                 await conn.end();
             }

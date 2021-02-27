@@ -23,7 +23,7 @@ declare const global: ApiGlobal;
 export let router = express.Router();
 
 /**
- * Checks if base permission for all sub functions is given
+ * checks if the users has permission to access the endpoints
  */
 router.use((req, res, next) => {
     if (req.decoded.permissions.users) {
@@ -279,7 +279,6 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
                         course.exams = courseData["exams"];
                         courses.push(course);
                     } catch (e) {
-                        //TODO add logger
                     }
                 }
                 await user.addCourse(courses);

@@ -35,7 +35,6 @@ export class TimeTable {
                 });
                 resolve(lessons);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -61,7 +60,6 @@ export class TimeTable {
                     reject();
                 }
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -90,7 +88,6 @@ export class TimeTable {
                     reject("No lesson: " + lessonNum + "; " + course.grade + "/" + course.subject + "-" + course.group);
                 }
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -136,7 +133,6 @@ export class TimeTable {
                 await conn.query("INSERT INTO `data_lessons` (`courseId`, `room`, `lesson`, weekday) VALUES (?, ?, ?, ?);", [lesson.course.id, lesson.room, lesson.lessonNumber, lesson.day]);
                 resolve();
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -156,7 +152,6 @@ export class TimeTable {
                 course.id = result.insertId;
                 resolve(course);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -183,7 +178,6 @@ export class TimeTable {
                 });
                 resolve(lessons);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -209,7 +203,6 @@ export class TimeTable {
                     resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["iddata_courses"]));
                 }
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -233,7 +226,6 @@ export class TimeTable {
                     reject()
                 }
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -257,7 +249,6 @@ export class TimeTable {
                 });
                 resolve(courses);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();

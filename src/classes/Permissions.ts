@@ -54,13 +54,17 @@ export class Permissions {
         this.globalAdmin = globalAdmin;
     }
 
-    //TODO add jDoc
+    /**
+     * Returns the standard Permission object (used for new users)
+     */
     static getDefault() {
         return new Permissions(false, false, true, false, true, false, true, false, true, false, false);
     }
 
-    //TODO update
-    //TODO add jDoc
+    /**
+     * loads the Permissions object for the given user
+     * @param userId
+     */
     static getByUID(userId: number): Promise<Permissions> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -118,7 +122,6 @@ export class Permissions {
                     });
                     resolve(permissions);
                 } else {
-                    //TODO error
                     let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);
 
                     resolve(permissions);

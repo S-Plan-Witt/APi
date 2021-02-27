@@ -48,8 +48,6 @@ export class User {
     public status: UserStatus;
     public type: UserType;
     public devices: Device[];
-    //TODO Move into Devices
-    public mails: any[];
     public courses: Course[];
     public secondFactor: number | null;
     public permissions: Permissions | null;
@@ -70,7 +68,7 @@ export class User {
      * @param permissions {Permissions}
      * @param moodleUID {number}
      */
-    constructor(firstName: string, lastName: string, displayname: string, username: string, id: number = -1, type: UserType, courses: Course[] = [], status: UserStatus = UserStatus.DISABLED, mails: any[] = [], devices: Device[] = [], secondFactor: number | null = null, permissions: Permissions | null, moodleUID: number | null = null) {
+    constructor(firstName: string, lastName: string, displayname: string, username: string, id: number = -1, type: UserType, courses: Course[] = [], status: UserStatus = UserStatus.DISABLED, devices: Device[] = [], secondFactor: number | null = null, permissions: Permissions | null, moodleUID: number | null = null) {
         this.status = status;
         this.id = id;
         this.firstName = firstName;
@@ -79,7 +77,6 @@ export class User {
         this.username = username;
         this.type = type;
         this.courses = courses;
-        this.mails = mails;
         this.devices = devices;
         this.secondFactor = secondFactor;
         this.permissions = permissions;
@@ -150,8 +147,7 @@ export class User {
                     await loadedUser.populateUser();
                     resolve(loadedUser);
                 } else {
-                    //TODO add logger
-                    reject();
+                    reject("Internal error");
                 }
             } catch (e) {
                 global.logger.log({
@@ -172,8 +168,8 @@ export class User {
      * @param sql
      */
     static async fromSqlUser(sql: any): Promise<User> {
-        return new Promise(async (resolve, reject) => {
-            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["idusers"], parseInt(sql["type"]), [], sql["active"], [], [], sql["twoFactor"], null, sql["moodleid"]))
+        return new Promise(async (resolve, eject) => {
+            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["idusers"], parseInt(sql["type"]), [], sql["active"], [], sql["twoFactor"], null, sql["moodleid"]))
         });
     }
 
@@ -396,7 +392,6 @@ export class User {
                 await conn.query("DELETE FROM `devices` WHERE `deviceID` = ?", [deviceId]);
                 resolve();
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end()
@@ -415,7 +410,6 @@ export class User {
                 let rows = await conn.query("SELECT * FROM users WHERE `type`= ? ", [type]);
                 resolve(rows);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -505,7 +499,6 @@ export class User {
             this.courses = await User.getCoursesByUser(this.id, this.type);
             this.devices = await User.getDevices(this.id);
             this.permissions = await Permissions.getByUID(this.id)
-            this.mails = await User.getEMails(this.id);
             resolve();
         });
     }
@@ -679,8 +672,7 @@ export class User {
                     }
                     resolve({"username": rows[0].username, "type": type});
                 } else {
-                    //TODO add logger
-                    reject();
+                    reject("Internal error");
                 }
 
             } catch (e) {
@@ -813,7 +805,6 @@ export class User {
             try {
                 let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `deviceID`= ?;", [device]);
                 if (rows.length !== 0) {
-                    //TODO add new handler
                     resolve(false);
                     return
                 }
@@ -894,12 +885,7 @@ export class User {
         let username: string = this.username;
         let firstname: string = this.firstName;
         let lastname: string = this.lastName;
-        let mail: string;
-        if (this.mails.length === 0) {
-            mail = this.username + "@netman.lokal";
-        } else {
-            mail = this.mails[0];
-        }
+        let mail: string = this.username + "@netman.lokal";
         return new Promise(async (resolve, reject) => {
             let muid = null;
             try {

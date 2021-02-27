@@ -22,7 +22,7 @@ declare const global: ApiGlobal;
 export let router = express.Router();
 
 /**
- * Checks if base permission for all sub functions is given
+ * checks if the users has permission to access the endpoints
  */
 router.use((req, res, next) => {
     if (req.decoded.permissions.timeTable) {
@@ -50,7 +50,6 @@ router.use((req, res, next) => {
  */
 router.post('/lessons', async (req, res) => {
     if (!req.decoded.permissions.timeTableAdmin) {
-        //TODO add logger
         return res.sendStatus(401);
     }
 
@@ -84,7 +83,6 @@ router.post('/lessons', async (req, res) => {
 
         } catch (e) {
             console.log(e);
-            //TODO add logger
         }
     }
     res.sendStatus(200);
@@ -105,7 +103,6 @@ router.post('/find/course', async (req: Request, res: Response) => {
 
         res.json(courses);
     } catch (e) {
-        //TODO add logger
         res.sendStatus(500);
     }
 });

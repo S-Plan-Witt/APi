@@ -32,10 +32,10 @@ const myFormat = printf(({level, message, label, timestamp: timestamp}) => {
 declare const global: ApiGlobal;
 export class Logger {
 
+    /**
+     * creates a logger and sets it into global.logger
+     */
     static init() {
-        /**
-         * Creates a global Logger
-         */
         let logger = winston.createLogger({
             format: combine(
                 timestamp(),

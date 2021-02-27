@@ -22,7 +22,9 @@ declare const global: ApiGlobal;
 
 export class Ldap {
 
-    //TODO add jDoc
+    /**
+     * Connects tor the Server and disconnects directly
+     */
     static async bindTest() {
         try {
             let ldapClient: Client = await Ldap.bindLDAP();
@@ -69,7 +71,10 @@ export class Ldap {
         });
     }
 
-    //TODO add jDoc
+    /**
+     * starts a tls session on the given client
+     * @param client
+     */
     static startTlsClient(client: Client) {
         return new Promise((resolve, reject) => {
             global.logger.log({
@@ -96,7 +101,9 @@ export class Ldap {
         });
     }
 
-    //TODO add jDoc
+    /**
+     * Returns a active ldap client with the service user
+     */
     static bindLDAP(): Promise<Client> {
         return new Promise(async (resolve, reject) => {
             if (global.config.ldapConfig.enabled) {
@@ -115,7 +122,12 @@ export class Ldap {
         });
     }
 
-    //TODO add jDoc
+    /**
+     * Returns a active ldap client with the given user;
+     * Fails if user credentials are invalid
+     * @param username
+     * @param password
+     */
     static bindLDAPAsUser(username: string, password: string): Promise<Client> {
         return new Promise(async (resolve, reject) => {
             if (global.config.ldapConfig.enabled) {
@@ -170,7 +182,12 @@ export class Ldap {
     }
 
 
-    //TODO add jDoc
+    /**
+     * Returns a list of users matching the opts
+     * @param opts
+     * @param searchRoot
+     * @returns Promise<User[]>
+     */
     static searchUsersAdvanced(opts: SearchOptions, searchRoot: string): Promise<User[]> {
         return new Promise(async (resolve, reject) => {
             let ldapClient: Client = await Ldap.bindLDAP();
@@ -179,7 +196,6 @@ export class Ldap {
             if (opts.scope === undefined) opts.scope = 'sub';
             if (opts.attributes === undefined) opts.attributes = ['sn', 'givenname', 'samaccountname', 'displayName', 'memberOf'];
 
-            //search on DC
             ldapClient.search(searchRoot, opts, (err: Error | null, res: SearchCallbackResponse) => {
                 if (err) {
                     global.logger.log({
@@ -210,7 +226,7 @@ export class Ldap {
                         let grade = dn[1].substr(3, (dn[1].length - 1));
 
                         if (grade !== '_Removed') {
-                            let user: User = new User(obj.givenName, obj.sn, obj.displayName, obj.sAMAccountName, -1, 0, [], UserStatus.ENABLED, [], [], null, Permissions.getDefault());
+                            let user: User = new User(obj.givenName, obj.sn, obj.displayName, obj.sAMAccountName, -1, 0, [], UserStatus.ENABLED, [],  null, Permissions.getDefault());
                             try {
                                 if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
                                     user.type = 1;
@@ -230,7 +246,7 @@ export class Ldap {
 
 
     /**
-     * Get all Teachers
+     * Returns all teachers within the forest
      * @returns Promise {[user]}
      */
     static loadTeachers(): Promise<Teacher[]> {
@@ -243,10 +259,13 @@ export class Ldap {
     }
 
     /**
-     *
+     * Resolves if the username and password are valid
+     * Reject if:
+     * - invalid username
+     * - invalid password
      * @param username
      * @param password
-     * @returns {Promise<number>}
+     * @returns {Promise<void>}
      */
     static checkPassword(username: string, password: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
@@ -266,8 +285,8 @@ export class Ldap {
     }
 
     /**
-     * load user details for user
-     * @returns Promise {[user]}
+     * Returns a given user from the AD
+     * @returns Promise {User}
      * @param username
      */
     static getUserByUsername(username: string): Promise<User> {
@@ -288,7 +307,10 @@ export class Ldap {
         });
     }
 
-    //TODO add jDoc
+    /**
+     * Returns all students ffrom the AD
+     * @returns Promise<Student[]>
+     */
     static getAllStudents(): Promise<Student[]> {
         return new Promise(async (resolve, reject) => {
             let opts: SearchOptions = {
@@ -304,7 +326,10 @@ export class Ldap {
     }
 }
 
-//TODO add jDoc
+/**
+ * Handles LDAP errors within the connection
+ * @param err
+ */
 function ldapErrorHandler(err: Error) {
     global.logger.log({
         level: 'error',
@@ -314,28 +339,16 @@ function ldapErrorHandler(err: Error) {
     });
 }
 
-export class LdapSearch {
-
-    firstName: string;
-    lastName: string;
-    birthDate: string;
-    username: string;
-    ou: string;
-
-    constructor(firstName: string, lastName: string, birthDate: string, username: string, ou: string) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthDate = birthDate;
-        this.username = username;
-        this.ou = ou;
-    }
-}
-
+/**
+ * TypeScript model for AD Entrys
+ */
 interface ActiveDirectorySearchEntry extends SearchEntry {
     readonly object: ActiveDirectorySearchEntryObject;
 
 }
-
+/**
+ * TypeScript model for AD Entrys
+ */
 interface ActiveDirectorySearchEntryObject extends SearchEntryObject {
     givenName: string;
     sn: string;

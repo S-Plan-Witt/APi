@@ -28,13 +28,13 @@ export class ReplacementLesson {
     public id: number | null;
     public course: Course;
     public lesson: Lesson;
-    public teacherId: number | null;
+    public teacherId: number;
     public room: string;
     public subject: string;
     public info: string;
     public date: string;
 
-    constructor(id: number | null, course: Course, lesson: Lesson, teacherId: number | null, room: string, subject: string, info: string, date: string) {
+    constructor(id: number | null, course: Course, lesson: Lesson, teacherId: number, room: string, subject: string, info: string, date: string) {
         this.id = id;
         this.course = course;
         this.lesson = lesson;
@@ -43,7 +43,6 @@ export class ReplacementLesson {
         this.subject = subject;
         this.info = info;
         this.date = date;
-
     }
 
     /**
@@ -56,9 +55,13 @@ export class ReplacementLesson {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT data_replacementlessons.iddata_vertretungen, data_replacementlessons.date, data_replacementlessons.subject, data_replacementlessons.room, data_replacementlessons.info, data_replacementlessons.lessonId, data_replacementlessons.teacherId AS replacementTeacherId, data_replacementlessons.replacementId, data_lessons.weekday, data_lessons.room AS lessonRoom, data_lessons.lesson, data_lessons.idlessons FROM data_replacementlessons LEFT JOIN data_lessons ON data_replacementlessons.lessonId = data_lessons.idlessons LEFT JOIN data_courses ON data_lessons.courseId = data_courses.iddata_courses WHERE data_courses.grade = ? AND data_courses.subject = ? AND  data_courses.`group` = ?", [course.grade, course.subject, course.group]);
-                resolve(await ReplacementLesson.convertSqlRowsToObjects(rows));
+                let replacementLessons: ReplacementLesson[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    let entry = await ReplacementLesson.convertSqlRowsToObjects(rows)
+                    replacementLessons.push(entry);
+                }
+                resolve(replacementLessons);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -81,12 +84,10 @@ export class ReplacementLesson {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `lessonId`= (SELECT idlessons FROM data_lessons WHERE courseId = (SELECT iddata_courses FROM data_courses WHERE `grade`= ? AND `subject`= ? AND `group`= ?)) AND `date` >= ? AND `date`<= ?", [course.grade, course.subject, course.group, dateStart, dateEnd]);
                 resolve(await ReplacementLesson.convertSqlRowsToObjects(rows));
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
             }
-
         });
     }
 
@@ -99,9 +100,13 @@ export class ReplacementLesson {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM data_replacementlessons");
-                resolve(await ReplacementLesson.convertSqlRowsToObjects(rows));
+                let replacementLessons: ReplacementLesson[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    let entry = await ReplacementLesson.convertSqlRowsToObjects(rows)
+                    replacementLessons.push(entry);
+                }
+                resolve(replacementLessons);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -119,9 +124,13 @@ export class ReplacementLesson {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `date`= ? ", [date]);
-                resolve(await ReplacementLesson.convertSqlRowsToObjects(rows));
+                let replacementLessons: ReplacementLesson[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    let entry = await ReplacementLesson.convertSqlRowsToObjects(rows)
+                    replacementLessons.push(entry);
+                }
+                resolve(replacementLessons);
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -130,15 +139,17 @@ export class ReplacementLesson {
         });
     }
 
-    //TODO add jDoc
-    static getById(id: number) {
+    /**
+     *
+     * @param id
+     */
+    static getById(id: number): Promise<ReplacementLesson> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `replacementId`= ? ", [id]);
                 resolve(await ReplacementLesson.convertSqlRowsToObjects(rows));
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -147,19 +158,18 @@ export class ReplacementLesson {
         });
     }
 
-    //TODO add jDoc
-    static convertSqlRowsToObjects(rows: any): Promise<ReplacementLesson[]> {
+    /**
+     * returns the entry as object
+     * @param entry
+     */
+    static convertSqlRowsToObjects(entry: any): Promise<ReplacementLesson> {
         return new Promise(async (resolve, reject) => {
 
+            entry["date"] = Utils.convertMysqlDate(entry["date"])
+            let lesson: Lesson = await TimeTable.getLessonById(entry["lessonId"].toString());
             let replacementLessons: ReplacementLesson[] = [];
-            for (let i = 0; i < rows.length; i++) {
-                let replacementLesson = rows[i];
-                replacementLesson["date"] = Utils.convertMysqlDate(replacementLesson["date"])
-                let lesson: Lesson = await TimeTable.getLessonById(replacementLesson["lessonId"].toString());
 
-                replacementLessons.push(new ReplacementLesson(replacementLesson["iddata_vertretungen"], lesson.course, lesson, replacementLesson["teacherId"], replacementLesson["room"], replacementLesson["subject"], replacementLesson["info"], replacementLesson["date"]));
-            }
-            resolve(replacementLessons);
+            resolve(new ReplacementLesson(entry["iddata_vertretungen"], lesson.course, lesson, entry["teacherId"], entry["room"], entry["subject"], entry["info"], entry["date"]));
         });
     }
 
@@ -188,11 +198,9 @@ export class ReplacementLesson {
                     if (e.code === "ER_DUP_ENTRY") {
                         console.log("update Needed");
                     }
-                    //TODO add logger
                     reject(e)
                 }
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -222,7 +230,6 @@ export class ReplacementLesson {
                 }
 
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -245,7 +252,6 @@ export class ReplacementLesson {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `teacherId` = ? AND `date` >= ? AND `date`<= ?", [teacherId, dateStart, dateEnd]);
                 resolve(await ReplacementLesson.convertSqlRowsToObjects(rows));
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();
@@ -260,7 +266,6 @@ export class ReplacementLesson {
                 let rows = await conn.query("SELECT * FROM `data_replacementlessons` WHERE `info` LIKE ? ", [info]);
                 resolve(await ReplacementLesson.convertSqlRowsToObjects(rows));
             } catch (e) {
-                //TODO add logger
                 reject(e);
             } finally {
                 await conn.end();

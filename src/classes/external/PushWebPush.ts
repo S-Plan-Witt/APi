@@ -44,7 +44,6 @@ export class PushWebPush {
                 });
                 resolve();
             } catch (e) {
-                //TODO add logger
                 reject(e);
             }
         });
@@ -60,11 +59,9 @@ export class PushWebPush {
             let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM `devices` WHERE (`deviceID` LIKE ?);", ['%' + endpoint + '%']);
-                //TODO add logger
                 resolve();
             } catch (e) {
-                //TODO add logger
-                reject();
+                reject(e);
             } finally {
                 await conn.end();
             }

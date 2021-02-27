@@ -70,7 +70,10 @@ export class Announcement {
         });
     }
 
-    //TODO JDoc
+    /**
+     * Returns an array of Announcements from the given sql result
+     * @param rows
+     */
     static convertSqlRowsToObjects(rows: any): Promise<Announcement[]> {
         return new Promise(async (resolve, reject) => {
 

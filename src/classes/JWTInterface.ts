@@ -63,7 +63,11 @@ export class JWTInterface {
         });
     }
 
-    //TODO add jDoc
+    /**
+     * saves the tokenID into the DB
+     * @param userId
+     * @param tokenId
+     */
     static saveToken(userId: number, tokenId: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn;
@@ -81,7 +85,12 @@ export class JWTInterface {
 
     }
 
-    //TODO add jDoc
+    /**
+     * Creates a new JWT based on the parameters (token is active)
+     * @param userId
+     * @param userType
+     * @param sessionId
+     */
     static createJWT(userId: number, userType: string, sessionId: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             let payload: any = {};
@@ -98,7 +107,12 @@ export class JWTInterface {
         });
     }
 
-    //TODO add jDoc
+    /**
+     * Validates a express request and loads all data for the processing
+     * @param req
+     * @param res
+     * @param next
+     */
     static async checkToken(req: Request, res: Response, next: NextFunction) {
         if (authFreePaths.includes(req.path)) {
             global.logger.log({
@@ -117,11 +131,9 @@ export class JWTInterface {
             let token: string | string[] | undefined = req.headers['x-access-token'] || req.headers['authorization'];
 
             if (typeof token == "string") {
-                //Strip down token if it contains type
                 if (token.startsWith('Bearer ')) {
                     token = token.slice(7, token.length);
                 }
-                //Verify Token signature with local key
                 try {
                     let decoded: any = jwt.verify(token, publicKey);
                     if (typeof decoded == 'object') {
@@ -144,7 +156,6 @@ export class JWTInterface {
                     }
 
                 } catch (e) {
-
                     global.logger.log({
                         level: 'warn',
                         label: 'JWT',
@@ -154,22 +165,21 @@ export class JWTInterface {
                     return res.sendStatus(401);
                 }
             } else {
-                //TODO add global.logger
                 return res.sendStatus(401)
             }
         }
-
     }
 
-    //TODO add jDoc
+    /**
+     * removes api access for a Token
+     * @param tokenId
+     */
     static revokeById(tokenId: number): Promise<void> {
         //Delete token from DB
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query(`DELETE
-                                  FROM jwt_Token
-                                  WHERE idjwt_Token = ?`, [tokenId]);
+                await conn.query(`DELETE FROM jwt_Token WHERE idjwt_Token = ?`, [tokenId]);
                 global.logger.log({
                     level: 'silly',
                     label: 'JWT',
@@ -191,20 +201,21 @@ export class JWTInterface {
         });
     }
 
-    //TODO add jDoc
-    static getByUser(username: string) {
+    /**
+     * Returns all active tokens for a user
+     * @param uid
+     */
+    static getByUser(uid: number) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query(`SELECT *
-                                             FROM jwt_Token
-                                             WHERE userid = ?`, [username]);
+                let rows = await conn.query(`SELECT * FROM jwt_Token WHERE userid = ?`, [uid.toString()]);
                 resolve(rows);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'JWT',
-                    message: 'Get by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e),
+                    message: 'Get by username failed: ' + JSON.stringify(uid) + " Err: " + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
                 reject(e);
@@ -214,7 +225,9 @@ export class JWTInterface {
         });
     }
 
-    //TODO add jDoc
+    /**
+     * Returns all active tokens
+     */
     static getAll() {
         //Load all issued tokens from DB
         return new Promise(async (resolve, reject) => {
@@ -236,17 +249,20 @@ export class JWTInterface {
         });
     }
 
-    //TODO add jDoc
-    static revokeUser(username: string): Promise<void> {
+    /**
+     * Revokes all jwt tokens for a user
+     * @param uid
+     */
+    static revokeUser(uid: number): Promise<void> {
         //Delete all tokens for specified user
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("DELETE From `jwt_Token` where `userid`=?", [username]);
+                await conn.query("DELETE From `jwt_Token` where `userid`=?", [uid.toString()]);
                 global.logger.log({
                     level: 'silly',
                     label: 'JWT',
-                    message: 'Revoked by username: ' + username,
+                    message: 'Revoked by uid: ' + uid,
                     file: path.basename(__filename)
                 });
                 resolve();
@@ -254,39 +270,7 @@ export class JWTInterface {
                 global.logger.log({
                     level: 'error',
                     label: 'JWT',
-                    message: 'Revoke by username failed: ' + JSON.stringify(username) + " Err: " + JSON.stringify(e),
-                    file: path.basename(__filename)
-                });
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    //TODO add jDoc
-    static preAuth(token: string) {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let rows = await conn.query("SELECT * FROM `preAuth_Token` WHERE `token` = ?", [token]);
-                if (rows.length === 1) {
-                    let username = rows[0].username;
-                    resolve(username);
-                } else {
-                    global.logger.log({
-                        level: 'error',
-                        label: 'JWT',
-                        message: 'PreAuth failed: ' + JSON.stringify(token) + " Err: not in database",
-                        file: path.basename(__filename)
-                    });
-                    reject("not found in db");
-                }
-            } catch (e) {
-                global.logger.log({
-                    level: 'error',
-                    label: 'JWT',
-                    message: 'PreAuth failed: ' + JSON.stringify(token) + " Err: " + JSON.stringify(e),
+                    message: 'Revoke by username failed: ' + JSON.stringify(uid) + " Err: " + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
                 reject(e);

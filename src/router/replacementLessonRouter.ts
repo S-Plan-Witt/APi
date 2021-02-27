@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
         }
         if (teacher == null || teacher.id != null) {
             try {
-                let teacherId: number | null = null;
+                let teacherId: number = -1;
                 if (teacher != null) {
                     if (teacher.id != null) {
                         teacherId = teacher.id;
@@ -100,7 +100,6 @@ router.get('/', async (req, res) => {
     try {
         await res.json(await ReplacementLesson.getAll());
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500);
     }
@@ -150,7 +149,6 @@ router.get('/date/:date', async (req, res) => {
  */
 router.get('/id/:id', async (req, res) => {
     if (!req.decoded.admin) {
-        //TODO add logger
         return res.sendStatus(401);
     }
     let id = parseInt(req.params.id);
@@ -158,7 +156,6 @@ router.get('/id/:id', async (req, res) => {
         let lesson = await ReplacementLesson.getById(id);
         res.json(lesson);
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500);
     }
@@ -171,7 +168,6 @@ router.post('/find', async (req, res) => {
         let lessons = await ReplacementLesson.search(info);
         res.json(lessons);
     } catch (e) {
-        //TODO add logger
         res.sendStatus(500);
     }
 
@@ -187,7 +183,6 @@ router.post('/find', async (req, res) => {
  */
 router.delete('/id/:id', async (req, res) => {
     let id = req.params.id;
-    console.log(id)
     try {
         let replacementLesson: ReplacementLesson = await ReplacementLesson.deleteById(id.toString());
 

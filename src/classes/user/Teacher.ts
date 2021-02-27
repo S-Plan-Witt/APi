@@ -14,6 +14,6 @@ import {Permissions} from "../Permissions";
 export class Teacher extends User {
 
     constructor(firstName: string, lastName: string, username: string, displayName: string, id: number) {
-        super(firstName, lastName, username, displayName, id, UserType.TEACHER, [], UserStatus.DISABLED, [], [], 0, Permissions.getDefault());
+        super(firstName, lastName, username, displayName, id, UserType.TEACHER, [], UserStatus.DISABLED, [], 0, Permissions.getDefault());
     }
 }

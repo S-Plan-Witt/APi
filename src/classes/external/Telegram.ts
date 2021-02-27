@@ -81,10 +81,8 @@ export class Telegram {
             try {
                 let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
                 await conn.query("INSERT INTO `telegramLinks` (`telegramId`, `token`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token`=?;", [telegramId, tokenId, tokenId]);
-                //TODO unique link creation
                 resolve(tokenId);
             } catch (e) {
-                //TODO add logger
                 reject(e)
             } finally {
                 await conn.end();

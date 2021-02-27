@@ -58,27 +58,10 @@ router.post('/login', async (req, res) => {
 
     let username = req.body.username.toLowerCase();
     let password = req.body.password;
-    let token = req.body.token;
-    let preauth = false;
 
     if (username != null && password != null) {
         username = username.toLowerCase();
 
-    } else if (token != null) {
-        try {
-            username = await JWTInterface.preAuth(token);
-            preauth = true;
-
-        } catch (e) {
-            global.logger.log({
-                level: 'error',
-                label: 'Login',
-                message: 'token Error : ' + e,
-                file: path.basename(__filename)
-            });
-            res.sendStatus(601);
-            return;
-        }
     } else {
         global.logger.log({
             level: 'error',
@@ -93,7 +76,6 @@ router.post('/login', async (req, res) => {
     try {
         user = await User.getUserByUsername(username);
     } catch (e) {
-        //TODO User not in DB
     }
 
     if (user == null) {
@@ -116,43 +98,42 @@ router.post('/login', async (req, res) => {
 
     try {
         await user.isActive();
-        if (!preauth) {
-            try {
-                await user.verifyPassword(password);
-            } catch (e) {
-                res.sendStatus(401);
-                return;
-            }
-            if (user.secondFactor === 1) {
-                if (req.body.hasOwnProperty("secondFactor")) {
-                    let code = req.body["secondFactor"];
-                    try {
-                        if (user.id != null) {
-                            await Totp.verifyUserCode(code, user.id);
-                        }
-                        console.log("ERROR")
-                    } catch (e) {
-                        res.sendStatus(401);
-                        global.logger.log({
-                            level: 'info',
-                            label: 'Login',
-                            message: 'SecondFactor failed : ' + username,
-                            file: path.basename(__filename)
-                        });
-                        return;
+        try {
+            await user.verifyPassword(password);
+        } catch (e) {
+            res.sendStatus(401);
+            return;
+        }
+        if (user.secondFactor === 1) {
+            if (req.body.hasOwnProperty("secondFactor")) {
+                let code = req.body["secondFactor"];
+                try {
+                    if (user.id != null) {
+                        await Totp.verifyUserCode(code, user.id);
                     }
-                } else {
-                    res.sendStatus(602);
+                    console.log("ERROR")
+                } catch (e) {
+                    res.sendStatus(401);
                     global.logger.log({
                         level: 'info',
                         label: 'Login',
-                        message: 'Further information required : ' + username,
+                        message: 'SecondFactor failed : ' + username,
                         file: path.basename(__filename)
                     });
                     return;
                 }
+            } else {
+                res.sendStatus(602);
+                global.logger.log({
+                    level: 'info',
+                    label: 'Login',
+                    message: 'Further information required : ' + username,
+                    file: path.basename(__filename)
+                });
+                return;
             }
         }
+
         let token = await user.generateToken();
         let type = "";
         if (user.type === 1) type = "student";
@@ -165,7 +146,6 @@ router.post('/login', async (req, res) => {
             file: path.basename(__filename)
         });
     } catch (e) {
-        console.log(e);
         global.logger.log({
             level: 'error',
             label: 'Express',
@@ -191,12 +171,9 @@ router.get('/courses', async (req, res) => {
     let courses;
     try {
         if (req.decoded.userType === "student") {
-            //Get userId for user
-            //Get courses for user
             courses = user.courses;
             await res.json(courses);
         } else if (req.decoded.userType === "teacher") {
-            //Get courses for user
             courses = user.courses;
             await res.json(courses);
         } else {
@@ -214,7 +191,6 @@ router.get('/courses', async (req, res) => {
             label: 'Express',
             message: 'Routing: /user/courses ; ' + JSON.stringify(e)
         });
-        console.log(e);
         res.sendStatus(500);
     }
 });
@@ -244,14 +220,12 @@ router.get('/lessons', async (req, res) => {
                         response.push(lesson);
                     });
                 } catch (e) {
-                    console.log(e);
                     global.logger.log({
                         level: 'error',
                         label: 'Express',
                         message: 'Routing: /user/lessons : processinf courses: ' + JSON.stringify(e),
                         file: path.basename(__filename)
                     });
-                    //TODO add handler
                 }
             }
         }
@@ -331,7 +305,6 @@ router.get('/replacementlessons', async (req, res) => {
 
         await res.json(response);
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500);
     }
@@ -358,8 +331,6 @@ router.get('/announcements', async (req: Request, res: Response) => {
             }
 
         } catch (e) {
-            //TODO add logger
-            //TODO add handler
             console.log(e);
         }
     }
@@ -400,8 +371,6 @@ router.get('/exams', async (req, res) => {
                         });
                     }
                 } catch (e) {
-                    //TODO add logger
-                    //TODO add handler
                     console.log(e)
                 }
             }
@@ -409,10 +378,8 @@ router.get('/exams', async (req, res) => {
         } else if (req.decoded.userType === "teacher") {
             response = await Exam.getByTeacher(req.user.username);
         }
-        //TODO add else
         res.json(response);
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500);
     }
@@ -435,7 +402,6 @@ router.get('/supervisors', async (req, res) => {
         //let data = await Supervisor.getByTeacherUsername(username);
         res.json(data);
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500);
     }
@@ -455,7 +421,6 @@ router.get('/devices', async (req, res) => {
         let data = await req.user.devices;
         res.json(data);
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500);
     }
@@ -482,7 +447,6 @@ router.post('/devices', async (req: Request, res: Response) => {
             res.sendStatus(200);
         }
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500);
     }
@@ -498,14 +462,11 @@ router.post('/devices', async (req: Request, res: Response) => {
  * @security JWT
  */
 router.delete('/devices/deviceId/:id', async (req, res) => {
-    //TODO not null req.
     let deviceId = req.params.id;
     try {
-        //TODO Fix
         await User.removeDevice(deviceId);
         res.sendStatus(200)
     } catch (e) {
-        //TODO add logger
         console.log(e);
         res.sendStatus(500)
     }
@@ -616,40 +577,7 @@ router.delete('/auth/totp/id/:id', async (req, res) => {
  */
 router.get('/profile/emails', async (req, res) => {
     try {
-        res.json(req.user.mails);
-    } catch (e) {
-        res.sendStatus(500);
-    }
-});
-
-/**
- * Adds a new mail address
- * @route POST /user/profile/emails
- * @group User - Operations about logged in user
- * @param {EMail.model} EMail.body.require
- * @returns {object>} 200
- * @returns {Error} 401 - Wrong JWT
- * @security JWT
- */
-router.post('/profile/emails', async (req, res) => {
-    try {
-        res.json(req.user.mails);
-    } catch (e) {
-        res.sendStatus(500);
-    }
-});
-
-/**
- * Deletes one mail address
- * @route DELETE /user/profile/emails/{id}
- * @group User - Operations about logged in user
- * @returns {object} 200
- * @returns {Error} 401 - Wrong JWT
- * @security JWT
- */
-router.delete('/profile/emails/:id', async (req, res) => {
-    try {
-        res.json(req.user.mails);
+        res.json(await User.getEMails(req.user.id));
     } catch (e) {
         res.sendStatus(500);
     }

@@ -23,7 +23,9 @@ export class PushTelegram {
         this.bot = bot;
     }
 
-    //TODO add jDoc
+    /**
+     * Connects to the telegram api and starts all listeners
+     */
     startTelegramBot() {
         //Set replay to /start command from TG
         this.bot.start(async (ctx: Context) => {
