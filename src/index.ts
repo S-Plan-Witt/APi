@@ -20,43 +20,14 @@ import {Telegram} from './classes/external/Telegram';
 import {PushNotifications} from './classes/external/PushNotifications';
 import path from "path";
 import {Device, DeviceType} from "./classes/Device";
+import {Logger} from "./classes/Logger";
 
 declare const global: ApiGlobal;
-const {combine, timestamp, printf} = format;
 
-//Create all 6 hours a new file
-const rotateFile = new (winston.transports.DailyRotateFile)({
-    filename: 'log/%DATE%.log',
-    datePattern: 'YYYY-MM-DD-HH',
-    maxSize: '20m',
-    level: 'silly',
-    format: winston.format.json(),
-    frequency: '6h'
-});
-
-//Logger output format
-const myFormat = printf(({level, message, label, timestamp: timestamp}) => {
-    return `${timestamp} [${label}] ${level}: ${message}`;
-});
-
-
-/**
- * Creates a global Logger
- */
-let logger = winston.createLogger({
-    format: combine(
-        timestamp(),
-        myFormat
-    ),
-    transports: [
-        rotateFile,
-        new transports.Console({level: 'silly'}),
-    ]
-});
-global.logger = logger;
+Logger.init()
 
 //-- Logger
-logger.log({
+global.logger.log({
     level: 'silly',
     label: 'Express',
     message: 'Logger init success',
@@ -73,7 +44,7 @@ dot.config({path: "./.env"});
  */
 global.config = Config.loadFromEnv();
 
-logger.log({
+global.logger.log({
     level: 'debug',
     label: 'Express',
     message: 'ENV loaded',
@@ -87,7 +58,7 @@ global.pushNotifications = new PushNotifications();
  * Exception handler
  */
 process.on('uncaughtException', function (err) {
-    logger.log({
+    global.logger.log({
         level: 'error',
         label: 'Express',
         message: 'Unhandled Exception trace: ' + err.stack,
@@ -108,7 +79,7 @@ global.mySQLPool = mySQL.createPool({
     database: global.config.mysqlConfig.database
 });
 
-logger.log({
+global.logger.log({
     level: 'debug',
     label: 'Express',
     message: 'MySql Connected',
