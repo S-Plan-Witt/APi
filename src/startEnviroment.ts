@@ -22,15 +22,20 @@ declare const global: ApiGlobal;
 
 export class Starter {
 
-    static  full() {
+    /**
+     * Starts all necessary services
+     */
+    static full() {
         return new Promise(async (resolve, reject) => {
             try {
                 console.log("Starter: FULL BEGIN");
                 this.logger();
-                this.globalExceptionHandler();
                 this.config();
                 await this.externalServers();
                 this.express();
+                this.pushNotifications();
+                this.swagger();
+                this.globalExceptionHandler();
                 console.log("Starter: FULL END");
             } catch (e) {
                 reject(e);
@@ -38,6 +43,9 @@ export class Starter {
         });
     }
 
+    /**
+     * Creates the global logger.
+     */
     static logger() {
         Logger.init();
 
@@ -49,6 +57,9 @@ export class Starter {
         });
     }
 
+    /**
+     * Loads the config
+     */
     static config() {
         /**
          * Load Env file to environment if exists
@@ -68,7 +79,10 @@ export class Starter {
         });
     }
 
-    static externalServers() :Promise<void>{
+    /**
+     * Connects all external servers
+     */
+    static externalServers(): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
                 console.log("Starter: ExSERVER BEGIN");
@@ -82,6 +96,9 @@ export class Starter {
         });
     }
 
+    /**
+     * Connects the global mysql connection pool
+     */
     static mysql() {
         console.log("Starter: MYSQL BEGIN");
         /**
@@ -123,30 +140,34 @@ export class Starter {
         });
     }
 
+    /**
+     * Starts the push notification services
+     */
     static pushNotifications() {
+        console.log("Starter: PUSH BEGIN");
         global.pushNotifications = new PushNotifications();
         if (global.config.pushFrameWorks.telegram.enabled) {
-            if (global.pushNotifications.pushTelegram) {
-                global.pushNotifications.pushTelegram.startTelegramBot();
-            }
+            global.pushNotifications.pushTelegram?.startTelegramBot();
         }
+        console.log("Starter: PUSH END");
     }
 
+    /**
+     * Launches the HTTP Server with the ExpressServer launch method.
+     */
     static express() {
         console.log("Starter: EXPRESS BEGIN");
         ExpressServer.launch();
         console.log("Starter: LDAP END");
     }
 
+    /**
+     * Generate and display Api documentation under host/api-docs/
+     */
     static swagger() {
         console.log("Starter: SWAGGER BEGIN");
-        if (global.express == null) {
-            this.express();
-        }
         if (global.config.webServerConfig.apiDocumentation) {
-            /**
-             * Generate and display Api documentation under host/api-docs/
-             */
+
             const expressSwagger = require('express-swagger-generator')(global.express.expressApp);
 
             let options = {
@@ -184,6 +205,9 @@ export class Starter {
         console.log("Starter: SWAGGER END");
     }
 
+    /**
+     * Starts the global exception handler.
+     */
     static globalExceptionHandler() {
         process.on('uncaughtException', function (err) {
             global.logger.log({
