@@ -325,7 +325,7 @@ router.get('/teacher/reload', async (req: Request, res: Response) => {
         });
         return res.sendStatus(401);
     }
-    let teachers: Teacher[] = await Ldap.loadTeachers();
+    let teachers: Teacher[] = await Ldap.getAllTeachers();
     for (const teacherKey in teachers) {
         let teacher = teachers[teacherKey];
         try {
