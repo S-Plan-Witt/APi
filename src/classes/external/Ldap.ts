@@ -181,7 +181,7 @@ export class Ldap {
             }
 
             let opts: SearchOptions = {
-                filter: '(&(objectClass=user)(sn=' + lastname + ')(givenname=' + firstname + ')(samaccountname=' + username + ')',
+                filter: '(&(objectClass=user)(sn=' + lastname + ')(givenname=' + firstname + ')(samaccountname=' + username + '))',
                 scope: 'sub',
                 attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'memberOf', 'info'],
                 paged: true

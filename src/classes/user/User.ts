@@ -587,8 +587,7 @@ export class User {
         let username = this.username;
         return new Promise(async (resolve, reject) => {
             try {
-                ///if (global.config.ldapConfig.enabled) {
-                if (false) {
+                if (global.config.ldapConfig.enabled) {
                     await Ldap.checkPassword(username, password);
 
                     let hash = bcrypt.hashSync(password, global.config.bCrypt.rounds);
