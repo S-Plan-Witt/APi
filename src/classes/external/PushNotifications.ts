@@ -103,6 +103,8 @@ export class PushNotifications {
                         console.log(e)
                         reject();
                     }
+                }else {
+                    resolve();
                 }
             } catch (e) {
                 reject(e);
