@@ -14,9 +14,9 @@ import * as dot from "dotenv";
 import {Config} from "./classes/config/Config";
 import {Express} from "express";
 import {ExpressServer} from "./classes/ExpressServer";
-import mySQL from "mariadb";
 import {PushNotifications} from "./classes/external/PushNotifications";
 import {Ldap} from "./classes/external/Ldap";
+import {Database} from "./classes/external/Database";
 
 declare const global: ApiGlobal;
 
@@ -101,25 +101,7 @@ export class Starter {
      */
     static mysql() {
         console.log("Starter: MYSQL BEGIN");
-        /**
-         * Initiate mysql connection
-         */
-        global.mySQLPool = mySQL.createPool({
-            host: global.config.mysqlConfig.hostname,
-            port: global.config.mysqlConfig.port,
-            user: global.config.mysqlConfig.username,
-            password: global.config.mysqlConfig.password,
-            connectionLimit: 30,
-            collation: "latin1_german2_ci",
-            database: global.config.mysqlConfig.database
-        });
-
-        global.logger.log({
-            level: 'debug',
-            label: 'Express',
-            message: 'MySql Connected',
-            file: path.basename(__filename)
-        });
+        Database.connect();
         console.log("Starter: MYSQL END");
     }
 
