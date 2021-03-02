@@ -12,7 +12,6 @@ import {ApiGlobal} from "../types/global";
 import 'winston-daily-rotate-file';
 
 const {combine, timestamp, printf} = format;
-import 'winston-daily-rotate-file';
 
 //Create all 6 hours a new file
 const rotateFile = new (winston.transports.DailyRotateFile)({
@@ -36,7 +35,7 @@ export class Logger {
      * creates a logger and sets it into global.logger
      */
     static init() {
-        let logger = winston.createLogger({
+        global.logger = winston.createLogger({
             format: combine(
                 timestamp(),
                 myFormat
@@ -46,7 +45,6 @@ export class Logger {
                 new transports.Console({level: 'silly'}),
             ]
         });
-        global.logger = logger;
     }
 
 }
