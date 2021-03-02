@@ -8,194 +8,23 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {ApiGlobal} from "./types/global";
-import mySQL from "mariadb";
-import * as dot from 'dotenv';
-import {Config} from "./classes/config/Config";
-import express, {Express, NextFunction, Request, Response} from "express";
-import {JWTInterface} from './classes/JWTInterface';
-import {Telegram} from './classes/external/Telegram';
-import {PushNotifications} from './classes/external/PushNotifications';
-import path from "path";
-import {Device, DeviceType} from "./classes/Device";
-import {Logger} from "./classes/Logger";
 
-declare const global: ApiGlobal;
+import {Starter} from "./startEnviroment";
 
-Logger.init()
-
-//-- Logger
-global.logger.log({
-    level: 'silly',
-    label: 'Express',
-    message: 'Logger init success',
-    file: path.basename(__filename)
-});
-
-/**
- * Load Env file to environment if exists
- */
-dot.config({path: "./.env"});
-
-/**
- * Load config from environment
- */
-global.config = Config.loadFromEnv();
-
-global.logger.log({
-    level: 'debug',
-    label: 'Express',
-    message: 'ENV loaded',
-    file: path.basename(__filename)
-});
-//-- ENV
-
-global.pushNotifications = new PushNotifications();
-
-/**
- * Exception handler
- */
-process.on('uncaughtException', function (err) {
-    global.logger.log({
-        level: 'error',
-        label: 'Express',
-        message: 'Unhandled Exception trace: ' + err.stack,
-        file: path.basename(__filename)
-    });
-});
-
-/**
- * Initiate mysql connection
- */
-global.mySQLPool = mySQL.createPool({
-    host: global.config.mysqlConfig.hostname,
-    port: global.config.mysqlConfig.port,
-    user: global.config.mysqlConfig.username,
-    password: global.config.mysqlConfig.password,
-    connectionLimit: 30,
-    collation: "latin1_german2_ci",
-    database: global.config.mysqlConfig.database
-});
-
-global.logger.log({
-    level: 'debug',
-    label: 'Express',
-    message: 'MySql Connected',
-    file: path.basename(__filename)
-});
-
-/**
- * creating Http Server
- */
-const app = express();
-if (global.config.webServerConfig.apiDocumentation) {
-    /**
-     * Generate and display Api documentation under host/api-docs/
-     */
-    const expressSwagger = require('express-swagger-generator')(app);
-
-    let options = {
-        swaggerDefinition: {
-            info: {
-                description: 'S-Plan',
-                title: 'S-Plan',
-                version: '1.0.2',
-            },
-            host: 'localhost:3000',
-            basePath: '',
-            produces: [
-                "application/json"
-            ],
-            schemes: ['http', 'https'],
-            securityDefinitions: {
-                JWT: {
-                    type: 'apiKey',
-                    in: 'header',
-                    name: 'Authorization',
-                    description: "",
-                }
-            }
-        },
-        basedir: __dirname, //app absolute path
-        files: ['./router/*.js'] //Path to the API handle folder
-    };
-    expressSwagger(options)
-    global.logger.log({
-        level: 'debug',
-        label: 'Api-docs',
-        message: 'Api documentation available at http://localhost:' + global.config.webServerConfig.port + '/api-docs/'
-    });
-}
-
-
-/**
- * Function to set on a response headers for compatibility with client JS
- * @param req
- * @param res
- * @param next
- */
-const header = (req: Request, res: Response, next: NextFunction) => {
-    res.set({
-        'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Origin': global.config.pwaConfig.url,
-        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma',
-        'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
-    });
-    next();
-};
-
-/**
- * Function to log a request to the logger
- * @param req
- * @param res
- * @param next
- */
-let reqLogger = (req: Request, res: Response, next: NextFunction) => {
-    let token = req.headers['x-access-token'] || req.headers['authorization'];
-    global.logger.log({
-        level: 'debug',
-        label: 'Express',
-        message: 'Received request to ' + req.path + ' By ' + token,
-        file: path.basename(__filename)
-    });
-    next();
-};
-
-if (global.config.pushFrameWorks.telegram.enabled) {
-    if (global.pushNotifications.pushTelegram) {
-        global.pushNotifications.pushTelegram.startTelegramBot();
+(async () => {
+    try {
+        await Starter.full();
+    }catch (e) {
+        console.log("Start errored")
+        process.exit(1);
     }
-}
+})();
 
-/**
- * Enable middleware for headers and logging
- */
-app.use(header);
-app.use(reqLogger);
 
-/**
- * Add parser for request payload in json format with a max size of 50mb
- */
-app.use(express.json({limit: '50mb'}));
 
-/**
- * Add Function to validate request auth Headers
- */
-app.use(JWTInterface.checkToken);
-
-/**
- * Response with a 200 OK status if it is a options preflight request
- */
-app.options('*', (req: Request, res: Response) => {
-    res.sendStatus(200);
-});
-
-/**
- * Loading the main router
- */
-app.use("/", require('./router/mainRouter').router);
 
 //TODO move to router
+/*
 app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
     let token = req.params.token;
 
@@ -221,15 +50,4 @@ app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
         res.sendStatus(500);
     }
 });
-
-/**
- * Start HTTP Server to listen for in-bound requests
- */
-app.listen(global.config.webServerConfig.port, () => {
-    global.logger.log({
-        level: 'silly',
-        label: 'Express',
-        message: 'Listening on port: ' + global.config.webServerConfig.port,
-        file: path.basename(__filename)
-    });
-});
+*/
