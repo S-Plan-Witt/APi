@@ -559,10 +559,7 @@ export class User {
             let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             try {
                 if (id != null) {
-                    let typeString = "";
-                    if (type === 1) typeString = "student";
-                    if (type === 2) typeString = "teacher";
-                    resolve(await JWTInterface.createJWT(id, typeString, tokenId));
+                    resolve(await JWTInterface.createJWT(id, type, tokenId));
                 }
                 reject("NAN UID")
             } catch (e) {
@@ -859,19 +856,6 @@ export class User {
                 reject(e);
             } finally {
                 await conn.end();
-            }
-        });
-    }
-
-    /**
-     * @returns {Promise<boolean>}
-     */
-    isActive() {
-        return new Promise(async (resolve, reject) => {
-            if (this.status == UserStatus.ENABLED) {
-                resolve(true);
-            } else {
-                reject("disabled");
             }
         });
     }

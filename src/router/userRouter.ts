@@ -11,7 +11,7 @@
 import {TimeTable} from '../classes/TimeTable';
 import {JWTInterface} from '../classes/JWTInterface';
 import express, {Request, Response} from 'express';
-import {User, UserType} from '../classes/user/User';
+import {User, UserStatus, UserType} from '../classes/user/User';
 import {Totp} from '../classes/Totp';
 import {Ldap} from "../classes/external/Ldap";
 import assert from "assert";
@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        await user.isActive();
+        assert(user.status == UserStatus.ENABLED,"User not enabled");
         try {
             await user.verifyPassword(password);
         } catch (e) {
