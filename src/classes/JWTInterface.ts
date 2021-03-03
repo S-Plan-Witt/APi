@@ -32,7 +32,7 @@ export class JWTInterface {
     /**
      * @param id {number}
      */
-    static verifyId(id: number): Promise<never> {
+    static verifyId(id: string): Promise<never> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -46,7 +46,7 @@ export class JWTInterface {
                         message: '(verifyId) ' + id + ' not vaild',
                         file: path.basename(__filename)
                     });
-                    reject();
+                    reject("Not valid");
                 }
 
             } catch (e) {
@@ -91,7 +91,7 @@ export class JWTInterface {
      * @param userType
      * @param sessionId
      */
-    static createJWT(userId: number, userType: string, sessionId: string): Promise<string> {
+    static createJWT(userId: number, userType: UserType, sessionId: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             let payload: any = {};
             payload.userId = userId;
@@ -172,18 +172,18 @@ export class JWTInterface {
 
     /**
      * removes api access for a Token
-     * @param tokenId
+     * @param id
      */
-    static revokeById(tokenId: number): Promise<void> {
+    static revokeById(id: string): Promise<void> {
         //Delete token from DB
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query(`DELETE FROM jwt_Token WHERE idjwt_Token = ?`, [tokenId]);
+                await conn.query(`DELETE FROM jwt_Token WHERE tokenIdentifier = ?`, [id]);
                 global.logger.log({
                     level: 'silly',
                     label: 'JWT',
-                    message: 'token revoked: ' + tokenId,
+                    message: 'token revoked: ' + id,
                     file: path.basename(__filename)
                 });
                 resolve();
@@ -191,7 +191,7 @@ export class JWTInterface {
                 global.logger.log({
                     level: 'error',
                     label: 'JWT',
-                    message: 'revoke of token failed ' + tokenId + '; e:' + e,
+                    message: 'revoke of token failed ' + id + '; e:' + e,
                     file: path.basename(__filename)
                 });
                 reject(e);
