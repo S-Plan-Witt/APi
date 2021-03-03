@@ -11,7 +11,7 @@
 import {TimeTable} from '../classes/TimeTable';
 import {JWTInterface} from '../classes/JWTInterface';
 import express, {Request, Response} from 'express';
-import {User} from '../classes/user/User';
+import {User, UserType} from '../classes/user/User';
 import {Totp} from '../classes/Totp';
 import {Ldap} from "../classes/external/Ldap";
 import assert from "assert";
@@ -136,8 +136,8 @@ router.post('/login', async (req, res) => {
 
         let token = await user.generateToken();
         let type = "";
-        if (user.type === 1) type = "student";
-        if (user.type === 2) type = "teacher";
+        if (user.type === UserType.STUDENT) type = "student";
+        if (user.type === UserType.TEACHER) type = "teacher";
         res.json({"token": token, "userType": type});
         global.logger.log({
             level: 'info',
