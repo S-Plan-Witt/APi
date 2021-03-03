@@ -239,7 +239,6 @@ export class Ldap {
                                 }
                                 users.push(user);
                             } catch (e) {
-                                console.log(obj)
                                 console.log("membership validation failed");
                             }
                         }

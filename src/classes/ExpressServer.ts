@@ -14,6 +14,7 @@ import {JWTInterface} from "./JWTInterface";
 
 declare const global: ApiGlobal;
 
+//TODO jDocs
 export class ExpressServer {
     expressApp: Express;
 

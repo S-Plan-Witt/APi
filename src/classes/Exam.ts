@@ -196,6 +196,7 @@ export class Exam {
      * @returns {Promise<boolean>}
      */
     save(): Promise<boolean> {
+        //TODO clean up
         let date = this.date;
         let from = this.from;
         let to = this.to;

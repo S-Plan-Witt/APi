@@ -16,7 +16,6 @@ declare const global: ApiGlobal;
 
 export class PushFCM {
 
-
     constructor() {
         firebaseAdmin.initializeApp({
             credential: firebaseAdmin.credential.cert(require(global.config.pushFrameWorks.fcm.certPath)),

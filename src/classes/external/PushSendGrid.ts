@@ -18,6 +18,7 @@ export class PushSendGrid {
 
 
         sgMail.setApiKey(global.config.pushFrameWorks.sendGrid.key)
+        //TODO better implementation
         const msg = <unknown>{
             to: address,
             from: 'test@nils-witt.de',

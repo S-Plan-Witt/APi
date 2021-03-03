@@ -42,20 +42,20 @@ export class Database {
      * Deletes all data from the database
      */
     static clear(){
-        //TODO implement
+        //TODO implement Database: clear()
     }
 
     /**
      * Loads the template schema into the database
      */
     static init(){
-        //TODO implement
+        //TODO implement Database: init()
     }
 
     /**
      * updates the schema version
      */
     static update(){
-        //TODO implement
+        //TODO implement Database: update()
     }
 }

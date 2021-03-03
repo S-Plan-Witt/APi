@@ -561,6 +561,7 @@ export class User {
                 if (id != null) {
                     resolve(await JWTInterface.createJWT(id, type, tokenId));
                 }
+                //TOD update description
                 reject("NAN UID")
             } catch (e) {
                 global.logger.log({
