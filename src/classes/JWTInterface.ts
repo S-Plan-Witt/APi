@@ -10,7 +10,7 @@
 
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
-import {User} from './user/User';
+import {User, UserType} from './user/User';
 import {ApiGlobal} from "../types/global";
 import {NextFunction, Request, Response} from "express";
 import path from "path";
@@ -99,7 +99,7 @@ export class JWTInterface {
             payload.userType = userType;
             try {
                 await JWTInterface.saveToken(userId, sessionId);
-                let token = jwt.sign(payload, privateKey, {algorithm: 'RS256'});
+                let token = jwt.sign(payload, privateKey, {algorithm: global.config.webServerConfig.authAlgo});
                 resolve(token);
             } catch (e) {
                 reject(e);

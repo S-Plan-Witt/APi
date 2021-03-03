@@ -594,7 +594,6 @@ router.get('/profile/emails', async (req, res) => {
 router.delete('/jwt', async (req, res) => {
     try {
         await JWTInterface.revokeById(req.decoded.jwtId);
-        console.log("revoke")
         res.sendStatus(200);
     } catch (e) {
         res.sendStatus(500);
