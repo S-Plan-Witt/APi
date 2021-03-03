@@ -9,6 +9,8 @@
 
 import {ApiGlobal} from "../types/global";
 import {Starter} from "../startEnviroment";
+import {JWTInterface} from "../classes/JWTInterface";
+import {User, UserType} from "../classes/user/User";
 
 declare const global: ApiGlobal;
 
@@ -18,11 +20,27 @@ let useStandardENV:boolean = true;
     try {
         Starter.logger();
         Starter.config();
+        Starter.mysql();
 
         if (!useStandardENV){
             setCustomParams();
         }
+        let user = await User.getUserByUsername("user")
 
+        let sessID = "TT22";
+        let token = await JWTInterface.createJWT(user.id,UserType.STUDENT,sessID);
+        console.log("Token Created");
+        console.log(token);
+        await JWTInterface.verifyId(sessID);
+        console.log("valid")
+        await JWTInterface.revokeById(sessID);
+        console.log("Revoked");
+        try {
+            await JWTInterface.verifyId(sessID);
+            console.log("token was not successfully revoked")
+        }catch (e) {
+            console.log("token is successfully revoked")
+        }
     } catch (e) {
         console.log("The tester run into an error:")
         console.error(e);
@@ -30,5 +48,5 @@ let useStandardENV:boolean = true;
 })();
 
 function setCustomParams() {
-
+    global.config.webServerConfig.authAlgo = "RS512";
 }
