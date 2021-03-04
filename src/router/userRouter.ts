@@ -11,7 +11,7 @@
 import {TimeTable} from '../classes/TimeTable';
 import {JWTInterface} from '../classes/JWTInterface';
 import express, {Request, Response} from 'express';
-import {User} from '../classes/user/User';
+import {User, UserStatus, UserType} from '../classes/user/User';
 import {Totp} from '../classes/Totp';
 import {Ldap} from "../classes/external/Ldap";
 import assert from "assert";
@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        await user.isActive();
+        assert(user.status == UserStatus.ENABLED,"User not enabled");
         try {
             await user.verifyPassword(password);
         } catch (e) {
@@ -136,8 +136,8 @@ router.post('/login', async (req, res) => {
 
         let token = await user.generateToken();
         let type = "";
-        if (user.type === 1) type = "student";
-        if (user.type === 2) type = "teacher";
+        if (user.type === UserType.STUDENT) type = "student";
+        if (user.type === UserType.TEACHER) type = "teacher";
         res.json({"token": token, "userType": type});
         global.logger.log({
             level: 'info',
@@ -594,7 +594,6 @@ router.get('/profile/emails', async (req, res) => {
 router.delete('/jwt', async (req, res) => {
     try {
         await JWTInterface.revokeById(req.decoded.jwtId);
-        console.log("revoke")
         res.sendStatus(200);
     } catch (e) {
         res.sendStatus(500);

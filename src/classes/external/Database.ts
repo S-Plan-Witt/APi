@@ -7,42 +7,55 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import sgMail = require("@sendgrid/mail");
+import mySQL from "mariadb";
+import path from "path";
 import {ApiGlobal} from "../../types/global";
 
 declare const global: ApiGlobal;
 
-export class PushSendGrid {
+export class Database {
 
-    sendPush(address: String, Preset: number, data: PushSendGridData) {
+    /**
+     * Connects to the database server
+     */
+    static connect(){
 
+        global.mySQLPool = mySQL.createPool({
+            host: global.config.mysqlConfig.hostname,
+            port: global.config.mysqlConfig.port,
+            user: global.config.mysqlConfig.username,
+            password: global.config.mysqlConfig.password,
+            connectionLimit: 30,
+            collation: "latin1_german2_ci",
+            database: global.config.mysqlConfig.database
+        });
 
-        sgMail.setApiKey(global.config.pushFrameWorks.sendGrid.key)
-        //TODO better implementation
-        const msg = <unknown>{
-            to: address,
-            from: 'test@nils-witt.de',
-            subject: 'Sending with SendGrid is Fun',
-            text: 'and easy to do anywhere, even with Node.js',
-            html: '<strong>and easy to do anywhere, even with Node.js</strong>',
-        }
-
-        sgMail
-            // @ts-ignore
-            .send(msg)
-            .then(() => {
-                console.log('Email sent')
-            })
-            .catch((error) => {
-                console.error(error)
-            })
+        global.logger.log({
+            level: 'debug',
+            label: 'Express',
+            message: 'MySql Connected',
+            file: path.basename(__filename)
+        });
     }
-}
 
-interface PushSendGridData {
+    /**
+     * Deletes all data from the database
+     */
+    static clear(){
+        //TODO implement Database: clear()
+    }
 
-}
+    /**
+     * Loads the template schema into the database
+     */
+    static init(){
+        //TODO implement Database: init()
+    }
 
-export class PushSendGridDataPWReset {
-    uid: number = 0;
+    /**
+     * updates the schema version
+     */
+    static update(){
+        //TODO implement Database: update()
+    }
 }

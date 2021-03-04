@@ -25,19 +25,23 @@ export class Ldap {
     /**
      * Connects tor the Server and disconnects directly
      */
-    static async bindTest() {
-        try {
-            let ldapClient: Client = await Ldap.bindLDAP();
-            ldapClient.unbind();
-            ldapClient.destroy();
-        } catch (e) {
-            global.logger.log({
-                level: 'error',
-                label: 'LDAP',
-                message: "LDAP init failed: " + JSON.stringify(e),
-                file: path.basename(__filename)
-            });
-        }
+    static async bindTest(): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let ldapClient: Client = await Ldap.bindLDAP();
+                ldapClient.unbind();
+                ldapClient.destroy();
+                resolve();
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'LDAP',
+                    message: "LDAP init failed: " + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            }
+        });
     }
 
     /**
@@ -110,11 +114,17 @@ export class Ldap {
                 let ldapClient: Client = ldap.createClient({
                     url: global.config.ldapConfig.host
                 });
+
+                ldapClient.on('error', err => {
+                    console.error(err);
+                })
                 if (global.config.ldapConfig.tls) {
                     await this.startTlsClient(ldapClient);
                     resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, global.config.ldapConfig.user, global.config.ldapConfig.password));
                 } else if (global.config.ldapConfig.password !== "") {
                     resolve(await Ldap.bindClient(ldapClient, global.config.ldapConfig.domain, global.config.ldapConfig.user, global.config.ldapConfig.password));
+                } else {
+                    reject("Config Error");
                 }
             } else {
                 reject("LDAP disabled")
@@ -171,7 +181,7 @@ export class Ldap {
             }
 
             let opts: SearchOptions = {
-                filter: '(&(objectClass=user)(sn=' + lastname + ')(givenname=' + firstname + ')(samaccountname=' + username + ')',
+                filter: '(&(objectClass=user)(sn=' + lastname + ')(givenname=' + firstname + ')(samaccountname=' + username + '))',
                 scope: 'sub',
                 attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'memberOf', 'info'],
                 paged: true
@@ -215,18 +225,12 @@ export class Ldap {
                         resolve(users);
                     });
                     res.on('searchEntry', (entry: ActiveDirectorySearchEntry) => {
-                        global.logger.log({
-                            level: 'silly',
-                            label: 'LDAP',
-                            message: 'Got entry : ' + JSON.stringify(entry.object),
-                            file: path.basename(__filename)
-                        });
                         let obj: ActiveDirectorySearchEntryObject = entry.object;
                         let dn = obj["dn"].toString().split(",");
                         let grade = dn[1].substr(3, (dn[1].length - 1));
 
                         if (grade !== '_Removed') {
-                            let user: User = new User(obj.givenName, obj.sn, obj.displayName, obj.sAMAccountName, -1, 0, [], UserStatus.ENABLED, [],  null, Permissions.getDefault());
+                            let user: User = new User(obj.givenName, obj.sn, obj.displayName, obj.sAMAccountName, -1, -1, [], UserStatus.ENABLED, [], null, Permissions.getDefault());
                             try {
                                 if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
                                     user.type = 1;
@@ -235,7 +239,7 @@ export class Ldap {
                                 }
                                 users.push(user);
                             } catch (e) {
-                                reject("membership validation failed");
+                                console.log("membership validation failed");
                             }
                         }
                     });
@@ -249,10 +253,13 @@ export class Ldap {
      * Returns all teachers within the forest
      * @returns Promise {[user]}
      */
-    static loadTeachers(): Promise<Teacher[]> {
+    static getAllTeachers(): Promise<Teacher[]> {
         return new Promise(async (resolve, reject) => {
             let opts: SearchOptions = {
-                filter: '(&(objectClass=user)(memberOf=' + global.config.ldapConfig.teacherGroup + '))'
+                filter: '(&(objectClass=user)(memberOf=' + global.config.ldapConfig.teacherGroup + '))',
+                scope: 'sub',
+                attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'info', 'dn', 'memberOf'],
+                paged: true
             };
             resolve(await Ldap.searchUsersAdvanced(opts, global.config.ldapConfig.root));
         });
@@ -314,9 +321,9 @@ export class Ldap {
     static getAllStudents(): Promise<Student[]> {
         return new Promise(async (resolve, reject) => {
             let opts: SearchOptions = {
-                filter: '(objectClass=user)',
+                filter: '(&(objectClass=user)(memberOf=' + global.config.ldapConfig.studentGroup + '))',
                 scope: 'sub',
-                attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'info', 'dn'],
+                attributes: ['sn', 'givenname', 'samaccountname', 'displayName', 'info', 'dn', 'memberOf'],
                 paged: true
             };
             let users: Student[] = <Student[]>await Ldap.searchUsersAdvanced(opts, global.config.ldapConfig.root);
@@ -346,6 +353,7 @@ interface ActiveDirectorySearchEntry extends SearchEntry {
     readonly object: ActiveDirectorySearchEntryObject;
 
 }
+
 /**
  * TypeScript model for AD Entrys
  */

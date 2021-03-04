@@ -9,7 +9,7 @@
  */
 
 import express, {Request, Response} from 'express';
-import {User, UserType} from '../classes/user/User';
+import {User, UserStatus, UserType} from '../classes/user/User';
 import {Ldap} from '../classes/external/Ldap';
 import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
@@ -17,6 +17,7 @@ import {UserFilter} from "../classes/user/UserFilter";
 import {Course} from "../classes/Course";
 import {Teacher} from "../classes/user/Teacher";
 import path from "path";
+import assert from "assert";
 
 declare const global: ApiGlobal;
 
@@ -153,7 +154,7 @@ router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
     let userId = parseInt(req.params.userId.toLowerCase());
     try {
         let user: User = await User.getUserById(userId);
-        await user.isActive();
+        assert(user.status == UserStatus.ENABLED,"User not enabled");
         let token = await user.createPreAuthToken(userId);
 
         await res.json([token]);
@@ -325,7 +326,7 @@ router.get('/teacher/reload', async (req: Request, res: Response) => {
         });
         return res.sendStatus(401);
     }
-    let teachers: Teacher[] = await Ldap.loadTeachers();
+    let teachers: Teacher[] = await Ldap.getAllTeachers();
     for (const teacherKey in teachers) {
         let teacher = teachers[teacherKey];
         try {

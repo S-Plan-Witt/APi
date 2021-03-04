@@ -80,7 +80,7 @@ export class RoomLink {
                     row["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
                     resolve(new RoomLink(row["room"], row["from"], row["to"], row["date"]));
                 } else {
-                    reject("No roomlink")
+                    reject("No roomlink");
                 }
 
             } catch (e) {
@@ -109,6 +109,7 @@ export class RoomLink {
                     message: 'RoomLink Save failed: ' + JSON.stringify(roomLink) + " Err: " + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
+                //TODO error
                 reject();
             } finally {
                 await conn.end();

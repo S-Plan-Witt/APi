@@ -57,6 +57,7 @@ export class TimeTable {
                     let row = rows[0];
                     resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"], false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["idlessons"]))
                 } else {
+                    //TODO error message
                     reject();
                 }
             } catch (e) {

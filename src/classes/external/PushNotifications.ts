@@ -54,7 +54,7 @@ export class PushNotifications {
         let pushTelegram = this.pushTelegram;
         return new Promise(async (resolve, reject) => {
             try {
-
+                //TODO replace if with switch
                 if (endpoint.platform === DeviceType.FIREBASE) {
                     try {
                         if (pushFCM != undefined) {
@@ -103,6 +103,8 @@ export class PushNotifications {
                         console.log(e)
                         reject();
                     }
+                }else {
+                    resolve();
                 }
             } catch (e) {
                 reject(e);
@@ -121,7 +123,6 @@ export class PushNotifications {
             try {
                 for (let id in devices) {
                     if (devices.hasOwnProperty(id)) {
-
                         let device = devices[id];
                         try {
                             await this.send(device, title, message);
