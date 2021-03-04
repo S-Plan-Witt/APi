@@ -7,44 +7,46 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import winston, {format, transports} from "winston";
 import {ApiGlobal} from "../types/global";
-import 'winston-daily-rotate-file';
+import {Starter} from "../startEnviroment";
+import {JWTInterface} from "../classes/JWTInterface";
+import {User, UserType} from "../classes/user/User";
 
 declare const global: ApiGlobal;
 
-export class Logger {
+let useStandardENV:boolean = true;
 
-    /**
-     * creates a logger and sets it into global.logger
-     */
-    static init() {
-        global.logger = winston.createLogger({
-            format: combine(
-                timestamp(),
-                myFormat
-            ),
-            transports: [
-                rotateFile,
-                new transports.Console({level: 'silly'}),
-            ]
-        });
+(async () => {
+    try {
+        Starter.logger();
+        Starter.config();
+        Starter.mysql();
+
+        if (!useStandardENV){
+            setCustomParams();
+        }
+        let user = await User.getUserByUsername("user")
+
+        let sessID = "TT22";
+        let token = await JWTInterface.createJWT(user.id,UserType.STUDENT,sessID);
+        console.log("Token Created");
+        console.log(token);
+        await JWTInterface.verifyId(sessID);
+        console.log("valid")
+        await JWTInterface.revokeById(sessID);
+        console.log("Revoked");
+        try {
+            await JWTInterface.verifyId(sessID);
+            console.log("token was not successfully revoked")
+        }catch (e) {
+            console.log("token is successfully revoked")
+        }
+    } catch (e) {
+        console.log("The tester run into an error:")
+        console.error(e);
     }
+})();
+
+function setCustomParams() {
+    global.config.webServerConfig.authAlgo = "RS512";
 }
-
-const {combine, timestamp, printf} = format;
-
-//Create all 6 hours a new file
-const rotateFile = new (winston.transports.DailyRotateFile)({
-    filename: 'log/%DATE%.log',
-    datePattern: 'YYYY-MM-DD-HH',
-    maxSize: '20m',
-    level: 'silly',
-    format: winston.format.json(),
-    frequency: '6h'
-});
-
-//Logger output format
-const myFormat = printf(({level, message, label, timestamp: timestamp}) => {
-    return `${timestamp} [${label}] ${level}: ${message}`;
-});

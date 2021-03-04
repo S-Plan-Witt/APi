@@ -8,12 +8,23 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import express from 'express';
+import express, {Request, Response} from 'express';
 import {ApiGlobal} from "../types/global";
 
 declare const global: ApiGlobal;
 
 export let router = express.Router();
+
+/**
+ * Response with a 200 OK status if it is a options preflight request
+ */
+router.options('*', (req: Request, res: Response) => {
+    res.sendStatus(200);
+});
+
+/**
+ * All subrouter
+ */
 router.use("/users", require('./usersRouter').router);
 router.use("/user", require('./userRouter').router);
 router.use("/timetable", require('./timeTableRouter').router);
@@ -64,22 +75,6 @@ class LoginRequest {
         this.secondFactor = secondFactor;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /**
  * @typedef TotpAddRequest

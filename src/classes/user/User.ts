@@ -559,11 +559,9 @@ export class User {
             let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             try {
                 if (id != null) {
-                    let typeString = "";
-                    if (type === 1) typeString = "student";
-                    if (type === 2) typeString = "teacher";
-                    resolve(await JWTInterface.createJWT(id, typeString, tokenId));
+                    resolve(await JWTInterface.createJWT(id, type, tokenId));
                 }
+                //TOD update description
                 reject("NAN UID")
             } catch (e) {
                 global.logger.log({
@@ -587,8 +585,7 @@ export class User {
         let username = this.username;
         return new Promise(async (resolve, reject) => {
             try {
-                ///if (global.config.ldapConfig.enabled) {
-                if (false) {
+                if (global.config.ldapConfig.enabled) {
                     await Ldap.checkPassword(username, password);
 
                     let hash = bcrypt.hashSync(password, global.config.bCrypt.rounds);
@@ -860,19 +857,6 @@ export class User {
                 reject(e);
             } finally {
                 await conn.end();
-            }
-        });
-    }
-
-    /**
-     * @returns {Promise<boolean>}
-     */
-    isActive() {
-        return new Promise(async (resolve, reject) => {
-            if (this.status == UserStatus.ENABLED) {
-                resolve(true);
-            } else {
-                reject("disabled");
             }
         });
     }
