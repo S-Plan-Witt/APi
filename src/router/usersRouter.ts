@@ -134,43 +134,6 @@ router.get('/id/:id', async (req: Request, res: Response) => {
 });
 
 /**
- * Generates a Link for login without password
- * @route GET /users/userid/{id}/preAuth
- * @group Users - Operations about all users
- * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
- * @security JWT
- */
-router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
-    if (!req.decoded.permissions.usersAdmin) {
-        global.logger.log({
-            level: 'debug',
-            label: 'Express',
-            message: 'No permissions : /students/find',
-            file: path.basename(__filename)
-        });
-        return res.sendStatus(401);
-    }
-    let userId = parseInt(req.params.userId.toLowerCase());
-    try {
-        let user: User = await User.getUserById(userId);
-        assert(user.status == UserStatus.ENABLED,"User not enabled");
-        let token = await user.createPreAuthToken(userId);
-
-        await res.json([token]);
-    } catch (e) {
-        global.logger.log({
-            level: 'error',
-            label: 'Express',
-            message: 'Routing: /users/:username/preAuth ; ' + JSON.stringify(e),
-            file: path.basename(__filename)
-        });
-
-        res.sendStatus(500);
-    }
-});
-
-/**
  * Returns all users from the connected Ldap server
  * @route GET /users/ldap
  * @group Users - Operations about all users

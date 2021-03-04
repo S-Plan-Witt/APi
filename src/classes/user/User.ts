@@ -841,27 +841,6 @@ export class User {
     }
 
     /**
-     * Create Token for preAuthorization
-     * @returns Promise(token)
-     * @param userId
-     */
-    createPreAuthToken(userId: number) {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                await conn.query("INSERT INTO `preAuth_Token` (`token`, `userId`) VALUES (?, ?);", [token, userId]);
-
-                resolve(token);
-            } catch (e) {
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
      * Planned feature
      */
     enableMoodleAccount() {

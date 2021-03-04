@@ -89,26 +89,6 @@ export class Telegram {
             }
         });
     }
-
-    /**
-     * Logs a message to the database
-     * @param chatId
-     * @param message
-     * @param direction
-     */
-    static logMessage(chatId: number, message: string, direction: string): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                await conn.query("INSERT INTO `TelegramMessages` (`chatId`, `message`, `direction`) VALUES (?, ?, ?)", [chatId, message, direction]);
-                resolve();
-            } catch (e) {
-                reject(e)
-            } finally {
-                await conn.end();
-            }
-        });
-    }
 }
 
 module.exports.Telegram = Telegram;

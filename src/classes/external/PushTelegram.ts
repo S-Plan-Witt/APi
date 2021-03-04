@@ -43,7 +43,6 @@ export class PushTelegram {
                     message: 'created Linking token id:' + senderId + " token: " + token,
                     file: path.basename(__filename)
                 });
-                Telegram.logMessage(senderId, messageText, 'out');
             }
         });
 
@@ -100,14 +99,13 @@ export class PushTelegram {
     sendPush(chatID: number, body: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
-                this.bot.telegram.sendMessage(chatID, body);
+                await this.bot.telegram.sendMessage(chatID, body);
                 global.logger.log({
                     level: 'silly',
                     label: 'TelegramPush',
                     message: 'sent message: ' + body + " ;to: " + chatID,
                     file: path.basename(__filename)
                 });
-                Telegram.logMessage(chatID, body, 'out');
                 resolve();
             } catch (e) {
                 global.logger.log({
