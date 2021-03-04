@@ -9,19 +9,26 @@
 
 import {ApiGlobal} from "../types/global";
 import {Starter} from "../startEnviroment";
+import {User} from "../classes/user/User";
 
 declare const global: ApiGlobal;
 
-let useStandardENV:boolean = true;
+let useStandardENV: boolean = true;
 
 (async () => {
     try {
         Starter.logger();
         Starter.config();
+        Starter.mysql();
 
-        if (!useStandardENV){
+        if (!useStandardENV) {
             setCustomParams();
         }
+        Starter.pushNotifications();
+        let user = await User.getUserByUsername("user");
+        let devices = user.devices;
+
+        await global.pushNotifications.sendBulk(devices, "Test", "T2")
 
     } catch (e) {
         console.log("The tester run into an error:")
