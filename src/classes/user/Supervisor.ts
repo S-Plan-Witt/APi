@@ -37,7 +37,7 @@ export class Supervisor extends User {
                 conn = await global.mySQLPool.getConnection();
                 let data: Supervisor[] = [];
                 //TODO Add Supervisor object
-                let rows = await conn.query("SELECT * FROM `data_exam_supervisors` LEFT JOIN `users` ON `data_exam_supervisors`.`TeacherId` = `users`.`idusers` WHERE `RoomLink`= ?", [id]);
+                let rows = await conn.query("SELECT * FROM `exams_supervisors` LEFT JOIN `users` ON `exams_supervisors`.`teacherId` = `users`.id_users WHERE `RoomLink`= ?", [id]);
                 rows.forEach((element: any) => {
                     data.push(element);
                 });
@@ -65,7 +65,7 @@ export class Supervisor extends User {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT `data_exam_supervisors`.*,`users`.*, `data_exam_rooms`.`room`, `data_exam_rooms`.`date` FROM `data_exam_supervisors` LEFT JOIN `users` ON `data_exam_supervisors`.`TeacherId` = `users`.`idusers` LEFT JOIN `data_exam_rooms` ON `data_exam_supervisors`.`RoomLink` = `data_exam_rooms`.`iddata_exam_rooms` WHERE `supervisorId`= ?", [id]);
+                let rows = await conn.query("SELECT `exams_supervisors`.*,`users`.*, `exams_rooms`.`room`, `exams_rooms`.`date` FROM `exams_supervisors` LEFT JOIN `users` ON `exams_supervisors`.`TeacherId` = `users`.id_users LEFT JOIN `exams_rooms` ON `exams_supervisors`.`RoomLink` = `exams_rooms`.id_exam_rooms WHERE id_exam_supervisor= ?", [id]);
                 if (rows.length > 0) {
                     let date = new Date(rows[0]["date"]);
                     rows[0]["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");

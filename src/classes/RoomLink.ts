@@ -44,7 +44,7 @@ export class RoomLink {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let roomLinks: RoomLink[] = [];
-                let rows = await conn.query("SELECT * FROM `data_exam_rooms` WHERE `date`= ? AND `room`= ? ", [date, room]);
+                let rows = await conn.query("SELECT * FROM `exams_rooms` WHERE `date`= ? AND `room`= ? ", [date, room]);
                 rows.forEach((element: any) => {
                     let date = new Date(element["date"]);
                     element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
@@ -73,7 +73,7 @@ export class RoomLink {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let result = await conn.query("SELECT * FROM data_exam_rooms WHERE iddata_exam_rooms = ?", [id]);
+                let result = await conn.query("SELECT * FROM exams_rooms WHERE id_exam_rooms = ?", [id]);
                 if (result.length === 1) {
                     let row = result[0];
                     let date = new Date(row["date"]);
@@ -100,7 +100,7 @@ export class RoomLink {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("INSERT INTO data_exam_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [roomLink.room, roomLink.from, roomLink.to, roomLink.date]);
+                await conn.query("INSERT INTO exams_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [roomLink.room, roomLink.from, roomLink.to, roomLink.date]);
                 resolve();
             } catch (e) {
                 global.logger.log({

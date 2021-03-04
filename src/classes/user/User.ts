@@ -141,7 +141,7 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows: any[];
-                rows = await conn.query("SELECT * FROM users LEFT JOIN moodle_mapping ON users.idusers = moodle_mapping.userid WHERE `idusers`= ?", [id]);
+                rows = await conn.query("SELECT * FROM users LEFT JOIN user_moodleaccounts ON users.id_users = user_moodleaccounts.userid WHERE id_users= ?", [id]);
                 if (rows.length > 0) {
                     let loadedUser = await User.fromSqlUser(rows[0]);
                     await loadedUser.populateUser();
@@ -169,7 +169,7 @@ export class User {
      */
     static async fromSqlUser(sql: any): Promise<User> {
         return new Promise(async (resolve, eject) => {
-            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["idusers"], parseInt(sql["type"]), [], sql["active"], [], sql["twoFactor"], null, sql["moodleid"]))
+            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["idusers"], parseInt(sql["type"]), [], sql["active"], await User.getDevices(sql["idusers"]), sql["twoFactor"], null, sql["moodleid"]))
         });
     }
 
@@ -212,7 +212,7 @@ export class User {
             try {
                 let courses: Course[] = [];
                 if (userType === 1) {
-                    const rows = await conn.query("SELECT data_courses.*, student_courses.displayKlausuren FROM student_courses LEFT JOIN data_courses ON student_courses.courseId = data_courses.iddata_courses WHERE `user_id`= ?;", [userId]);
+                    const rows = await conn.query("SELECT courses.*, user_student_courses.displayKlausuren FROM user_student_courses LEFT JOIN courses ON user_student_courses.courseId = courses.id_courses WHERE `user_id`= ?;", [userId]);
                     await conn.end();
                     rows.forEach((row: any) => {
                         let exams = false;
@@ -222,7 +222,7 @@ export class User {
                         courses.push(new Course(row.grade, row.subject, row.group, exams, row.iddata_courses));
                     });
                 } else if (userType === 2) {
-                    const rows = await conn.query("SELECT * FROM data_courses WHERE `teacherId` = ?;", [userId]);
+                    const rows = await conn.query("SELECT * FROM courses WHERE `teacherId` = ?;", [userId]);
                     rows.forEach((row: any) => {
                         courses.push(new Course(row.grade, row.subject, row.group, false, row.iddata_courses, row.teacherId));
                     });
@@ -295,7 +295,7 @@ export class User {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT student_courses.*, devices.* FROM student_courses LEFT JOIN devices ON student_courses.user_id = devices.userID WHERE (`courseId`=? )", [course.id]);
+                let rows = await conn.query("SELECT user_student_courses.*, devices.* FROM user_student_courses LEFT JOIN devices ON user_student_courses.user_id = devices.userID WHERE (`courseId`=? )", [course.id]);
 
                 let devices: any = [];
                 rows.forEach((row: any) => {
@@ -594,7 +594,7 @@ export class User {
                     let conn;
                     try {
                         conn = await global.mySQLPool.getConnection();
-                        await conn.query("UPDATE users SET hashedpassword = ? WHERE idusers = ?", [hash, this.id]);
+                        await conn.query("UPDATE users SET hashedpassword = ? WHERE id_users = ?", [hash, this.id]);
                     } catch (e) {
                         global.logger.log({
                             level: 'error',
@@ -618,7 +618,7 @@ export class User {
                     let conn;
                     try {
                         conn = await global.mySQLPool.getConnection();
-                        let res = await conn.query("SELECT hashedpassword FROM users WHERE idusers = ?", [this.id]);
+                        let res = await conn.query("SELECT hashedpassword FROM users WHERE id_users = ?", [this.id]);
                         hashedpassword = res[0]["hashedpassword"];
                     } catch (e) {
                         global.logger.log({
@@ -695,7 +695,7 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let announcements: any = [];
-                const rows = await conn.query("SELECT * FROM student_courses WHERE `user_id`= ?;", [userId]);
+                const rows = await conn.query("SELECT * FROM user_student_courses WHERE `user_id`= ?;", [userId]);
                 rows.forEach((row: any) => {
                     announcements.push({
                         "subject": row.subject,
@@ -733,7 +733,7 @@ export class User {
             try {
                 for (const course of courses) {
                     try {
-                        await conn.query("INSERT INTO `student_courses` (`user_id`, `courseId`,`displayKlausuren`) VALUES (?, ?, ?)", [userId, course.id, course.exams]);
+                        await conn.query("INSERT INTO `user_student_courses` (`user_id`, `courseId`,`displayKlausuren`) VALUES (?, ?, ?)", [userId, course.id, course.exams]);
                     } catch (e) {
                         global.logger.log({
                             level: 'error',
@@ -772,7 +772,7 @@ export class User {
                 let rows = await conn.query("SELECT * FROM users WHERE `username`= ? AND `type`= 1;", [username]);
                 if (rows.length !== 0) {
                     let userId = rows[0].idusers;
-                    await conn.query("DELETE FROM student_courses WHERE `user_id`= ? ", [userId]);
+                    await conn.query("DELETE FROM user_student_courses WHERE `user_id`= ? ", [userId]);
                 }
                 resolve()
             } catch (e) {
@@ -805,7 +805,7 @@ export class User {
                     resolve(false);
                     return
                 }
-                await conn.query("INSERT INTO `devices` (`userID`, `deviceID`, `platform`) VALUES ((SELECT idusers FROM users WHERE username = ?), ?, ?)", [username, device.deviceIdentifier, device.platform]);
+                await conn.query("INSERT INTO `devices` (`userID`, `deviceID`, `platform`) VALUES ((SELECT id_users FROM users WHERE username = ?), ?, ?)", [username, device.deviceIdentifier, device.platform]);
                 resolve(true);
             } catch (e) {
                 reject(e);
@@ -860,7 +860,7 @@ export class User {
                 let conn;
                 try {
                     conn = await global.mySQLPool.getConnection();
-                    let result = await conn.query("INSERT INTO `moodle_mapping` (`userid`, `moodleid`) VALUES (?, ?);", [uid, muid]);
+                    let result = await conn.query("INSERT INTO `user_moodleaccounts` (`userid`, `moodleid`) VALUES (?, ?);", [uid, muid]);
                     resolve(muid);
                 } catch (e) {
                     console.log(e);
@@ -884,7 +884,7 @@ export class User {
                     await Moodle.deleteUserById(mUID);
 
                     conn = await global.mySQLPool.getConnection();
-                    let result = await conn.query("DELETE FROM `moodle_mapping` WHERE `userid` = ?", [uid]);
+                    let result = await conn.query("DELETE FROM `user_moodleaccounts` WHERE `userid` = ?", [uid]);
                     await conn.end();
                     resolve(mUID);
                 } catch (e) {

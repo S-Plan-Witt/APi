@@ -25,8 +25,8 @@ export class Totp {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let res = await conn.query("INSERT INTO `totp` (`user_id`, `totp_key`, alias) VALUES (?, ?, ?);", [userId, token, alias]);
-                await conn.query("UPDATE users SET twoFactor = 1 WHERE idusers = ?", [userId]);
+                let res = await conn.query("INSERT INTO `user_totp` (`user_id`, `totp_key`, alias) VALUES (?, ?, ?);", [userId, token, alias]);
+                await conn.query("UPDATE users SET twoFactor = 1 WHERE id_users = ?", [userId]);
                 if (res.warningStatus === 0) {
                     resolve(res.insertId);
                 }
@@ -51,7 +51,7 @@ export class Totp {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM totp WHERE id_totp = ?;", [tokenId]);
+                let rows = await conn.query("SELECT * FROM user_totp WHERE id_totp = ?;", [tokenId]);
                 if (rows.length !== 1) {
 
                     reject("Key is not available");
@@ -67,7 +67,7 @@ export class Totp {
                         reject("Invalid code");
                         return;
                     }
-                    await conn.query("UPDATE totp SET verified = 1 WHERE id_totp = ?", [tokenId]);
+                    await conn.query("UPDATE user_totp SET verified = 1 WHERE id_totp = ?", [tokenId]);
                     resolve();
                 }
 
@@ -103,7 +103,7 @@ export class Totp {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM totp WHERE user_id = ?;", [userId]);
+                let rows = await conn.query("SELECT * FROM user_totp WHERE user_id = ?;", [userId]);
                 for (let i = 0; i < rows.length; i++) {
                     if (rows.hasOwnProperty(i)) {
                         let valid = speakeasy.totp.verify({
@@ -132,12 +132,12 @@ export class Totp {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM totp WHERE id_totp = ?;", [id]);
+                let rows = await conn.query("SELECT * FROM user_totp WHERE id_totp = ?;", [id]);
                 if (rows.length > 0) {
-                    await conn.query("DELETE FROM totp WHERE id_totp = ?", [id]);
-                    rows = await conn.query("SELECT * FROM totp WHERE user_id = ?;", [userId]);
+                    await conn.query("DELETE FROM user_totp WHERE id_totp = ?", [id]);
+                    rows = await conn.query("SELECT * FROM user_totp WHERE user_id = ?;", [userId]);
                     if (rows.length < 1) {
-                        await conn.query("UPDATE users SET twoFactor = 0 WHERE idusers = ?", [userId]);
+                        await conn.query("UPDATE users SET twoFactor = 0 WHERE id_users = ?", [userId]);
                     }
                 }
                 resolve();
