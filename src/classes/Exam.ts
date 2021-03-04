@@ -213,10 +213,14 @@ export class Exam {
             }
 
             if (this.course.id == null) {
-                this.course = await TimeTable.getCourseByFields(this.course.subject, this.course.grade, this.course.group);
+                try {
+                    this.course = await TimeTable.getCourseByFields(this.course.subject, this.course.grade, this.course.group);
+                }catch (e) {
+                    reject("Course not found")
+                }
             }
 
-            let linkId = avilRoomLinks[0]["iddata_exam_rooms"];
+            let linkId = avilRoomLinks[0]["id_exam_rooms"];
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();

@@ -169,7 +169,7 @@ export class User {
      */
     static async fromSqlUser(sql: any): Promise<User> {
         return new Promise(async (resolve, eject) => {
-            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["idusers"], parseInt(sql["type"]), [], sql["active"], await User.getDevices(sql["idusers"]), sql["twoFactor"], null, sql["moodleid"]))
+            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["id_users"], parseInt(sql["type"]), [], sql["active"], await User.getDevices(sql["id_users"]), sql["twoFactor"], null, sql["moodleid"]))
         });
     }
 
@@ -352,7 +352,7 @@ export class User {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userID`= ?;", [userId]);
+                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [userId]);
                 let devices: Device[] = [];
                 rows.forEach((row: any) => {
                     if (row.deviceID != null) {

@@ -135,10 +135,7 @@ router.post('/login', async (req, res) => {
         }
 
         let token = await user.generateToken();
-        let type = "";
-        if (user.type === UserType.STUDENT) type = "student";
-        if (user.type === UserType.TEACHER) type = "teacher";
-        res.json({"token": token, "userType": type});
+        res.json({"token": token, "userType": user.type});
         global.logger.log({
             level: 'info',
             label: 'Login',

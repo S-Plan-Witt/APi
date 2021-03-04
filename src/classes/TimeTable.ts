@@ -199,9 +199,9 @@ export class TimeTable {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
                 if (rows.length !== 1) {
-                    reject()
+                    reject("Course not found")
                 } else {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["iddata_courses"]));
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"]));
                 }
             } catch (e) {
                 reject(e);
