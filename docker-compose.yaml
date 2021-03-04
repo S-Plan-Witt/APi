@@ -7,7 +7,7 @@ services:
     working_dir: /home/node/app
     volumes:
     - ./:/home/node/app
-    command: "node build/index.js"
+    command: "node build/app.js"
     environment:
       # API Self
       API_URL: "https://api.example.com"

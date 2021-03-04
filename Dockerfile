@@ -34,5 +34,5 @@ ENV GOOGLE_APPLICATION_CREDENTIALS="/usr/src/splan/keys/fcm_key.json"
 
 COPY build/ ./
 
-CMD ["node","index.js"]
+CMD ["node","app.js"]
 EXPOSE 3000
