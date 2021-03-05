@@ -11,7 +11,6 @@
 import {JWTInterface} from '../classes/JWTInterface';
 import express, {Request, Response} from 'express';
 import {User, UserStatus, UserType} from '../classes/user/User';
-import {Totp} from '../classes/Totp';
 import {Ldap} from "../classes/external/Ldap";
 import assert from "assert";
 import {ApiGlobal} from "../types/global";
@@ -109,7 +108,7 @@ router.post('/login', async (req, res) => {
                 let code = req.body["secondFactor"];
                 try {
                     if (user.id != null) {
-                        await Totp.verifyUserCode(code, user.id);
+                        //await Totp.verifyUserCode(code, user.id);
                     }
                 } catch (e) {
                     res.sendStatus(401);
@@ -503,7 +502,7 @@ router.post('/auth/totp', async (req, res) => {
             let key = req.body["key"];
             let alias = req.body["alias"];
             if (user.id != null) {
-                tokenId = await Totp.saveTokenForUser(key, user.id, alias)
+                //tokenId = await Totp.saveTokenForUser(key, user.id, alias)
             }
         } catch (e) {
 
@@ -529,7 +528,7 @@ router.post('/auth/totp/verify', async (req, res) => {
         try {
             let keyId = req.body["keyId"];
             let code = req.body["code"];
-            await Totp.verifyKey(keyId, code);
+           // await Totp.verifyKey(keyId, code);
             await res.sendStatus(200);
         } catch (e) {
             console.log(e);
@@ -552,7 +551,7 @@ router.post('/auth/totp/verify', async (req, res) => {
 router.delete('/auth/totp/id/:id', async (req, res) => {
     try {
         if (req.user.id != null) {
-            await Totp.removeById(parseInt(req.params.id), req.user.id);
+           // await Totp.removeById(parseInt(req.params.id), req.user.id);
         }
         res.sendStatus(200)
     } catch (e) {
