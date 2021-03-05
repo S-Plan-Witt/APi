@@ -8,7 +8,6 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {TimeTable} from '../classes/TimeTable';
 import {JWTInterface} from '../classes/JWTInterface';
 import express, {Request, Response} from 'express';
 import {User, UserStatus, UserType} from '../classes/user/User';
@@ -168,7 +167,7 @@ router.get('/courses', async (req, res) => {
     let courses;
     try {
         if (req.user.type === UserType.STUDENT) {
-            courses = user.courses;
+            courses = req.user.courses;
             await res.json(courses);
         } else if (req.user.type === UserType.TEACHER) {
             courses = user.courses;
@@ -268,13 +267,13 @@ router.get('/replacementlessons', async (req, res) => {
     try {
         let courses;
         let response: any = [];
-        if (req.decoded.userType === "student" || req.decoded.userType === "teacher") {
+        if (req.user.type == UserType.STUDENT || req.user.type == UserType.TEACHER) {
             courses = req.user.courses;
         } else {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: 'Routing: /user/replacementlessons : rej (503)(' + req.decoded.userType + ')',
+                message: 'Routing: /user/replacementlessons : rej (503)(' + req.user.type+ ')',
                 file: path.basename(__filename)
             });
 

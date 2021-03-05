@@ -167,7 +167,7 @@ export class Course {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM courses WHERE (id_courses=?)", [id]);
                 if (rows.length === 1) {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["iddata_courses"]));
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"]));
                 } else {
                     reject()
                 }

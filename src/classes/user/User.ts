@@ -201,30 +201,31 @@ export class User {
 
     /**
      * Get courses associated with user
-     * @param userId {Integer}
-     * @param userType
      * @returns Promise {courses}
      */
-    static getCoursesByUID(userId: number, userType: number): Promise<Course[]> {
+    getCourses(): Promise<Course[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let courses: Course[] = [];
-                if (userType === 1) {
-                    const rows = await conn.query("SELECT courses.*, user_student_courses.displayKlausuren FROM user_student_courses LEFT JOIN courses ON user_student_courses.courseId = courses.id_courses WHERE `user_id`= ?;", [userId]);
+                if (this.type == UserType.STUDENT) {
+                    const rows = await conn.query("SELECT user_student_courses.* FROM user_student_courses WHERE `user_id`= ?;", [this.id]);
                     await conn.end();
-                    rows.forEach((row: any) => {
+                    for (let i = 0; i < rows.length; i++) {
+                        let row = rows[i];
                         let exams = false;
                         if (row.displayKlausuren === 1) {
                             exams = true;
                         }
-                        courses.push(new Course(row.grade, row.subject, row.group, exams, row.iddata_courses));
-                    });
-                } else if (userType === 2) {
-                    const rows = await conn.query("SELECT * FROM courses WHERE `teacherId` = ?;", [userId]);
-                    rows.forEach((row: any) => {
-                        courses.push(new Course(row.grade, row.subject, row.group, false, row.iddata_courses, row.teacherId));
-                    });
+                        courses.push(await Course.getById(parseInt(row.courseId)));
+                    }
+                } else if (this.type == UserType.TEACHER) {
+                    const rows = await conn.query("SELECT * FROM courses WHERE `teacherId` = ?;", [this.id]);
+                    await conn.end();
+                    for (let i = 0; i < rows.length; i++) {
+                        let row = rows[i];
+                        courses.push(await Course.getById(parseInt(row.courseId)));
+                    }
                 }
                 global.logger.log({
                     level: 'silly',
@@ -443,7 +444,7 @@ export class User {
      */
     populateUser(): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            this.courses = await User.getCoursesByUID(this.id, this.type);
+            this.courses = await this.getCourses();
             this.devices = await User.getDevices(this.id);
             this.permissions = await Permissions.getByUID(this.id)
             resolve();

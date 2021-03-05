@@ -159,7 +159,7 @@ router.get('/ldap/', async (req: Request, res: Response) => {
 
 /**
  * Returns all users from the connected Ldap server
- * @route POST /users/ldap/find
+ * @route POST /users/find
  * @group Users - Operations about all users
  * @param {UserFilter.model} UserFilter.body.required
  * @returns {Array.<User>} 200
@@ -184,7 +184,6 @@ router.post('/find', async (req: Request, res: Response) => {
 
     try {
         let filter = new UserFilter(username, firstName, lastName)
-
         let users: User[] = await User.search(filter);
         res.json(users);
     } catch (e) {
