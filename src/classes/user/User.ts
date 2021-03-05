@@ -672,37 +672,6 @@ export class User {
     }
 
     /**
-     * Add device to user
-     * @param device {String}
-     * @returns Promise
-     */
-    addDevice(device: Device) {
-        let username = this.username;
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `deviceID`= ?;", [device]);
-                if (rows.length !== 0) {
-                    resolve(false);
-                    return
-                }
-                await conn.query("INSERT INTO `devices` (`userID`, `deviceID`, `platform`) VALUES ((SELECT id_users FROM users WHERE username = ?), ?, ?)", [username, device.deviceIdentifier, device.platform]);
-                resolve(true);
-            } catch (e) {
-                reject(e);
-                global.logger.log({
-                    level: 'error',
-                    label: 'User',
-                    message: 'Class: User; Function: addDevice: ' + JSON.stringify(e),
-                    file: path.basename(__filename)
-                });
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
      * Planned feature
      */
     enableMoodleAccount() {

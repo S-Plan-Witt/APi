@@ -430,12 +430,12 @@ router.get('/devices', async (req, res) => {
  * @security JWT
  */
 router.post('/devices', async (req: Request, res: Response) => {
-    let deviceId = req.body.deviceId;
-    let platform = req.body.plattform;
+    let deviceIdentifier = req.body.deviceIdentifier;
+    let platform = req.body.platform;
 
     try {
-        let device = new Device(parseInt(platform), null, req.user.id, Date.now().toString(), deviceId);
-        if (await req.user.addDevice(device)) {
+        let device = new Device(parseInt(platform), null, req.user.id, Date.now().toString(), deviceIdentifier);
+        if (await device.save()) {
             res.sendStatus(200);
         } else {
             res.sendStatus(200);
