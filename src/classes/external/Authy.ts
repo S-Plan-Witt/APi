@@ -11,8 +11,6 @@ import {User} from "../user/User";
 import path from "path";
 import {ApiGlobal} from "../../types/global";
 
-import{} from 'twilio'
-
 declare const global: ApiGlobal;
 
 export class Authy {
