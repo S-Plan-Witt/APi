@@ -51,6 +51,7 @@
     "@types/jsonwebtoken": "^8.5.0",
     "@types/ldapjs": "^1.0.9",
     "@types/node": "^14.14.25",
+    "@types/notp": "^2.0.0",
     "@types/speakeasy": "^2.0.5",
     "@types/web-push": "^3.3.0",
     "express-swagger-generator": "^1.1.17",
