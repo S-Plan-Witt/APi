@@ -111,7 +111,6 @@ router.post('/login', async (req, res) => {
                     if (user.id != null) {
                         await Totp.verifyUserCode(code, user.id);
                     }
-                    console.log("ERROR")
                 } catch (e) {
                     res.sendStatus(401);
                     global.logger.log({
@@ -167,10 +166,10 @@ router.get('/courses', async (req, res) => {
     let user = req.user;
     let courses;
     try {
-        if (req.decoded.userType === "student") {
+        if (req.user.type === UserType.STUDENT) {
             courses = user.courses;
             await res.json(courses);
-        } else if (req.decoded.userType === "teacher") {
+        } else if (req.user.type === UserType.TEACHER) {
             courses = user.courses;
             await res.json(courses);
         } else {
@@ -415,7 +414,7 @@ router.get('/supervisors', async (req, res) => {
  */
 router.get('/devices', async (req, res) => {
     try {
-        let data = await req.user.devices;
+        let data = req.user.devices;
         res.json(data);
     } catch (e) {
         console.log(e);
@@ -568,7 +567,7 @@ router.delete('/auth/totp/id/:id', async (req, res) => {
  * Lists all mail addresses
  * @route GET /user/profile/emails
  * @group User - Operations about logged in user
- * @returns {Array.<EMail>} 200
+ * @returns {Array.<Device>} 200
  * @returns {Error} 401 - Wrong JWT
  * @security JWT
  */
