@@ -43,7 +43,6 @@ export class Device {
                     resolve(false);
                     return
                 }
-                this.deviceIdentifier = "RR"
                 await conn.query("INSERT INTO `devices` (`userId`, deviceIdentifier, `platform`) VALUES (?, ?, ?)", [this.userId, this.deviceIdentifier, this.platform]);
                 resolve(true);
             } catch (e) {
