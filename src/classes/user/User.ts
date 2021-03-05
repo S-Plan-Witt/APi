@@ -312,43 +312,6 @@ export class User {
     }
 
     /**
-     * Get devices related to user
-     * @returns Promise({devices})
-     * @param userId
-     */
-    getDevices(): Promise<any> {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [this.id]);
-                let devices: Device[] = [];
-                rows.forEach((row: any) => {
-                    if (row.deviceIdentifier != null) {
-                        devices.push(new Device(row.platform, parseInt(row.idDevices), row.userId, row.added, row.deviceIdentifier));
-                    }
-                });
-                global.logger.log({
-                    level: 'silly',
-                    label: 'User',
-                    message: 'Class: User; Function: getDevices: loaded',
-                    file: path.basename(__filename)
-                });
-                resolve(devices);
-            } catch (e) {
-                global.logger.log({
-                    level: 'error',
-                    label: 'User',
-                    message: 'Class: User; Function: getDevices: ' + JSON.stringify(e),
-                    file: path.basename(__filename)
-                });
-                reject(e);
-            } finally {
-                await conn.end()
-            }
-        });
-    }
-
-    /**
      * Returns all users with the given type
      * @param type
      */
@@ -446,7 +409,7 @@ export class User {
     populateUser(): Promise<void> {
         return new Promise(async (resolve, reject) => {
             this.courses = await this.getCourses();
-            this.devices = await this.getDevices();
+            this.devices = await Device.getByUID(this.id);
             this.permissions = await Permissions.getByUID(this.id)
             resolve();
         });

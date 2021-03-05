@@ -28,6 +28,7 @@ export class PushTelegram {
      * Connects to the telegram api and starts all listeners
      */
     startTelegramBot() {
+        //TODO promise return
         //Set replay to /start command from TG
         this.bot.start(async (ctx: Context) => {
             let senderId = undefined;

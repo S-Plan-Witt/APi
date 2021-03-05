@@ -81,6 +81,38 @@ export class Device {
             }
         });
     }
+
+    static getByUID(id: number): Promise<Device[]>{
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [id]);
+                let devices: Device[] = [];
+                rows.forEach((row: any) => {
+                    if (row.deviceIdentifier != null) {
+                        devices.push(new Device(row.platform, parseInt(row.id_devices), row.userId, row.added, row.deviceIdentifier));
+                    }
+                });
+                global.logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: Device; Function: getByUID: loaded',
+                    file: path.basename(__filename)
+                });
+                resolve(devices);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: Device; Function: getByUID: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            } finally {
+                await conn.end()
+            }
+        });
+    }
 }
 
 export enum DeviceType {
