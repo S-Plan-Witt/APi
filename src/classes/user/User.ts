@@ -101,6 +101,7 @@ export class User {
                         file: path.basename(__filename)
                     });
                     let loadedUser: User = await User.fromSqlUser(rows[0]);
+                    await loadedUser.populateUser();
                     global.logger.log({
                         level: 'silly',
                         label: 'User',
@@ -168,7 +169,7 @@ export class User {
      */
     static async fromSqlUser(sql: any): Promise<User> {
         return new Promise(async (resolve, eject) => {
-            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["id_users"], parseInt(sql["type"]), [], sql["active"], await User.getDevices(sql["id_users"]), sql["twoFactor"], null, sql["moodleid"]))
+            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["id_users"], parseInt(sql["type"]), [], sql["active"], [], sql["twoFactor"], null, sql["moodleid"]))
         });
     }
 
@@ -315,15 +316,15 @@ export class User {
      * @returns Promise({devices})
      * @param userId
      */
-    static getDevices(userId: number): Promise<any> {
+    getDevices(): Promise<any> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [userId]);
+                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [this.id]);
                 let devices: Device[] = [];
                 rows.forEach((row: any) => {
-                    if (row.deviceID != null) {
-                        devices.push(new Device(row.platform, parseInt(row.idDevices), row.userId, row.added, row.deviceID));
+                    if (row.deviceIdentifier != null) {
+                        devices.push(new Device(row.platform, parseInt(row.idDevices), row.userId, row.added, row.deviceIdentifier));
                     }
                 });
                 global.logger.log({
@@ -445,7 +446,7 @@ export class User {
     populateUser(): Promise<void> {
         return new Promise(async (resolve, reject) => {
             this.courses = await this.getCourses();
-            this.devices = await User.getDevices(this.id);
+            this.devices = await this.getDevices();
             this.permissions = await Permissions.getByUID(this.id)
             resolve();
         });

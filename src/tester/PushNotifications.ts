@@ -27,9 +27,8 @@ let useStandardENV: boolean = true;
         Starter.pushNotifications();
         let user = await User.getByUsername("user");
         let devices = user.devices;
-
         await global.pushNotifications.sendBulk(devices, "Test", "T2")
-
+        console.log("SUCCESSFUL")
     } catch (e) {
         console.log("The tester run into an error:")
         console.error(e);
