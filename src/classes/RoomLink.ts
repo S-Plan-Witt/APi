@@ -93,24 +93,22 @@ export class RoomLink {
 
 
     /**
-     * @param roomLink {RoomLink}
      * @returns {Promise<void>}
      */
-    static add(roomLink: RoomLink): Promise<void> {
+    save(): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("INSERT INTO exams_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [roomLink.room, roomLink.from, roomLink.to, roomLink.date]);
+                await conn.query("INSERT INTO exams_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [this.room, this.from, this.to, this.date]);
                 resolve();
             } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'roomLink',
-                    message: 'RoomLink Save failed: ' + JSON.stringify(roomLink) + " Err: " + JSON.stringify(e),
+                    message: 'RoomLink Save failed: ' + JSON.stringify(this) + " Err: " + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
-                //TODO error
-                reject();
+                reject(e);
             } finally {
                 await conn.end();
             }

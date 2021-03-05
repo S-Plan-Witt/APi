@@ -198,7 +198,7 @@ export class Exam {
         return new Promise(async (resolve, reject) => {
             let avilRoomLinks: any = await RoomLink.getRoomLinks(this.date, this.room);
             if (avilRoomLinks.length === 0) {
-                await RoomLink.add(new RoomLink(this.room, this.from, this.to, this.date));
+                await (new RoomLink(this.room, this.from, this.to, this.date)).save();
             }
             avilRoomLinks = await RoomLink.getRoomLinks(this.date, this.room);
             if (avilRoomLinks === 0) {
@@ -214,7 +214,7 @@ export class Exam {
 
             if (this.course.id == null) {
                 try {
-                    this.course = await TimeTable.getCourseByFields(this.course.subject, this.course.grade, this.course.group);
+                    this.course = await Course.getByFields(this.course.subject, this.course.grade, this.course.group);
                 }catch (e) {
                     reject("Course not found")
                 }

@@ -22,6 +22,7 @@ import {Announcement} from "../classes/Announcement";
 import {Supervisor} from "../classes/user/Supervisor";
 import path from "path";
 import {Device} from "../classes/Device";
+import {Course} from "../classes/Course";
 
 declare const global: ApiGlobal;
 
@@ -74,15 +75,15 @@ router.post('/login', async (req, res) => {
     }
     let user: User | null = null;
     try {
-        user = await User.getUserByUsername(username);
+        user = await User.getByUsername(username);
     } catch (e) {
     }
 
     if (user == null) {
         try {
             user = await Ldap.getUserByUsername(username);
-            await User.createUserFromLdap(username);
-            user = await User.getUserByUsername(username);
+            await User.createFromLdap(username);
+            user = await User.getByUsername(username);
         } catch (e) {
             res.sendStatus(401);
             global.logger.log({
@@ -207,10 +208,11 @@ router.get('/lessons', async (req, res) => {
     try {
         let courses = req.user.courses;
         if (courses != null) {
-            for (const course of courses) {
+            for (let coursePrototype of courses) {
+                let course = await Course.getByFields(coursePrototype.subject,coursePrototype.grade,coursePrototype.group);
                 try {
                     //Get lesson for course as array
-                    let lessons: any = await TimeTable.getLessonsByCourse(course);
+                    let lessons: any = await course.getLessons();
                     lessons.forEach((lesson: any) => {
                         //Add lesson to response array
                         response.push(lesson);
@@ -391,11 +393,8 @@ router.get('/exams', async (req, res) => {
  * @security JWT
  */
 router.get('/supervisors', async (req, res) => {
-    let username = req.user.username;
     try {
-        let data: any[] = [];
-        //TODO change to id based
-        //let data = await Supervisor.getByTeacherUsername(username);
+        let data = await Supervisor.getById(req.user.id);
         res.json(data);
     } catch (e) {
         console.log(e);
@@ -460,7 +459,7 @@ router.post('/devices', async (req: Request, res: Response) => {
 router.delete('/devices/deviceId/:id', async (req, res) => {
     let deviceId = req.params.id;
     try {
-        await User.removeDevice(deviceId);
+        await Device.removeDevice(deviceId);
         res.sendStatus(200)
     } catch (e) {
         console.log(e);

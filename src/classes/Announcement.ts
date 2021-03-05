@@ -81,7 +81,7 @@ export class Announcement {
             for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
                 row["date"] = Utils.convertMysqlDate(row["date"]);
-                announcements.push(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
+                announcements.push(new Announcement(await Course.getById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
             }
             resolve(announcements);
         });
@@ -126,7 +126,7 @@ export class Announcement {
                 if (rows.length === 1) {
                     let row = rows[0];
                     row["date"] = Utils.convertMysqlDate(row["date"])
-                    resolve(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
+                    resolve(new Announcement(await Course.getById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
                 } else {
                     reject("no row");
                 }

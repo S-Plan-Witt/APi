@@ -25,7 +25,7 @@ let useStandardENV: boolean = true;
             setCustomParams();
         }
         Starter.pushNotifications();
-        let user = await User.getUserByUsername("user");
+        let user = await User.getByUsername("user");
         let devices = user.devices;
 
         await global.pushNotifications.sendBulk(devices, "Test", "T2")

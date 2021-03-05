@@ -13,6 +13,7 @@ import {User} from "../user/User";
 import {ApiGlobal} from "../../types/global";
 import {Context, Telegraf} from "telegraf";
 import path from "path";
+import {Device} from "../Device";
 
 declare const global: ApiGlobal;
 
@@ -56,7 +57,7 @@ export class PushTelegram {
             }
             try {
                 if (senderId != undefined) {
-                    await User.removeDevice(senderId.toString());
+                    await Device.removeDevice(senderId.toString());
                     await ctx.reply("Abgeschlossen");
                     global.logger.log({
                         level: 'silly',

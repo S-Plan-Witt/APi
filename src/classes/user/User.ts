@@ -62,7 +62,6 @@ export class User {
      * @param type {UserType}
      * @param courses {Course[]}
      * @param status {UserStatus}
-     * @param mails
      * @param devices {Device[]}
      * @param secondFactor {number}
      * @param permissions {Permissions}
@@ -85,10 +84,10 @@ export class User {
     }
 
     /**
-     * Seaches in the database for a user with the given username (no wildcards)
+     * Searches in the database for a user with the given username (no wildcards)
      * @param username
      */
-    static getUserByUsername(username: string): Promise<User> {
+    static getByUsername(username: string): Promise<User> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -136,7 +135,7 @@ export class User {
      * Returns a User with the given id or rejects
      * @param id {number}
      */
-    static getUserById(id: number): Promise<User> {
+    static getById(id: number): Promise<User> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -178,7 +177,7 @@ export class User {
      * @param username {String}
      * @returns Promise resolves if user is created
      */
-    static createUserFromLdap(username: string): Promise<void> {
+    static createFromLdap(username: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             let user: User = await Ldap.getUserByUsername(username);
 
@@ -206,7 +205,7 @@ export class User {
      * @param userType
      * @returns Promise {courses}
      */
-    static getCoursesByUser(userId: number, userType: number): Promise<Course[]> {
+    static getCoursesByUID(userId: number, userType: number): Promise<Course[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -287,39 +286,6 @@ export class User {
     }
 
     /**
-     * Get all student devices associated with the given course
-     * @param course {Course}
-     * @returns Promise {device}
-     */
-    static getStudentDevicesByCourse(course: Course) {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let rows = await conn.query("SELECT user_student_courses.*, devices.* FROM user_student_courses LEFT JOIN devices ON user_student_courses.user_id = devices.userID WHERE (`courseId`=? )", [course.id]);
-
-                let devices: any = [];
-                rows.forEach((row: any) => {
-                    if (row.deviceID != null) {
-                        let device = new Device(row.platform, row.idDevices, row.userId, row.added, row.deviceID);
-                        devices.push(device);
-                    }
-                });
-                resolve(devices);
-            } catch (e) {
-                global.logger.log({
-                    level: 'error',
-                    label: 'User',
-                    message: 'Class: User; Function: getStudentDevicesByCourse: ' + JSON.stringify(e),
-                    file: path.basename(__filename)
-                })
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
      * Get all users from database
      * @returns Promise({user})
      */
@@ -373,25 +339,6 @@ export class User {
                     message: 'Class: User; Function: getDevices: ' + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
-                reject(e);
-            } finally {
-                await conn.end()
-            }
-        });
-    }
-
-    /**
-     * Remove device from Database
-     * @param deviceId {String}
-     * @returns Promise
-     */
-    static removeDevice(deviceId: string): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                await conn.query("DELETE FROM `devices` WHERE `deviceID` = ?", [deviceId]);
-                resolve();
-            } catch (e) {
                 reject(e);
             } finally {
                 await conn.end()
@@ -496,7 +443,7 @@ export class User {
      */
     populateUser(): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            this.courses = await User.getCoursesByUser(this.id, this.type);
+            this.courses = await User.getCoursesByUID(this.id, this.type);
             this.devices = await User.getDevices(this.id);
             this.permissions = await Permissions.getByUID(this.id)
             resolve();
@@ -519,6 +466,11 @@ export class User {
                 let result = await conn.query("INSERT INTO users ( username, firstname, lastname, type, displayname) VALUES (?, ?, ?, ?, ?)", [username, firstName, lastName, type, displayName]);
                 resolve(result);
             } catch (e) {
+                if(e.code === "ER_DUP_ENTRY") {
+                    resolve("Done");
+                    return
+                }
+                    console.log(e)
                 global.logger.log({
                     level: 'error',
                     label: 'User',
@@ -650,83 +602,11 @@ export class User {
     }
 
     /**
-     * resolves if user is saved in db
-     * @param username {String}
-     * @returns Promise resolves if user is in database
-     */
-    userInDB(username: string) {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let rows = await conn.query("SELECT * FROM users WHERE username=?", [username.toLowerCase()]);
-                if (rows.length === 1) {
-                    let type = null;
-                    let row = rows[0];
-                    if (row.type === "1") {
-                        type = "student";
-                    } else if (row.type === "2") {
-                        type = "teacher";
-                    }
-                    resolve({"username": rows[0].username, "type": type});
-                } else {
-                    reject("Internal error");
-                }
-
-            } catch (e) {
-                global.logger.log({
-                    level: 'error',
-                    label: 'User',
-                    message: 'Class: User; Function: userInDB: ' + JSON.stringify(e),
-                    file: path.basename(__filename)
-                });
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
-     * Returns all Announcements for the user
-     */
-    getAnnouncements() {
-        let userId: number;
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let announcements: any = [];
-                const rows = await conn.query("SELECT * FROM user_student_courses WHERE `user_id`= ?;", [userId]);
-                rows.forEach((row: any) => {
-                    announcements.push({
-                        "subject": row.subject,
-                        "grade": row.grade,
-                        "group": row.group,
-                        "displayKlausuren": row.displayKlausuren
-                    });
-                });
-
-
-                resolve(announcements);
-            } catch (e) {
-                global.logger.log({
-                    level: 'error',
-                    label: 'User',
-                    message: 'Class: User; Function: getAnnouncements: ' + JSON.stringify(e),
-                    file: path.basename(__filename)
-                });
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
      * Associate courses with user
      * @param courses {Course[]}
      * @returns Promise
      */
-    addCourse(courses: Course[]): Promise<void> {
+    addCourses(courses: Course[]): Promise<void> {
         let userId = this.id;
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -764,7 +644,7 @@ export class User {
      * Delete all course associations from user
      * @returns Promise
      */
-    deleteCourses(): Promise<void> {
+    clearCourses(): Promise<void> {
         let username = this.username;
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
@@ -815,25 +695,6 @@ export class User {
                     message: 'Class: User; Function: addDevice: ' + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
-     * Remove all Devices related to specified user
-     * @param userId {Integer}
-     * @returns Promise
-     */
-    removeAllDevicesByUser(userId: number): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                await conn.query("DELETE FROM `devices` WHERE `userID` = ?", [userId]);
-                resolve();
-            } catch (e) {
-                reject(e);
             } finally {
                 await conn.end();
             }

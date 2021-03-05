@@ -14,7 +14,9 @@ import {JWTInterface} from "./JWTInterface";
 
 declare const global: ApiGlobal;
 
-//TODO jDocs
+/**
+ * Class ExpressServer: Handles all http- server functionality.
+ */
 export class ExpressServer {
     expressApp: Express;
 
@@ -27,6 +29,9 @@ export class ExpressServer {
         new ExpressServer();
     }
 
+    /**
+     * Initialises and exposes the server
+     */
     startUp() {
         global.express = this;
         this.initHeaders();
@@ -35,14 +40,23 @@ export class ExpressServer {
         this.exposeServer();
     }
 
+    /**
+     * Loads all router scripts
+     */
     initRouter() {
         this.expressApp.use("/", require('../router/mainRouter').router);
     }
 
+    /**
+     * Sets the response header
+     */
     initHeaders() {
         this.expressApp.use(header);
     }
 
+    /**
+     * Loads all global middleware
+     */
     initMiddleware() {
 
         this.expressApp.use(reqLogger);
@@ -56,6 +70,9 @@ export class ExpressServer {
         this.expressApp.use(express.json({limit: '50mb'}));
     }
 
+    /**
+     * Exposes the server
+     */
     exposeServer(){
         /**
          * Start HTTP Server to listen for in-bound requests

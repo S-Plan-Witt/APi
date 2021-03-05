@@ -25,7 +25,7 @@ let useStandardENV:boolean = true;
         if (!useStandardENV){
             setCustomParams();
         }
-        let user = await User.getUserByUsername("user")
+        let user = await User.getByUsername("user")
 
         let sessID = "TT22";
         let token = await JWTInterface.createJWT(user.id,UserType.STUDENT,sessID);

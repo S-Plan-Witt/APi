@@ -7,7 +7,9 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+import {ApiGlobal} from "../types/global";
 
+declare const global: ApiGlobal;
 /**
  * @typedef Device
  * @property {number} id
@@ -29,6 +31,25 @@ export class Device {
         this.userId = userId;
         this.timeAdded = timeAdded;
         this.deviceIdentifier = deviceIdentifier;
+    }
+
+    /**
+     * Remove device from Database
+     * @param deviceId {String}
+     * @returns Promise
+     */
+    static removeDevice(deviceId: string): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("DELETE FROM `devices` WHERE `deviceID` = ?", [deviceId]);
+                resolve();
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end()
+            }
+        });
     }
 }
 

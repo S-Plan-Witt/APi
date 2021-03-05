@@ -139,7 +139,7 @@ export class JWTInterface {
                     if (typeof decoded == 'object') {
                         decoded['jwtId'] = await JWTInterface.verifyId(decoded.session)
                         req.decoded = decoded;
-                        req.user = await User.getUserById(req.decoded.userId);
+                        req.user = await User.getById(req.decoded.userId);
                         await req.user.populateUser();
                         if (req.user.permissions instanceof Permissions) {
                             req.decoded.permissions = req.user.permissions;
