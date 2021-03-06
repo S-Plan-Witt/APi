@@ -7,9 +7,12 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
 import {ApiGlobal} from "../types/global";
 import {Starter} from "../startEnviroment";
+import {TOTP} from "../classes/secondFactor/TOTP";
 import {User} from "../classes/user/User";
+import * as twofactor from 'node-2fa';
 
 declare const global: ApiGlobal;
 
@@ -24,11 +27,18 @@ let useStandardENV: boolean = true;
         if (!useStandardENV) {
             setCustomParams();
         }
-        Starter.pushNotifications();
-        let user = await User.getByUsername("user");
-        let devices = user.devices;
-        await global.pushNotifications.sendBulk(devices, "Test", "T2")
+        let endpoint: any = await TOTP.new(await User.getByUsername("user"));
+        let secret = endpoint.secret;
+        console.log(secret)
+
+        // @ts-ignore
+        let token: string = (twofactor.generateToken(secret)).token;
+        console.log(token)
+
+       // await totp.verify(secret, token);
+
         console.log("SUCCESSFUL")
+        process.exit(0)
     } catch (e) {
         console.log("The tester run into an error:")
         console.error(e);

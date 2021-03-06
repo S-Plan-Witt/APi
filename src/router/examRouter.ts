@@ -14,6 +14,7 @@ import {Course} from "../classes/Course";
 import {Exam} from "../classes/Exam";
 import {Supervisor} from "../classes/user/Supervisor";
 import path from "path";
+import {User} from "../classes/user/User";
 
 declare const global: ApiGlobal;
 
@@ -39,10 +40,14 @@ router.post('/', async (req, res) => {
                 let exam = new Exam(false, element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"], element["students"], null, element["id"], "");
                 exam.room = element["room"];
                 await exam.save();
+                let devices = await exam.course.getStudentDevices();
+                await global.pushNotifications.sendBulk(devices, "Exam", "Datum: "+ exam.date + " Fach: " + exam.course.subject + " wurde hinzugefügt");
             } catch (e) {
+                //TODO add response code
                 if (e !== "row exists") {
                     console.log(e);
                 }
+                console.log(e)
             }
         }
         res.sendStatus(200);

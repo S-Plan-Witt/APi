@@ -12,6 +12,7 @@ import {Course} from "./Course";
 import {RoomLink} from "./RoomLink";
 import {ApiGlobal} from "../types/global";
 import path from "path";
+import {TimeTable} from "./TimeTable";
 
 declare const global: ApiGlobal;
 
@@ -63,7 +64,7 @@ export class Exam {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT `data_exams`.*, `data_exam_rooms`.room   FROM `data_exams` LEFT JOIN `data_exam_rooms` ON `data_exams`.`roomLink` = `data_exam_rooms`.`iddata_exam_rooms`");
+                let rows = await conn.query("SELECT `exams`.*, `exams_rooms`.room   FROM `exams` LEFT JOIN `exams_rooms` ON `exams`.`roomLink` = `exams_rooms`.id_exam_rooms");
                 resolve(await this.sqlRowToArray(rows));
             } catch (err) {
                 global.logger.log({
@@ -87,7 +88,7 @@ export class Exam {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM `data_exams` WHERE `subject`= ? AND `grade`= ? AND `group`= ?", [course.subject, course.grade, course.group]);
+                let rows = await conn.query("SELECT * FROM `exams` WHERE `courseId`= ? ", [course.id]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
                 global.logger.log({
@@ -110,7 +111,7 @@ export class Exam {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM `data_exams` WHERE `teacher`= ?", [teacher]);
+                let rows = await conn.query("SELECT * FROM `exams` WHERE `teacher`= ?", [teacher]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
                 reject(e);
@@ -130,7 +131,9 @@ export class Exam {
                 let element = rows[i];
                 let date = new Date(element["date"]);
                 element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
-                data.push(new Exam(element["visibleOnDisplay"], element["date"], new Course(element["grade"], element["subject"], element["group"]), element["from"], element["to"], element["teacher"], element["students"], await RoomLink.getById(element["roomLink"]), element["iddata_klausuren"], element["uniqueIdentifier"]))
+                let course = await Course.getById(element["courseId"])
+
+                data.push(new Exam(element["visibleOnDisplay"], element["date"], course, element["from"], element["to"], element["teacher"], element["students"], await RoomLink.getById(element["roomLink"]), element["iddata_klausuren"], element["uniqueIdentifier"]))
             }
             resolve(data);
         });
@@ -144,7 +147,7 @@ export class Exam {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM data_exams where roomLink = ?;", [roomLinkId]);
+                let rows = await conn.query("SELECT * FROM exams where roomLink = ?;", [roomLinkId]);
                 resolve(await this.sqlRowToArray(rows));
             } catch (e) {
                 global.logger.log({
@@ -164,16 +167,14 @@ export class Exam {
      * @returns {Promise<void>}
      */
     delete(): Promise<void> {
-        let id = this.id;
-
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("DELETE FROM `data_exams` WHERE (`iddata_klausuren` = ?);", [id]);
+                await conn.query("DELETE FROM `exams` WHERE (id_exam = ?);", [this.id]);
                 global.logger.log({
                     level: 'silly',
                     label: 'exams',
-                    message: 'Deleted: ' + JSON.stringify(id),
+                    message: 'Deleted: ' + JSON.stringify(this.id),
                     file: path.basename(__filename)
                 });
                 resolve();
@@ -181,7 +182,7 @@ export class Exam {
                 global.logger.log({
                     level: 'error',
                     label: 'exams',
-                    message: 'Delete failed: ' + JSON.stringify(id) + " Err: " + JSON.stringify(err),
+                    message: 'Delete failed: ' + JSON.stringify(this.id) + " Err: " + JSON.stringify(err),
                     file: path.basename(__filename)
                 });
                 reject(err);
@@ -196,53 +197,48 @@ export class Exam {
      * @returns {Promise<boolean>}
      */
     save(): Promise<boolean> {
-        //TODO clean up
-        let date = this.date;
-        let from = this.from;
-        let to = this.to;
-        let grade = this.course.grade;
-        let subject = this.course.subject;
-        let group = this.course.group;
-        let teacher = this.teacher;
-        let students = this.students;
-        let show = this.display;
-        let room = this.room;
-        let id = this.id;
-
         return new Promise(async (resolve, reject) => {
-            let avilRoomLinks: any = await RoomLink.getRoomLinks(date, room);
+            let avilRoomLinks: any = await RoomLink.getRoomLinks(this.date, this.room);
             if (avilRoomLinks.length === 0) {
-                await RoomLink.add(new RoomLink(room, from, to, date));
+                await (new RoomLink(this.room, this.from, this.to, this.date)).save();
             }
-            avilRoomLinks = await RoomLink.getRoomLinks(date, room);
+            avilRoomLinks = await RoomLink.getRoomLinks(this.date, this.room);
             if (avilRoomLinks === 0) {
                 reject("err");
                 return;
             }
-            if (teacher === undefined) {
-                teacher = "";
+            if (this.teacher === undefined) {
+                this.teacher = "";
             }
-            if (students === undefined) {
-                students = 0;
+            if (this.students === undefined) {
+                this.students = 0;
             }
 
-            let linkId = avilRoomLinks[0]["iddata_exam_rooms"];
+            if (this.course.id == null) {
+                try {
+                    this.course = await Course.getByFields(this.course.subject, this.course.grade, this.course.group);
+                }catch (e) {
+                    reject("Course not found")
+                }
+            }
+
+            let linkId = avilRoomLinks[0]["id_exam_rooms"];
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
 
-                let uniqueIdentifier = grade + '-' + group + '-' + subject + '-' + date;
+                let uniqueIdentifier = this.course.grade + '-' + this.course.group + '-' + this.course.subject + '-' + this.date;
 
-                let rows = await conn.query('SELECT * FROM data_exams WHERE uniqueIdentifier=?', [uniqueIdentifier]);
-                if (rows.length > 0 && id == null) {
+                let rows = await conn.query('SELECT * FROM exams WHERE uniqueIdentifier=?', [uniqueIdentifier]);
+                if (rows.length > 0 && this.id == null) {
                     reject("row exists");
                     return;
                 }
                 let res;
-                if (id != null) {
-                    res = await conn.query("UPDATE `data_exams` SET `date` = ?, `subject` = ?, `grade` = ?, `group` = ?, `visibleOnDisplay` = ?, `from` = ?, `to` = ?, `teacher` = ?,`students` = ? WHERE (`iddata_klausuren` = ?);", [date, subject, grade, group, show, from, to, teacher, students, id]);
+                if (this.id != null) {
+                    res = await conn.query("UPDATE `exams` SET `date` = ?, `courseId` = ?, `visibleOnDisplay` = ?, `from` = ?, `to` = ?, `teacher` = ?,`students` = ? WHERE (id_exam = ?);", [this.date, this.course.id, this.display, this.from, this.to, this.teacher, this.students, this.id]);
                 } else {
-                    res = await conn.query("INSERT INTO data_exams (date, subject, grade, `group`, visibleOnDisplay, `from`, `to`, teacher, students, roomLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [date, subject, grade, group, show, from, to, teacher, students, linkId]);
+                    res = await conn.query("INSERT INTO exams (date, courseId, visibleOnDisplay, `from`, `to`, teacher, students, roomLink) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [this.date, this.course.id, this.display, this.from, this.to, this.teacher, this.students, linkId]);
                 }
                 resolve(res);
             } catch (e) {

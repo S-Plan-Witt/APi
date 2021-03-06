@@ -7,34 +7,7 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {ApiGlobal} from "../types/global";
-import {Starter} from "../startEnviroment";
-import {User} from "../classes/user/User";
-
-declare const global: ApiGlobal;
-
-let useStandardENV: boolean = true;
-
-(async () => {
-    try {
-        Starter.logger();
-        Starter.config();
-        Starter.mysql();
-
-        if (!useStandardENV) {
-            setCustomParams();
-        }
-        Starter.pushNotifications();
-        let user = await User.getByUsername("user");
-        let devices = user.devices;
-        await global.pushNotifications.sendBulk(devices, "Test", "T2")
-        console.log("SUCCESSFUL")
-    } catch (e) {
-        console.log("The tester run into an error:")
-        console.error(e);
-    }
-})();
-
-function setCustomParams() {
+export class AuthyConfig {
+    public apiKey = "";
 
 }

@@ -60,7 +60,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM `data_announcements` WHERE `courseId`= ? ", [course.id]);
+                let rows = await conn.query("SELECT * FROM `announcements` WHERE `courseId`= ? ", [course.id]);
                 resolve(this.convertSqlRowsToObjects(rows));
             } catch (e) {
                 reject(e);
@@ -81,7 +81,7 @@ export class Announcement {
             for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
                 row["date"] = Utils.convertMysqlDate(row["date"]);
-                announcements.push(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
+                announcements.push(new Announcement(await Course.getById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
             }
             resolve(announcements);
         });
@@ -96,7 +96,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM `data_announcements`");
+                let rows = await conn.query("SELECT * FROM `announcements`");
                 resolve(this.convertSqlRowsToObjects(rows));
             } catch (e) {
                 global.logger.log({
@@ -122,11 +122,11 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM `data_announcements` WHERE iddata_announcements = ?", [id]);
+                let rows = await conn.query("SELECT * FROM `announcements` WHERE id_announcements = ?", [id]);
                 if (rows.length === 1) {
                     let row = rows[0];
                     row["date"] = Utils.convertMysqlDate(row["date"])
-                    resolve(new Announcement(await TimeTable.getCourseById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
+                    resolve(new Announcement(await Course.getById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["iddata_announcements"]));
                 } else {
                     reject("no row");
                 }
@@ -159,7 +159,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                await conn.query("INSERT INTO `splan`.`data_announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`) VALUES (?, ?, ?, ?, ?)", [content, date, authorId, editorId, courseId]);
+                await conn.query("INSERT INTO `announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`) VALUES (?, ?, ?, ?, ?)", [content, date, authorId, editorId, courseId]);
                 resolve(true);
             } catch (e) {
                 global.logger.log({
@@ -189,7 +189,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                await conn.query("UPDATE `data_announcements` SET `content` = ?, `edited` = CURRENT_TIMESTAMP, `editorId` = ?, `date` = ? WHERE iddata_announcements = ?", [content, editorId, date, id]);
+                await conn.query("UPDATE `announcements` SET `content` = ?, `edited` = CURRENT_TIMESTAMP, `editorId` = ?, `date` = ? WHERE id_announcements = ?", [content, editorId, date, id]);
                 resolve(true);
             } catch (e) {
                 global.logger.log({
@@ -215,7 +215,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                await conn.query("DELETE FROM `data_announcements` WHERE iddata_announcements = ?", [id]);
+                await conn.query("DELETE FROM `announcements` WHERE id_announcements = ?", [id]);
                 resolve(true);
             } catch (e) {
                 global.logger.log({

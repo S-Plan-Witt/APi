@@ -50,7 +50,9 @@ export class Ldap {
     static bindClient(ldapClient: Client, domain: string, username: string, password: string): Promise<Client> {
         return new Promise((resolve, reject) => {
             try {
+                console.log("Attempt Bind")
                 ldapClient.bind(domain + "\\" + username, password, (err: Error | null) => {
+                    console.log("BOUND")
                     if (err) {
                         reject("BindFailed");
                         global.logger.log({
@@ -60,6 +62,7 @@ export class Ldap {
                             file: path.basename(__filename)
                         });
                     } else {
+                        console.log("FDON")
                         resolve(ldapClient);
                     }
                 });
@@ -114,6 +117,7 @@ export class Ldap {
                 let ldapClient: Client = ldap.createClient({
                     url: global.config.ldapConfig.host
                 });
+                console.log("Client connected")
 
                 ldapClient.on('error', err => {
                     console.error(err);
@@ -233,9 +237,9 @@ export class Ldap {
                             let user: User = new User(obj.givenName, obj.sn, obj.displayName, obj.sAMAccountName, -1, -1, [], UserStatus.ENABLED, [], null, Permissions.getDefault());
                             try {
                                 if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
-                                    user.type = 1;
+                                    user.type = 0;
                                 } else if (obj["memberOf"].includes(global.config.ldapConfig.teacherGroup)) {
-                                    user.type = 2;
+                                    user.type = 1;
                                 }
                                 users.push(user);
                             } catch (e) {

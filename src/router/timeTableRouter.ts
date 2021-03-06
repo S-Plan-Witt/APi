@@ -59,24 +59,24 @@ router.post('/lessons', async (req, res) => {
         try {
             let course: Course | undefined = undefined;
             try {
-                course = await TimeTable.getCourseByFields(lessonDataSet["course"]["subject"], lessonDataSet["course"]["grade"], lessonDataSet["course"]["group"]);
+                course = await Course.getByFields(lessonDataSet["course"]["subject"], lessonDataSet["course"]["grade"], lessonDataSet["course"]["group"]);
             } catch (e) {
                 console.log(e)
             }
             if (course === undefined) {
                 let teacherId: number | null = null;
                 try {
-                    let teacher: User = await User.getUserByUsername(lessonDataSet["teacher"]);
+                    let teacher: User = await User.getByUsername(lessonDataSet["teacher"]);
                     teacherId = teacher.id;
                 } catch (e) {
                     console.log("Teacher error:" + e)
                 }
 
-                course = await TimeTable.addCourse(new Course(lessonDataSet["course"]["grade"], lessonDataSet["course"]["subject"], lessonDataSet["course"]["group"], false, null, teacherId))
+                course = await (new Course(lessonDataSet["course"]["grade"], lessonDataSet["course"]["subject"], lessonDataSet["course"]["group"], false, null, teacherId)).save();
             }
             let lesson: Lesson = new Lesson(course, lessonDataSet["lessonNumber"], lessonDataSet["day"], lessonDataSet["room"], null);
             try {
-                await TimeTable.addLesson(lesson);
+                await lesson.save();
             } catch (e) {
                 console.log("AE: " + JSON.stringify(lesson));
             }
@@ -117,6 +117,9 @@ router.post('/find/course', async (req: Request, res: Response) => {
  */
 router.get('/grades', async (req, res) => {
     //TODO implement
+    /*
+    SELECT DISTINCT grade FROM courses;
+     */
 });
 
 /**
@@ -128,7 +131,7 @@ router.get('/grades', async (req, res) => {
  * @security JWT
  */
 router.get('/courses', async (req, res) => {
-    res.json(await TimeTable.getAllCourses())
+    res.json(await Course.getAll())
 });
 
 /**
@@ -140,5 +143,5 @@ router.get('/courses', async (req, res) => {
  * @security JWT
  */
 router.get('/lessons', async (req, res) => {
-    res.json(await TimeTable.getAllLessons());
+    res.json(await Lesson.getAll());
 });

@@ -36,7 +36,7 @@ export class JWTInterface {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM `jwt_Token` WHERE `tokenIdentifier`= ?", [id]);
+                let rows = await conn.query("SELECT * FROM `user_token` WHERE `tokenIdentifier`= ?", [id]);
                 if (rows.length === 1) {
                     resolve(rows[0]['idjwt_Token']);
                 } else {
@@ -73,7 +73,7 @@ export class JWTInterface {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                await conn.query("INSERT INTO `jwt_Token` (`tokenIdentifier`, `userid`) VALUES (?, ?);", [tokenId, userId]);
+                await conn.query("INSERT INTO `user_token` (`tokenIdentifier`, `userid`) VALUES (?, ?);", [tokenId, userId]);
                 await conn.end();
                 resolve();
 
@@ -139,7 +139,7 @@ export class JWTInterface {
                     if (typeof decoded == 'object') {
                         decoded['jwtId'] = await JWTInterface.verifyId(decoded.session)
                         req.decoded = decoded;
-                        req.user = await User.getUserById(req.decoded.userId);
+                        req.user = await User.getById(req.decoded.userId);
                         await req.user.populateUser();
                         if (req.user.permissions instanceof Permissions) {
                             req.decoded.permissions = req.user.permissions;
@@ -179,7 +179,7 @@ export class JWTInterface {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query(`DELETE FROM jwt_Token WHERE tokenIdentifier = ?`, [id]);
+                await conn.query(`DELETE FROM user_token WHERE tokenIdentifier = ?`, [id]);
                 global.logger.log({
                     level: 'silly',
                     label: 'JWT',
@@ -209,7 +209,7 @@ export class JWTInterface {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query(`SELECT * FROM jwt_Token WHERE userid = ?`, [uid.toString()]);
+                let rows = await conn.query(`SELECT * FROM user_token WHERE userid = ?`, [uid.toString()]);
                 resolve(rows);
             } catch (e) {
                 global.logger.log({
@@ -233,7 +233,7 @@ export class JWTInterface {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM `jwt_Token`");
+                let rows = await conn.query("SELECT * FROM `user_token`");
                 resolve(rows);
             } catch (e) {
                 global.logger.log({
@@ -258,7 +258,7 @@ export class JWTInterface {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("DELETE From `jwt_Token` where `userid`=?", [uid.toString()]);
+                await conn.query("DELETE From `user_token` where `userid`=?", [uid.toString()]);
                 global.logger.log({
                     level: 'silly',
                     label: 'JWT',

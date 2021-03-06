@@ -71,7 +71,7 @@ export class Permissions {
 
             try {
                 conn = await global.mySQLPool.getConnection();
-                let result = await conn.query("SELECT * FROM permissions WHERE userId = ?", [userId]);
+                let result = await conn.query("SELECT * FROM user_permissions WHERE userId = ?", [userId]);
                 if (result.length === 1) {
                     let uResult = result[0];
                     let permissions: Permissions = new Permissions(false, false, false, false, false, false, false, false, false, false, false);

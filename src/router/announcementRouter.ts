@@ -45,7 +45,7 @@ router.use((req, res, next) => {
 router.post('/', async (req, res) => {
     let body = req.body;
     try {
-        let course = await TimeTable.getCourseByFields(body["course"]["subject"], body["course"]["grade"], body["course"]["group"])
+        let course = await Course.getByFields(body["course"]["subject"], body["course"]["grade"], body["course"]["group"])
         console.log(course);
 
         if (!req.decoded.admin) {
@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
         let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body["content"], body["date"], null);
         await announcement.create();
 
-        let devices = await User.getStudentDevicesByCourse(course);
+        let devices = await announcement.course.getStudentDevices();
         let push = new PushNotifications();
         await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Hinzugefügt: " + announcement.content + " Datum: " + announcement.date);
 
@@ -110,7 +110,7 @@ router.put('/id/:id', async (req, res) => {
 
     await announcement.update();
 
-    let devices = await User.getStudentDevicesByCourse(announcement.course);
+    let devices = await announcement.course.getStudentDevices();
     let push = new PushNotifications();
     await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Geändert: " + announcement.content + " Datum: " + announcement.date);
 
@@ -154,7 +154,7 @@ router.delete('/id/:id', async (req, res) => {
         }
 
         await announcement.delete();
-        let devices = await User.getStudentDevicesByCourse(announcement.course);
+        let devices = await announcement.course.getStudentDevices();
         let push = new PushNotifications();
         await push.sendBulk(devices, "Aushang: " + announcement.course.subject, " Entfernt Datum: " + announcement.date);
 

@@ -8,6 +8,13 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+import {Device} from "./Device";
+import path from "path";
+import {ApiGlobal} from "../types/global";
+import assert from "assert";
+import {Lesson} from "./Lesson";
+
+declare const global: ApiGlobal;
 /**
  * @typedef Course
  * @property {string} grade.required
@@ -40,5 +47,158 @@ export class Course {
         this.exams = exams;
         this.id = id;
         this.teacherId = teacherId;
+    }
+
+    save(): Promise<Course>{
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let result = await conn.query("INSERT INTO `courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);", [this.grade, this.subject, this.group, this.teacherId]);
+                this.id = result.insertId;
+                resolve(this);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    delete(){
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("DELETE FROM courses WHERE id_courses=?", [this.id]);
+                resolve(this);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    /**
+     * Get all student devices associated with the given course
+     * @returns Promise {device}
+     */
+    getStudentDevices() {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows = await conn.query("SELECT user_student_courses.*, devices.* FROM user_student_courses LEFT JOIN devices ON user_student_courses.user_id = devices.userID WHERE (`courseId`=? )", [this.id]);
+
+                let devices: any = [];
+                rows.forEach((row: any) => {
+                    if (row.deviceIdentifier != null) {
+                        let device = new Device(row.platform, row.id_devices, row.userId, row.added, row.deviceIdentifier);
+                        devices.push(device);
+                    }
+                });
+                resolve(devices);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getStudentDevicesByCourse: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                })
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    getLessons(){
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                let lessons: Lesson[] = [];
+                assert(this.id != null);
+                let rows = await conn.query("SELECT * FROM lessons WHERE courseId = ?", [this.id]);
+                rows.forEach((row: any) => {
+                    lessons.push(new Lesson(this, row["lesson"], row["weekday"], row["room"], row["id_lessons"]));
+                });
+                resolve(lessons);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+
+        });
+    }
+
+    /**
+     * Returns a course if found else rejects
+     * @param subject
+     * @param grade
+     * @param group
+     */
+    static getByFields(subject: string, grade: string, group: string): Promise<Course> {
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                let rows = await conn.query("SELECT * FROM courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
+                if (rows.length !== 1) {
+                    reject("Course not found")
+                } else {
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"]));
+                }
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    /**
+     * Returns a course with the given id or rejects
+     * @param id
+     */
+    static getById(id: number): Promise<Course> {
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                let rows = await conn.query("SELECT * FROM courses WHERE (id_courses=?)", [id]);
+                if (rows.length === 1) {
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"]));
+                } else {
+                    reject()
+                }
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    /**
+     * Returns all Courses
+     * @returns {Promise<Course[]>}
+     */
+    static getAll(): Promise<Course[]> {
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                let courses: Course[] = [];
+                let rows = await conn.query("SELECT * FROM courses ORDER BY grade, subject, `group`");
+                rows.forEach((lesson: any) => {
+                    courses.push(lesson);
+                });
+                resolve(courses);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
     }
 }

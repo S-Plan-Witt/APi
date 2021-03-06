@@ -17,6 +17,7 @@ import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Course} from "../classes/Course";
 import path from "path";
+import {Lesson} from "../classes/Lesson";
 
 declare const global: ApiGlobal;
 
@@ -37,18 +38,18 @@ router.post('/', async (req, res) => {
         let postDataSet: any = req.body[i];
 
         let replacementLesson: ReplacementLesson | undefined = undefined;
-        let course: Course = await TimeTable.getCourseByFields(postDataSet["course"]["subject"], postDataSet["course"]["grade"], postDataSet["course"]["group"]);
+        let course: Course = await Course.getByFields(postDataSet["course"]["subject"], postDataSet["course"]["grade"], postDataSet["course"]["group"]);
         let teacher: User | null = null;
         if (postDataSet["teacher"] !== "---") {
             try {
-                teacher = await User.getUserByUsername(postDataSet["teacher"]);
+                teacher = await User.getByUsername(postDataSet["teacher"]);
             } catch (e) {
                 console.log("TNF")
             }
         }
         if (teacher == null || teacher.id != null) {
             try {
-                let teacherId: number = -1;
+                let teacherId: number | null = null;
                 if (teacher != null) {
                     if (teacher.id != null) {
                         teacherId = teacher.id;
@@ -56,7 +57,7 @@ router.post('/', async (req, res) => {
                 }
                 let date = new Date(postDataSet["date"]);
                 let weekday = date.getDay();
-                replacementLesson = new ReplacementLesson(null, course, await TimeTable.getLessonsByCourseAndLessonAndDay(course, postDataSet["lessonNumber"], weekday), teacherId, postDataSet["room"], postDataSet["subject"], postDataSet["info"], postDataSet["date"]);
+                replacementLesson = new ReplacementLesson(null, course, await Lesson.getByCourseAndLessonAndDay(course, postDataSet["lessonNumber"], weekday), teacherId, postDataSet["room"], postDataSet["subject"], postDataSet["info"], postDataSet["date"]);
             } catch (e) {
                 console.log(e)
             }
@@ -66,13 +67,12 @@ router.post('/', async (req, res) => {
             if (replacementLesson != null) {
 
                 let status = await ReplacementLesson.add(replacementLesson);
-                let devices = await User.getStudentDevicesByCourse(replacementLesson.course);
+                let devices = await replacementLesson.course.getStudentDevices();
                 console.log(status + ":" + JSON.stringify(replacementLesson))
-                let pushNotifications = new PushNotifications();
                 if (status === "added") {
-                    await pushNotifications.sendBulk(devices, "Hinzugefügt: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                    await global.pushNotifications.sendBulk(devices, "Hinzugefügt: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
                 } else if (status === "updated") {
-                    await pushNotifications.sendBulk(devices, "Aktualisiert: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                    await global.pushNotifications.sendBulk(devices, "Aktualisiert: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
                 }
             }
 
@@ -151,9 +151,8 @@ router.get('/id/:id', async (req, res) => {
     if (!req.decoded.admin) {
         return res.sendStatus(401);
     }
-    let id = parseInt(req.params.id);
     try {
-        let lesson = await ReplacementLesson.getById(id);
+        let lesson = await ReplacementLesson.getById(req.params.id);
         res.json(lesson);
     } catch (e) {
         console.log(e);
@@ -184,10 +183,11 @@ router.post('/find', async (req, res) => {
 router.delete('/id/:id', async (req, res) => {
     let id = req.params.id;
     try {
-        let replacementLesson: ReplacementLesson = await ReplacementLesson.deleteById(id.toString());
+        let replacementLesson: ReplacementLesson = await ReplacementLesson.getById(id);
+        await replacementLesson.delete();
 
         let push = new PushNotifications();
-        let devices: any = await User.getStudentDevicesByCourse(replacementLesson.course);
+        let devices: any = await replacementLesson.course.getStudentDevices();
         for (const id in devices) {
             if (devices.hasOwnProperty(id)) {
                 const device = devices[id];

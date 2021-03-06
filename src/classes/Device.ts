@@ -7,7 +7,10 @@
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
+import {ApiGlobal} from "../types/global";
+import path from "path";
 
+declare const global: ApiGlobal;
 /**
  * @typedef Device
  * @property {number} id
@@ -29,6 +32,86 @@ export class Device {
         this.userId = userId;
         this.timeAdded = timeAdded;
         this.deviceIdentifier = deviceIdentifier;
+    }
+
+    save(){
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE deviceIdentifier= ?;", [this.deviceIdentifier]);
+                if (rows.length !== 0) {
+                    resolve(false);
+                    return
+                }
+                await conn.query("INSERT INTO `devices` (`userId`, deviceIdentifier, `platform`) VALUES (?, ?, ?)", [this.userId, this.deviceIdentifier, this.platform]);
+                resolve(true);
+            } catch (e) {
+                reject(e);
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: Device; Function: addDevice: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    delete(){
+        //TODO implement
+    }
+
+    /**
+     * Remove device from Database
+     * @param deviceId {String}
+     * @returns Promise
+     */
+    static removeDevice(deviceId: string): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("DELETE FROM `devices` WHERE deviceIdentifier = ?", [deviceId]);
+                resolve();
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end()
+            }
+        });
+    }
+
+    static getByUID(id: number): Promise<Device[]>{
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [id]);
+                let devices: Device[] = [];
+                rows.forEach((row: any) => {
+                    if (row.deviceIdentifier != null) {
+                        devices.push(new Device(row.platform, parseInt(row.id_devices), row.userId, row.added, row.deviceIdentifier));
+                    }
+                });
+                global.logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: Device; Function: getByUID: loaded',
+                    file: path.basename(__filename)
+                });
+                resolve(devices);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: Device; Function: getByUID: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            } finally {
+                await conn.end()
+            }
+        });
     }
 }
 

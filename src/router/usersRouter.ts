@@ -18,6 +18,7 @@ import {Course} from "../classes/Course";
 import {Teacher} from "../classes/user/Teacher";
 import path from "path";
 import assert from "assert";
+import {Student} from "../classes/user/Student";
 
 declare const global: ApiGlobal;
 
@@ -97,7 +98,7 @@ router.get('/type/:type', async (req: Request, res: Response) => {
  */
 router.get('/username/:username', async (req: Request, res: Response) => {
     try {
-        let data = await User.getUserByUsername(req.params.username);
+        let data = await User.getByUsername(req.params.username);
         await res.json([data]);
     } catch (e) {
         global.logger.log({
@@ -120,7 +121,7 @@ router.get('/username/:username', async (req: Request, res: Response) => {
  */
 router.get('/id/:id', async (req: Request, res: Response) => {
     try {
-        let data = await User.getUserById(parseInt(req.params.id));
+        let data = await User.getById(parseInt(req.params.id));
         await res.json([data]);
     } catch (e) {
         global.logger.log({
@@ -129,43 +130,6 @@ router.get('/id/:id', async (req: Request, res: Response) => {
             message: 'Routing: /users/username ; ' + JSON.stringify(e),
             file: path.basename(__filename)
         });
-        res.sendStatus(500);
-    }
-});
-
-/**
- * Generates a Link for login without password
- * @route GET /users/userid/{id}/preAuth
- * @group Users - Operations about all users
- * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
- * @security JWT
- */
-router.get('/userid/:userId/preAuth', async (req: Request, res: Response) => {
-    if (!req.decoded.permissions.usersAdmin) {
-        global.logger.log({
-            level: 'debug',
-            label: 'Express',
-            message: 'No permissions : /students/find',
-            file: path.basename(__filename)
-        });
-        return res.sendStatus(401);
-    }
-    let userId = parseInt(req.params.userId.toLowerCase());
-    try {
-        let user: User = await User.getUserById(userId);
-        assert(user.status == UserStatus.ENABLED,"User not enabled");
-        let token = await user.createPreAuthToken(userId);
-
-        await res.json([token]);
-    } catch (e) {
-        global.logger.log({
-            level: 'error',
-            label: 'Express',
-            message: 'Routing: /users/:username/preAuth ; ' + JSON.stringify(e),
-            file: path.basename(__filename)
-        });
-
         res.sendStatus(500);
     }
 });
@@ -195,7 +159,7 @@ router.get('/ldap/', async (req: Request, res: Response) => {
 
 /**
  * Returns all users from the connected Ldap server
- * @route POST /users/ldap/find
+ * @route POST /users/find
  * @group Users - Operations about all users
  * @param {UserFilter.model} UserFilter.body.required
  * @returns {Array.<User>} 200
@@ -220,7 +184,6 @@ router.post('/find', async (req: Request, res: Response) => {
 
     try {
         let filter = new UserFilter(username, firstName, lastName)
-
         let users: User[] = await User.search(filter);
         res.json(users);
     } catch (e) {
@@ -256,7 +219,7 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
     }
     let user: User | null = null;
     try {
-        user = await User.getUserByUsername(req.params.username);
+        user = await User.getByUsername(req.params.username);
     } catch (e) {
         global.logger.log({
             level: 'error',
@@ -266,23 +229,23 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
         });
     }
     if (user == null) {
-        await User.createUserFromLdap(req.params.username);
-        user = await User.getUserByUsername(req.params.username);
+        await User.createFromLdap(req.params.username);
+        user = await User.getByUsername(req.params.username);
     }
     if (user != null) {
         try {
             if (user.type == UserType.STUDENT) {
-                await user.deleteCourses();
+                await user.clearCourses();
                 let courses = [];
                 for (const courseData of req.body) {
                     try {
-                        let course: Course = await TimeTable.getCourseByFields(courseData["subject"], courseData["grade"], courseData["group"])
+                        let course: Course = await Course.getByFields(courseData["subject"], courseData["grade"], courseData["group"])
                         course.exams = courseData["exams"];
                         courses.push(course);
                     } catch (e) {
                     }
                 }
-                await user.addCourse(courses);
+                await user.addCourses(courses);
                 res.sendStatus(200);
             } else {
                 res.send("type: " + user.type);
@@ -331,6 +294,41 @@ router.get('/teacher/reload', async (req: Request, res: Response) => {
         let teacher = teachers[teacherKey];
         try {
             await teacher.createToDB();
+        } catch (e) {
+            global.logger.log({
+                level: 'error',
+                label: 'Express',
+                message: '/teacher/reload: ' + JSON.stringify(e),
+                file: path.basename(__filename)
+            });
+        }
+    }
+    res.sendStatus(200);
+});
+
+/**
+ * Loads all students from AD Server
+ * @route POST /users/students/reload
+ * @group Users - Operations about all users
+ * @returns {object} 200
+ * @returns {Error} 401 - Wrong Credentials
+ * @security JWT
+ */
+router.get('/students/reload', async (req: Request, res: Response) => {
+    if (!req.decoded.permissions.usersAdmin) {
+        global.logger.log({
+            level: 'debug',
+            label: 'Express',
+            message: 'No permissions : /students/' + req.params.username + '/courses',
+            file: path.basename(__filename)
+        });
+        return res.sendStatus(401);
+    }
+    let students: Student[] = await Ldap.getAllStudents();
+    for (const studentKey in students) {
+        let student = students[studentKey];
+        try {
+            await student.createToDB();
         } catch (e) {
             global.logger.log({
                 level: 'error',

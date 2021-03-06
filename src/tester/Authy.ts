@@ -7,9 +7,10 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+
 import {ApiGlobal} from "../types/global";
 import {Starter} from "../startEnviroment";
-import {User} from "../classes/user/User";
+import {Authy} from "../classes/external/Authy";
 
 declare const global: ApiGlobal;
 
@@ -24,11 +25,12 @@ let useStandardENV: boolean = true;
         if (!useStandardENV) {
             setCustomParams();
         }
-        Starter.pushNotifications();
-        let user = await User.getByUsername("user");
-        let devices = user.devices;
-        await global.pushNotifications.sendBulk(devices, "Test", "T2")
+        let authy = new Authy();
+
+        await authy.verifyRequest(1345641333,454640)
+
         console.log("SUCCESSFUL")
+        process.exit(0)
     } catch (e) {
         console.log("The tester run into an error:")
         console.error(e);

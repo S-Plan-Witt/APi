@@ -25,7 +25,7 @@ export class Telegram {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM telegramLinks WHERE `token`= ? ", [token]);
+                let rows = await conn.query("SELECT * FROM user_device_verification WHERE `token`= ? ", [token]);
                 if (rows.length === 1) {
                     resolve(rows[0].telegramId);
                 } else {
@@ -54,7 +54,7 @@ export class Telegram {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("DELETE FROM `telegramLinks` WHERE (`token` = ?);", [token]);
+                await conn.query("DELETE FROM `user_device_verification` WHERE (`token` = ?);", [token]);
                 resolve();
             } catch (e) {
                 global.logger.log({
@@ -80,28 +80,8 @@ export class Telegram {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                await conn.query("INSERT INTO `telegramLinks` (`telegramId`, `token`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token`=?;", [telegramId, tokenId, tokenId]);
+                await conn.query("INSERT INTO `user_device_verification` (`deviceId`, `token`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token`=?;", [telegramId, tokenId, tokenId]);
                 resolve(tokenId);
-            } catch (e) {
-                reject(e)
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
-     * Logs a message to the database
-     * @param chatId
-     * @param message
-     * @param direction
-     */
-    static logMessage(chatId: number, message: string, direction: string): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                await conn.query("INSERT INTO `TelegramMessages` (`chatId`, `message`, `direction`) VALUES (?, ?, ?)", [chatId, message, direction]);
-                resolve();
             } catch (e) {
                 reject(e)
             } finally {

@@ -14,6 +14,7 @@ import {PushFrameworksConfig} from "./PushFrameworksConfig";
 import {WebServerConfig} from "./WebServerConfig";
 import {PWAConfig} from "./PWAConfig";
 import {BcryptConf} from "./BcryptConf";
+import {AuthyConfig} from "./AuthyConfig";
 
 export class Config {
     public ldapConfig: LdapConfig = new LdapConfig();
@@ -22,6 +23,7 @@ export class Config {
     public webServerConfig: WebServerConfig = new WebServerConfig();
     public pwaConfig: PWAConfig = new PWAConfig();
     public bCrypt: BcryptConf = new BcryptConf();
+    public authy: AuthyConfig = new AuthyConfig();
 
     static loadFromEnv(): Config {
         let config = new Config();
@@ -82,6 +84,11 @@ export class Config {
          * PWA
          **/
         if (typeof process.env.PWA_URL == "string") config.pwaConfig.url = process.env.PWA_URL;
+
+        /**
+         * Authy
+         **/
+        if (typeof process.env.AUTHY_KEY == "string") config.authy.apiKey = process.env.AUTHY_KEY;
 
         return config;
     }

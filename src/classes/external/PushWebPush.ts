@@ -58,7 +58,7 @@ export class PushWebPush {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("DELETE FROM `devices` WHERE (`deviceID` LIKE ?);", ['%' + endpoint + '%']);
+                await conn.query("DELETE FROM `devices` WHERE (deviceIdentifier LIKE ?);", ['%' + endpoint + '%']);
                 resolve();
             } catch (e) {
                 reject(e);

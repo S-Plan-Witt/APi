@@ -13,6 +13,7 @@ import {User} from "../user/User";
 import {ApiGlobal} from "../../types/global";
 import {Context, Telegraf} from "telegraf";
 import path from "path";
+import {Device} from "../Device";
 
 declare const global: ApiGlobal;
 
@@ -27,6 +28,7 @@ export class PushTelegram {
      * Connects to the telegram api and starts all listeners
      */
     startTelegramBot() {
+        //TODO promise return
         //Set replay to /start command from TG
         this.bot.start(async (ctx: Context) => {
             let senderId = undefined;
@@ -43,7 +45,6 @@ export class PushTelegram {
                     message: 'created Linking token id:' + senderId + " token: " + token,
                     file: path.basename(__filename)
                 });
-                Telegram.logMessage(senderId, messageText, 'out');
             }
         });
 
@@ -57,7 +58,7 @@ export class PushTelegram {
             }
             try {
                 if (senderId != undefined) {
-                    await User.removeDevice(senderId.toString());
+                    await Device.removeDevice(senderId.toString());
                     await ctx.reply("Abgeschlossen");
                     global.logger.log({
                         level: 'silly',
@@ -100,14 +101,13 @@ export class PushTelegram {
     sendPush(chatID: number, body: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
-                this.bot.telegram.sendMessage(chatID, body);
+                await this.bot.telegram.sendMessage(chatID, body);
                 global.logger.log({
                     level: 'silly',
                     label: 'TelegramPush',
                     message: 'sent message: ' + body + " ;to: " + chatID,
                     file: path.basename(__filename)
                 });
-                Telegram.logMessage(chatID, body, 'out');
                 resolve();
             } catch (e) {
                 global.logger.log({
