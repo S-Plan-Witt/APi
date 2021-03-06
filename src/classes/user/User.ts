@@ -214,11 +214,11 @@ export class User {
                     await conn.end();
                     for (let i = 0; i < rows.length; i++) {
                         let row = rows[i];
-                        let exams = false;
+                        let course = await Course.getById(parseInt(row.courseId));
                         if (row.displayKlausuren === 1) {
-                            exams = true;
+                            course.exams = true;
                         }
-                        courses.push(await Course.getById(parseInt(row.courseId)));
+                        courses.push(course);
                     }
                 } else if (this.type == UserType.TEACHER) {
                     const rows = await conn.query("SELECT * FROM courses WHERE `teacherId` = ?;", [this.id]);

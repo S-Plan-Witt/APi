@@ -346,10 +346,9 @@ router.get('/announcements', async (req: Request, res: Response) => {
 router.get('/exams', async (req, res) => {
     try {
         let response: Exam[] = [];
-        console.log("UT:" + req.decoded.userType)
-        if (req.decoded.userType === "student") {
+        if (req.user.type === UserType.STUDENT) {
             let courses = req.user.courses;
-
+            console.log(courses)
             for (const course of courses) {
                 try {
                     //if user should see exams in this course
@@ -371,7 +370,7 @@ router.get('/exams', async (req, res) => {
                 }
             }
 
-        } else if (req.decoded.userType === "teacher") {
+        } else if (req.user.type === UserType.TEACHER) {
             response = await Exam.getByTeacher(req.user.username);
         }
         res.json(response);
