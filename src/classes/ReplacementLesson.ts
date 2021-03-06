@@ -28,13 +28,13 @@ export class ReplacementLesson {
     public id: number | null;
     public course: Course;
     public lesson: Lesson;
-    public teacherId: number;
+    public teacherId: number | null;
     public room: string;
     public subject: string;
     public info: string;
     public date: string;
 
-    constructor(id: number | null, course: Course, lesson: Lesson, teacherId: number, room: string, subject: string, info: string, date: string) {
+    constructor(id: number | null, course: Course, lesson: Lesson, teacherId: number | null, room: string, subject: string, info: string, date: string) {
         this.id = id;
         this.course = course;
         this.lesson = lesson;
@@ -150,13 +150,17 @@ export class ReplacementLesson {
      *
      * @param id
      */
-    static getById(id: number): Promise<ReplacementLesson> {
+    static getById(id: string): Promise<ReplacementLesson> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `replacementlessons` WHERE `replacementId`= ? ", [id]);
-                //TODO fix
-                //resolve(await ReplacementLesson.convertSqlRowsToObjects(rows));
+                if(rows.length == 1){
+                    resolve(await ReplacementLesson.convertSqlRowToObjects(rows[0]));
+                }else {
+                    reject("Not found");
+                }
+
             } catch (e) {
                 reject(e);
             } finally {

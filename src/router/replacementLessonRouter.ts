@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
         }
         if (teacher == null || teacher.id != null) {
             try {
-                let teacherId: number = -1;
+                let teacherId: number | null = null;
                 if (teacher != null) {
                     if (teacher.id != null) {
                         teacherId = teacher.id;
@@ -69,11 +69,10 @@ router.post('/', async (req, res) => {
                 let status = await ReplacementLesson.add(replacementLesson);
                 let devices = await replacementLesson.course.getStudentDevices();
                 console.log(status + ":" + JSON.stringify(replacementLesson))
-                let pushNotifications = new PushNotifications();
                 if (status === "added") {
-                    await pushNotifications.sendBulk(devices, "Hinzugefügt: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                    await global.pushNotifications.sendBulk(devices, "Hinzugefügt: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
                 } else if (status === "updated") {
-                    await pushNotifications.sendBulk(devices, "Aktualisiert: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
+                    await global.pushNotifications.sendBulk(devices, "Aktualisiert: " + replacementLesson.course.subject, " Stunde: " + replacementLesson.lesson.lessonNumber + " Info: " + replacementLesson.info + " Datum: " + replacementLesson.date);
                 }
             }
 
@@ -152,9 +151,8 @@ router.get('/id/:id', async (req, res) => {
     if (!req.decoded.admin) {
         return res.sendStatus(401);
     }
-    let id = parseInt(req.params.id);
     try {
-        let lesson = await ReplacementLesson.getById(id);
+        let lesson = await ReplacementLesson.getById(req.params.id);
         res.json(lesson);
     } catch (e) {
         console.log(e);
@@ -185,7 +183,7 @@ router.post('/find', async (req, res) => {
 router.delete('/id/:id', async (req, res) => {
     let id = req.params.id;
     try {
-        let replacementLesson: ReplacementLesson = await ReplacementLesson.getById(parseInt(id));
+        let replacementLesson: ReplacementLesson = await ReplacementLesson.getById(id);
         await replacementLesson.delete();
 
         let push = new PushNotifications();
