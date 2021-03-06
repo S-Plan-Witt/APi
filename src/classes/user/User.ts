@@ -201,55 +201,6 @@ export class User {
     }
 
     /**
-     * Get courses associated with user
-     * @returns Promise {courses}
-     */
-    getCourses(): Promise<Course[]> {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let courses: Course[] = [];
-                if (this.type == UserType.STUDENT) {
-                    const rows = await conn.query("SELECT user_student_courses.* FROM user_student_courses WHERE `user_id`= ?;", [this.id]);
-                    await conn.end();
-                    for (let i = 0; i < rows.length; i++) {
-                        let row = rows[i];
-                        let course = await Course.getById(parseInt(row.courseId));
-                        if (row.displayKlausuren === 1) {
-                            course.exams = true;
-                        }
-                        courses.push(course);
-                    }
-                } else if (this.type == UserType.TEACHER) {
-                    const rows = await conn.query("SELECT * FROM courses WHERE `teacherId` = ?;", [this.id]);
-                    await conn.end();
-                    for (let i = 0; i < rows.length; i++) {
-                        let row = rows[i];
-                        courses.push(await Course.getById(parseInt(row.courseId)));
-                    }
-                }
-                global.logger.log({
-                    level: 'silly',
-                    label: 'User',
-                    message: 'Class: User; Function: getCourses: loaded',
-                    file: path.basename(__filename)
-                });
-                resolve(courses);
-            } catch (e) {
-                global.logger.log({
-                    level: 'error',
-                    label: 'User',
-                    message: 'Class: User; Function: getCourses: ' + JSON.stringify(e),
-                    file: path.basename(__filename)
-                });
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    /**
      * returns the emailaddresses by the given userid
      * @param userId
      */
@@ -404,6 +355,55 @@ export class User {
     }
 
     /**
+     * Get courses associated with user
+     * @returns Promise {courses}
+     */
+    getCourses(): Promise<Course[]> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let courses: Course[] = [];
+                if (this.type == UserType.STUDENT) {
+                    const rows = await conn.query("SELECT user_student_courses.* FROM user_student_courses WHERE `user_id`= ?;", [this.id]);
+                    await conn.end();
+                    for (let i = 0; i < rows.length; i++) {
+                        let row = rows[i];
+                        let course = await Course.getById(parseInt(row.courseId));
+                        if (row.displayKlausuren === 1) {
+                            course.exams = true;
+                        }
+                        courses.push(course);
+                    }
+                } else if (this.type == UserType.TEACHER) {
+                    const rows = await conn.query("SELECT * FROM courses WHERE `teacherId` = ?;", [this.id]);
+                    await conn.end();
+                    for (let i = 0; i < rows.length; i++) {
+                        let row = rows[i];
+                        courses.push(await Course.getById(parseInt(row.courseId)));
+                    }
+                }
+                global.logger.log({
+                    level: 'silly',
+                    label: 'User',
+                    message: 'Class: User; Function: getCourses: loaded',
+                    file: path.basename(__filename)
+                });
+                resolve(courses);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getCourses: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    /**
      * Loads complete profile
      */
     populateUser(): Promise<void> {
@@ -431,11 +431,11 @@ export class User {
                 let result = await conn.query("INSERT INTO users ( username, firstname, lastname, type, displayname) VALUES (?, ?, ?, ?, ?)", [username, firstName, lastName, type, displayName]);
                 resolve(result);
             } catch (e) {
-                if(e.code === "ER_DUP_ENTRY") {
+                if (e.code === "ER_DUP_ENTRY") {
                     resolve("Done");
                     return
                 }
-                    console.log(e)
+                console.log(e)
                 global.logger.log({
                     level: 'error',
                     label: 'User',
@@ -610,15 +610,10 @@ export class User {
      * @returns Promise
      */
     clearCourses(): Promise<void> {
-        let username = this.username;
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT * FROM users WHERE `username`= ? AND `type`= 1;", [username]);
-                if (rows.length !== 0) {
-                    let userId = rows[0].idusers;
-                    await conn.query("DELETE FROM user_student_courses WHERE `user_id`= ? ", [userId]);
-                }
+                await conn.query("DELETE FROM user_student_courses WHERE `user_id`= ? ", [this.id]);
                 resolve()
             } catch (e) {
                 global.logger.log({
