@@ -90,8 +90,8 @@ export class Course {
 
                 let devices: any = [];
                 rows.forEach((row: any) => {
-                    if (row.deviceID != null) {
-                        let device = new Device(row.platform, row.idDevices, row.userId, row.added, row.deviceID);
+                    if (row.deviceIdentifier != null) {
+                        let device = new Device(row.platform, row.id_devices, row.userId, row.added, row.deviceIdentifier);
                         devices.push(device);
                     }
                 });
