@@ -247,7 +247,14 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM users");
-                resolve(rows);
+                let users: User[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    let user = await User.fromSqlUser(rows[i]);
+                    console.log(user);
+                    await user.populateUser();
+                    users.push(user)
+                }
+                resolve(users);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
