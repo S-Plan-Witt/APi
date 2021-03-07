@@ -78,14 +78,14 @@ export class ReplacementLesson {
 
     /**
      * Get replacement lessons by course
-     * @param course {course}
+     * @param lesson {Lesson}
      * @returns {Promise<ReplacementLesson[]>}
      */
-    static getByCourse(course: Course): Promise<ReplacementLesson[]> {
+    static getByLesson(lesson: Lesson): Promise<ReplacementLesson[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("SELECT replacementlessons.id_replacementlessons, replacementlessons.date, replacementlessons.subject, replacementlessons.room, replacementlessons.info, replacementlessons.lessonId, replacementlessons.teacherId AS replacementTeacherId, replacementlessons.replacementId, lessons.weekday, lessons.room AS lessonRoom, lessons.lesson, lessons.id_lessons FROM replacementlessons LEFT JOIN lessons ON replacementlessons.lessonId = lessons.id_lessons LEFT JOIN courses ON lessons.courseId = courses.id_courses WHERE courses.grade = ? AND courses.subject = ? AND  courses.`group` = ?", [course.grade, course.subject, course.group]);
+                let rows = await conn.query("SELECT * FROM replacementlessons WHERE lessonId = ?", [lesson.id]);
                 let replacementLessons: ReplacementLesson[] = [];
                 for (let i = 0; i < rows.length; i++) {
                     replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));

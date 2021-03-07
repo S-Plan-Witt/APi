@@ -21,6 +21,7 @@ import {Supervisor} from "../classes/user/Supervisor";
 import path from "path";
 import {Device} from "../classes/Device";
 import {Course} from "../classes/Course";
+import {Lesson} from "../classes/Lesson";
 
 declare const global: ApiGlobal;
 
@@ -281,13 +282,17 @@ router.get('/replacementlessons', async (req, res) => {
         }
 
         for (const course of courses) {
-            //Get replacement lessons with today and today + 6 days
-            let data: any = await ReplacementLesson.getByCourse(course);
-            data.forEach((replacementLesson: ReplacementLesson) => {
-                //Add replacement lesson to all replacement lessons
-                let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, info: replacementLesson.info, date: replacementLesson.date}
-                response.push(dataset);
-            });
+            let lessons: Lesson[] = await course.getLessons();
+            for (const lesson of lessons) {
+                //Get replacement lessons with today and today + 6 days
+                let data: any = await ReplacementLesson.getByLesson(lesson);
+                data.forEach((replacementLesson: ReplacementLesson) => {
+                    console.log(replacementLesson.lesson)
+                    //Add replacement lesson to all replacement lessons
+                    let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, info: replacementLesson.info, date: replacementLesson.date}
+                    response.push(dataset);
+                });
+            }
         }
         if (req.decoded.userType === "teacher") {
             //Get replacement lessons hold by teacher
