@@ -99,6 +99,31 @@ export class Course {
     }
 
     /**
+     * Returns a course with the given teacher id
+     * @param id
+     */
+    static getByTeacherId(id: number): Promise<Course[]> {
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                let rows = await conn.query("SELECT * FROM courses WHERE (teacherId=?)", [id]);
+                let courses: Course[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    let row = rows[i];
+                    let course = new Course(row["grade"], row["subject"], row["group"], false, row["id_courses"], row["teacherId"]);
+                    courses.push(course);
+                }
+                resolve(courses);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    /**
      * Returns all Courses
      * @returns {Promise<Course[]>}
      */

@@ -375,12 +375,7 @@ export class User {
                         courses.push(course);
                     }
                 } else if (this.type == UserType.TEACHER) {
-                    const rows = await conn.query("SELECT * FROM courses WHERE `teacherId` = ?;", [this.id]);
-                    await conn.end();
-                    for (let i = 0; i < rows.length; i++) {
-                        let row = rows[i];
-                        courses.push(await Course.getById(parseInt(row.courseId)));
-                    }
+                    resolve(await Course.getByTeacherId(this.id))
                 }
                 global.logger.log({
                     level: 'silly',
