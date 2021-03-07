@@ -134,9 +134,10 @@ export class Course {
                 conn = await global.mySQLPool.getConnection();
                 let courses: Course[] = [];
                 let rows = await conn.query("SELECT * FROM courses ORDER BY grade, subject, `group`");
-                rows.forEach((lesson: any) => {
-                    courses.push(lesson);
-                });
+                for (let i = 0; i < rows.length; i++) {
+                    let row = rows[i];
+                    courses.push(new Course(row.grade,row.subject,row.group,false,row.id_courses,row.teacherId))
+                }
                 resolve(courses);
             } catch (e) {
                 reject(e);
