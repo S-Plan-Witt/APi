@@ -247,7 +247,13 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM users");
-                resolve(rows);
+                let users: User[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    let user = await User.fromSqlUser(rows[i]);
+                    await user.populateUser();
+                    users.push(user)
+                }
+                resolve(users);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
@@ -375,12 +381,7 @@ export class User {
                         courses.push(course);
                     }
                 } else if (this.type == UserType.TEACHER) {
-                    const rows = await conn.query("SELECT * FROM courses WHERE `teacherId` = ?;", [this.id]);
-                    await conn.end();
-                    for (let i = 0; i < rows.length; i++) {
-                        let row = rows[i];
-                        courses.push(await Course.getById(parseInt(row.courseId)));
-                    }
+                    resolve(await Course.getByTeacherId(this.id))
                 }
                 global.logger.log({
                     level: 'silly',
