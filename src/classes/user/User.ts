@@ -250,7 +250,6 @@ export class User {
                 let users: User[] = [];
                 for (let i = 0; i < rows.length; i++) {
                     let user = await User.fromSqlUser(rows[i]);
-                    console.log(user);
                     await user.populateUser();
                     users.push(user)
                 }
