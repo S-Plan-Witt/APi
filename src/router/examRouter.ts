@@ -19,7 +19,8 @@ import {User} from "../classes/user/User";
 declare const global: ApiGlobal;
 
 export let router = express.Router();
-
+//TODO Authorisation
+//TODO swagger
 /**
  * Adds a new Exam
  * @route POST /exams/
@@ -62,6 +63,7 @@ router.post('/', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * Returns all Exams
  * @route GET /exams/
@@ -77,6 +79,7 @@ router.get('/', async (req, res) => {
     await res.json(rows);
 });
 
+//TODO swagger
 /**
  * Updates a Exam
  * @route PUT /exams/{id}
@@ -93,6 +96,7 @@ router.put('/:id', async (req, res) => {
     res.sendStatus(605);
 });
 
+//TODO swagger
 /**
  * Deletes an Exam
  * @route DELETE /exams/{id}
@@ -108,24 +112,4 @@ router.delete('/id/:id', async (req, res) => {
     }
     //TODO add Delete
     res.sendStatus(605);
-});
-
-//TODO determine correct router for endpoint
-router.get('/exams/supervisors/:id', async (req, res) => {
-    if (!req.decoded.admin) {
-        return res.sendStatus(401);
-    }
-
-    try {
-        let data = await Supervisor.getById(parseInt(req.params.id));
-        await res.json(data);
-    } catch (e) {
-        global.logger.log({
-            level: 'error',
-            label: 'ExamsRouter',
-            message: 'Err: ' + JSON.stringify(e),
-            file: path.basename(__filename)
-        });
-        res.sendStatus(500);
-    }
 });

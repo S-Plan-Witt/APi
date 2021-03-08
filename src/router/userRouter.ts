@@ -29,10 +29,10 @@ export let router = express.Router();
 router.use("/totp", require('./userTOTProuter').router);
 /**
  * Return the current user
- * @route POST /user/
- * @group User - Operations about logged in user
+ * @route GET /user/
+ * @group User
  * @returns {User.model} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Wrong JWT
  * @security JWT
  */
 router.get('/', async (req, res) => {
@@ -47,12 +47,12 @@ router.get('/', async (req, res) => {
  * Return the JWT to access the Api
  * @sum Login
  * @route POST /user/login
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @param {LoginRequest.model} LoginRequest.body.required - username
  * @returns {LoginResponse.model} 200
  * @returns {Error} 602 - missing secondFactor
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Wrong Bearer
  */
 router.post('/login', async (req, res) => {
 
@@ -153,10 +153,11 @@ router.post('/login', async (req, res) => {
 
 });
 
+//TODO swagger
 /**
  * List all courses for the user
  * @route GET /user/courses
- * @group User - Operations about logged in user
+ * @group User
  * @returns {Array.<Course>} 200
  * @returns {Error} 602 - missing secondFactor
  * @returns {Error} 401 - Wrong JWT
@@ -191,10 +192,11 @@ router.get('/courses', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * List all lessons for the user
  * @route GET /user/lessons
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {Array.<Lesson>} 200
  * @returns {Error} 401 - Wrong Credentials
@@ -238,10 +240,11 @@ router.get('/lessons', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * List all replacement lessons for the user
- * @route GET /user/lessons
- * @group User - Operations about logged in user
+ * @route GET /user/replacementlessons
+ * @group User
  * @consumes application/json
  * @returns {Array.<ReplacementLesson>} 200
  * @returns {Error} 401 - Wrong Credentials
@@ -311,10 +314,11 @@ router.get('/replacementlessons', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * Lists all Announcements for the user
  * @route GET /user/announcements
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {Array.<Announcement>} 200
  * @returns {Error} 401 - Wrong Credentials
@@ -339,10 +343,11 @@ router.get('/announcements', async (req: Request, res: Response) => {
     res.json(response);
 });
 
+//TODO swagger
 /**
  * Lists all exams for the user or if teacher, for his courses
  * @route GET /user/exams
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {Array.<Exam>} 200
  * @returns {Error} 401 - Wrong Credentials
@@ -385,6 +390,7 @@ router.get('/exams', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * only for teachers - returns all supervisor blocks
  * @route GET /user/supervisors
@@ -407,7 +413,7 @@ router.get('/supervisors', async (req, res) => {
 /**
  * Lists all devices for the user
  * @route GET /user/devices
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {Array.<Device>} 200
  * @returns {Error} 401 - Wrong Credentials
@@ -423,10 +429,11 @@ router.get('/devices', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * Adds a new device to the user
  * @route POST /user/devices
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @param {Device.model} Device.body
  * @returns {Error} 401 - Wrong Credentials
@@ -449,10 +456,11 @@ router.post('/devices', async (req: Request, res: Response) => {
     }
 });
 
+//TODO swagger
 /**
  * Removes a device from the user account
  * @route DELETE /user/devices/deviceId/{id}
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {object} 200 - Success
  * @returns {Error} 401 - Wrong Credentials
@@ -469,15 +477,16 @@ router.delete('/devices/deviceId/:id', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * Lists all mail addresses
- * @route GET /user/profile/emails
+ * @route GET /user/emails
  * @group User - Operations about logged in user
  * @returns {Array.<Device>} 200
  * @returns {Error} 401 - Wrong JWT
  * @security JWT
  */
-router.get('/profile/emails', async (req, res) => {
+router.get('/emails', async (req, res) => {
     try {
         res.json(await User.getEMails(req.user.id));
     } catch (e) {
@@ -485,10 +494,11 @@ router.get('/profile/emails', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * Deletes access jwt
  * @route DELETE /user/jwt
- * @group User - Operations about logged in user
+ * @group User
  * @returns {object} 200
  * @returns {Error} 401 - Wrong JWT
  * @security JWT

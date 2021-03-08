@@ -272,7 +272,7 @@ export class User {
      * Returns all users with the given type
      * @param type
      */
-    static getUsersByType(type: any) {
+    static getUsersByType(type: UserType) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -394,7 +394,7 @@ export class User {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getCourses: ' + JSON.stringify(e),
+                    message: 'Class: User; Function: getCourses(' + this.id + '): ' + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
                 reject(e);

@@ -19,14 +19,19 @@ declare const global: ApiGlobal;
  */
 export class ExpressServer {
     expressApp: Express;
+    static instance : ExpressServer;
 
     constructor() {
         this.expressApp = express();
         this.startUp();
     }
 
-    static launch() {
-        new ExpressServer();
+    static init() {
+        this.instance = new ExpressServer();
+    }
+
+    static launch(){
+        this.instance.exposeServer();
     }
 
     /**
@@ -37,7 +42,7 @@ export class ExpressServer {
         this.initHeaders();
         this.initMiddleware();
         this.initRouter();
-        this.exposeServer();
+
     }
 
     /**

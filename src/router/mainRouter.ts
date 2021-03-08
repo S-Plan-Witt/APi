@@ -10,7 +10,7 @@
 
 import express, {Request, Response} from 'express';
 import {ApiGlobal} from "../types/global";
-
+require('./RouterTypes')
 declare const global: ApiGlobal;
 
 export let router = express.Router();
@@ -25,87 +25,83 @@ router.options('*', (req: Request, res: Response) => {
 /**
  * All subrouter
  */
-router.use("/users", require('./usersRouter').router);
-router.use("/user", require('./userRouter').router);
-router.use("/timetable", require('./timeTableRouter').router);
-router.use("/exams", require('./examRouter').router);
 router.use("/announcements", require('./announcementRouter').router);
-router.use("/timetable", require('./timeTableRouter').router);
+router.use("/courses", require('./coursesRouter').router);
+router.use("/exams", require('./examRouter').router);
+router.use("/lessons", require('./lessonsRouter').router);
 router.use("/replacementLessons", require('./replacementLessonRouter').router);
+router.use("/user", require('./userRouter').router);
+router.use("/users", require('./usersRouter').router);
 
+
+
+/*
+Models for Swagger documentation
+ */
 
 /**
- * @typedef Announcement
- * @property {Course.model} course.required
- * @property {string} author.required
- * @property {string} content.required
- * @property {string} date.required
+ * @typedef Course
  * @property {number} id
+ * @property {string} grade.required
+ * @property {string} subject.required
+ * @property {string} group.required
  */
-
-/**
- * @typedef LoginResponse
- * @property {string} token.required
- * @property {string} userType.required
- */
-class LoginResponse {
-    token: string;
-    userType: string;
-
-    constructor(token: string, userType: string) {
-        this.token = token;
-        this.userType = userType;
-    }
-}
 
 /**
  * @typedef LoginRequest
  * @property {string} username.required
  * @property {string} password.required
- * @property {string} secondFactor
  */
-class LoginRequest {
-    username: string;
-    password: string;
-    secondFactor: string;
-
-    constructor(username: string, password: string, secondFactor: string) {
-        this.username = username;
-        this.password = password;
-        this.secondFactor = secondFactor;
-    }
-}
 
 /**
- * @typedef TotpAddRequest
- * @property {string} password.required
- * @property {string} key.required
- * @property {string} alias.required
+ * @typedef LoginResponse
+ * @property {string} token.required
+ * @property {UserType} userType.required
  */
-
-class TotpAddRequest {
-    password: string;
-    key: string;
-    alias: string;
-    constructor(password: string, key: string, alias: string) {
-        this.password = password;
-        this.key = key;
-        this.alias = alias;
-    }
-}
 
 /**
- * @typedef TotpVerifyRequest
- * @property {number} keyId.required
- * @property {number} code.required
+ * @typedef Device
+ * @property {number} id
+ * @property {string} platform.required
+ * @property {number} userId.required
+ * @property {string} timeAdded.required
+ * @property {string} deviceIdentifier.required
+ * @property {boolean} verified
  */
 
-class TotpVerifyRequest {
-    keyId: number;
-    code: number;
+/**
+ * @typedef UserFilter
+ * @property {string} firstName
+ * @property {string} lastName
+ * @property {string} username
+ */
 
-    constructor(keyId: number, code: number) {
-        this.keyId = keyId;
-        this.code = code;
-    }
-}
+/**
+ * @typedef Permissions
+ * @property {boolean} users
+ * @property {boolean} usersAdmin
+ * @property {boolean} replacementLessons
+ * @property {boolean} replacementLessonsAdmin
+ * @property {boolean} announcements
+ * @property {boolean} announcementsAdmin
+ * @property {boolean} timeTable
+ * @property {boolean} timeTableAdmin
+ * @property {boolean} moodle
+ * @property {boolean} moodleAdmin
+ * @property {boolean} globalAdmin
+ */
+
+/**
+ * @typedef User
+ * @property {number} id
+ * @property {string} firstName.required
+ * @property {string} lastName.required
+ * @property {string} displayName.required
+ * @property {string} username.required
+ * @property {UserType} type.required
+ * @property {Array.<Course>} courses
+ * @property {number} devices
+ * @property {number} secondFactor
+ * @property {Permissions.model} permissions
+ * @property {number} moodleUID
+ */

@@ -33,20 +33,21 @@ router.use((req, res, next) => {
     return res.sendStatus(401);
 });
 
+
+//TODO swagger
 /**
- * Lists all Announcements
+ * Adds a new Announcement
  * @route POST /announcements/
- * @group Announcements - Management functions for Announcements
+ * @group Announcements
  * @param {Announcement.model} Announcement.body.required
  * @returns {object} 200 - Success
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
 router.post('/', async (req, res) => {
-    let body = req.body;
+    let body: { course: Course, content: string, date: string } = req.body;
     try {
-        let course = await Course.getByFields(body["course"]["subject"], body["course"]["grade"], body["course"]["group"])
-        console.log(course);
+        let course = await Course.getByFields(body.course.subject, body.course.grade, body.course.group)
 
         if (!req.decoded.admin) {
             if (!req.user.isTeacherOf(course)) {
@@ -54,7 +55,7 @@ router.post('/', async (req, res) => {
             }
         }
 
-        let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body["content"], body["date"], null);
+        let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body.content, body.date, null);
         await announcement.create();
 
         let devices = await announcement.course.getStudentDevices();
@@ -75,10 +76,11 @@ router.post('/', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * Lists all Announcements
  * @route GET /announcements/
- * @group Announcements - Management functions for Announcements
+ * @group Announcements
  * @returns {Array.<Announcement>} 200
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
@@ -88,10 +90,11 @@ router.get('/', async (req, res) => {
     await res.json(await Announcement.getAll());
 });
 
+//TODO swagger
 /**
  * Updates Announcement {id}
  * @route PUT /announcements/id/{id}
- * @group Announcements - Management functions for Announcements
+ * @group Announcements
  * @returns {Error} 200 - Success
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
@@ -117,6 +120,7 @@ router.put('/id/:id', async (req, res) => {
     res.sendStatus(200);
 });
 
+//TODO swagger
 /**
  * Returns Announcement {id}
  * @route GET /announcements/id/{id}
@@ -131,6 +135,7 @@ router.get('/id/:id', async (req, res) => {
     res.json(announcement)
 });
 
+//TODO swagger
 /**
  * Deletes Announcement {id}
  * @route DELETE /announcements/id/{id}

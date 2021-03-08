@@ -23,6 +23,7 @@ declare const global: ApiGlobal;
 
 export let router = express.Router();
 
+//TODO swagger
 /**
  * Adds an ReplacementLesson
  * @route POST /replacementLessons/
@@ -88,6 +89,7 @@ router.post('/', async (req, res) => {
     res.sendStatus(200);
 });
 
+//TODO swagger
 /**
  * Returns all ReplacementLessons
  * @route GET /replacementLessons/
@@ -106,6 +108,7 @@ router.get('/', async (req, res) => {
 
 });
 
+//TODO swagger
 /**
  * Returns all ReplacementLessons on specific date
  * @route GET /replacementLessons/date/{date}
@@ -139,6 +142,7 @@ router.get('/date/:date', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * Gets a ReplacementLesson by id
  * @route GET /replacementLessons/id/{id}
@@ -161,6 +165,7 @@ router.get('/id/:id', async (req, res) => {
 
 });
 
+//TODO swagger
 router.post('/find', async (req, res) => {
     let info = req.body.info;
     try {
@@ -172,6 +177,7 @@ router.post('/find', async (req, res) => {
 
 });
 
+//TODO swagger
 /**
  * Deletes an ReplacementLesson by replacement-id
  * @route DELETE /replacementLessons/id/{id}

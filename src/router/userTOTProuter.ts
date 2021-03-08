@@ -16,6 +16,8 @@ declare const global: ApiGlobal;
 
 export let router = express.Router();
 
+//TODO swagger
+
 router.get('/', async (req, res) => {
 
     try {
@@ -63,7 +65,7 @@ router.get('/register', async (req, res) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/aregister', async (req, res) => {
+router.post('/register', async (req, res) => {
     if (req.body.hasOwnProperty("password") && req.body.hasOwnProperty("key")) {
         let user;
         let tokenId;
