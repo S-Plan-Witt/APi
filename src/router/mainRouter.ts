@@ -10,7 +10,7 @@
 
 import express, {Request, Response} from 'express';
 import {ApiGlobal} from "../types/global";
-require('./RouterTypes')
+
 declare const global: ApiGlobal;
 
 export let router = express.Router();
