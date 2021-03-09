@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
  * @returns {Error} 401 - Wrong Credentials
  * @security JWT
  */
-router.post('/lessons', async (req, res) => {
+router.post('/', async (req, res) => {
     if (!req.decoded.permissions.timeTableAdmin) {
         return res.sendStatus(401);
     }
