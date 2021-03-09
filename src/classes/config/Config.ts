@@ -15,6 +15,7 @@ import {WebServerConfig} from "./WebServerConfig";
 import {PWAConfig} from "./PWAConfig";
 import {BcryptConf} from "./BcryptConf";
 import {AuthyConfig} from "./AuthyConfig";
+import {MoodleConfig} from "./MoodleConfig";
 
 export class Config {
     public ldapConfig: LdapConfig = new LdapConfig();
@@ -24,6 +25,7 @@ export class Config {
     public pwaConfig: PWAConfig = new PWAConfig();
     public bCrypt: BcryptConf = new BcryptConf();
     public authy: AuthyConfig = new AuthyConfig();
+    public moodleConfig: MoodleConfig = new MoodleConfig();
 
     static loadFromEnv(): Config {
         let config = new Config();
@@ -89,6 +91,13 @@ export class Config {
          * Authy
          **/
         if (typeof process.env.AUTHY_KEY == "string") config.authy.apiKey = process.env.AUTHY_KEY;
+
+        /**
+         * Moodle
+         **/
+        if (typeof process.env.MOODLE_HOST == "string") config.moodleConfig.host = process.env.MOODLE_HOST;
+        if (typeof process.env.MOODLE_PATH == "string") config.moodleConfig.path = process.env.MOODLE_PATH;
+        if (typeof process.env.MOODLE_KEY == "string") config.moodleConfig.token = process.env.MOODLE_KEY;
 
         return config;
     }

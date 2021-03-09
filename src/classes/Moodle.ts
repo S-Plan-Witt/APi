@@ -9,16 +9,20 @@
  */
 
 import https from 'https';
+import {User} from "./user/User";
+import {ReplacementLesson} from "./ReplacementLesson";
+import {ApiGlobal} from "../types/global";
+
+declare const global: ApiGlobal;
 
 export class Moodle {
 
-    //TODO add jDoc
-    static apiRequest(wsToken: string, host: string, wsfunction: string, parameters: string): Promise<string> {
+    static apiRequest(mFunction: string, parameters: any): Promise<string> {
         return new Promise(async (resolve, reject) => {
             let options = {
                 'method': 'GET',
-                'hostname': host,
-                'path': '/webservice/rest/server.php?wstoken=' + wsToken + '&wsfunction=' + wsfunction + '&moodlewsrestformat=json&' + parameters,
+                'hostname': global.config.moodleConfig.host,
+                'path': global.config.moodleConfig.path + '/webservice/rest/server.php?wstoken=' + global.config.moodleConfig.token + '&wsfunction=' + mFunction + '&moodlewsrestformat=json&' + parameters,
                 'headers': {}
             };
 
@@ -31,7 +35,7 @@ export class Moodle {
 
                 res.on("end", (chunk: any) => {
                     let body = Buffer.concat(chunks);
-                    resolve(body.toString())
+                    resolve(JSON.parse(body.toString()));
                 });
 
                 res.on("error", (error: Error) => {
@@ -44,79 +48,108 @@ export class Moodle {
         });
     }
 
-    /**
-     *
-     * @param id {int}
-     */
-    static getUserById(id: number) {
+    static createUser(user: User): Promise<MoodleCreateResponse> {
         return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
-                let result = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_get_users", "criteria[0][key]=id&criteria[0][value]=" + id.toString())
-            }
-        });
+            let params = `users[0][username]=${user.username}&users[0][auth]=ldap&users[0][firstname]=${user.firstName}&users[0][lastname]=${user.lastName}&users[0][email]=${user.username}@netman.lokal`
 
-    }
-
-    //TODO add jDoc
-    static getUserByUsername(username: string) {
-        return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
-                let result = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_get_users", "criteria[0][key]=username&criteria[0][value]=siks" + username)
+            let res: MoodleResponse = <any>await this.apiRequest(MoodleFunctions.CREATE_USER, params);
+            if (!res.exception) {
+                let mUser: MoodleCreateResponse = (<any>res)[0];
+                await this.saveMapping(user.id, mUser.id)
+                resolve(mUser);
+            } else {
+                reject("Error: " + res.exception);
             }
         });
     }
 
-    /**
-     * @param id {int}
-     */
-    static deleteUserById(id: number) {
+    static delete(mUID: number) {
         return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
-                let result = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_delete_users", "userids[0]=" + id);
-                if (result === "null") {
-                    console.log("success")
-                } else {
-                    console.log(result)
+            let params = `userids[0]=${mUID}`
+            let res = await this.apiRequest(MoodleFunctions.DELETE_USER, params);
+
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("DELETE FROM user_moodleaccounts WHERE moodleid=?", [mUID]);
+                resolve(res);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    static find(username: string) {
+        return new Promise(async (resolve, reject) => {
+            let params = `field=username&values[0]=${username}`
+
+            let res: MoodleUser[] | MoodleResponse = <any>await this.apiRequest(MoodleFunctions.SEARCH_USER, params);
+            if (res.hasOwnProperty('exception')) {
+                reject("Error: " + res);
+            } else {
+                resolve(res);
+            }
+
+        });
+    }
+
+    static saveMapping(userId: number, moodleId: number) {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows = await conn.query("INSERT INTO user_moodleaccounts (userid, moodleid) VALUES (?,?)", [userId, moodleId]);
+                let replacementLessons: ReplacementLesson[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));
                 }
+                resolve(replacementLessons);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
             }
         });
     }
 
-    /**
-     *
-     * @param username {String}
-     * @param firstname {String}
-     * @param lastname {String}
-     * @param mail {String}
-     */
-    static createUser(username: string, firstname: string, lastname: string, mail: string) {
+    static getUidByUserId(userId: number) {
         return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
-                let response: string = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_create_users", '&users[0][auth]=ldap&users[0][username]=' + username + '&users[0][firstname]=' + firstname + '&users[0][lastname]=' + lastname + '&users[0][email]=' + mail)
-                let data = JSON.parse(response);
-                if (data.length === 1) {
-                    if (data[0].hasOwnProperty("id")) {
-                        console.log(data[0]["id"]);
-                        resolve(data[0]["id"]);
-                        return;
-                    }
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows = await conn.query("SELECT * FROM user_moodleaccounts WHERE userid=?", [userId]);
+
+                if (rows.length > 0) {
+                    resolve(rows[0].moodleid);
                 }
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
             }
-            reject("err");
-            return;
         });
     }
+}
 
-    /**
-     *
-     * @param id {int}
-     * @param mail {String}
-     */
-    static updateEmailById(id: number, mail: string) {
-        return new Promise(async (resolve, reject) => {
-            if (process.env.MOODLE_KEY !== undefined && process.env.MOODLE_URL !== undefined) {
-                let result = await Moodle.apiRequest(process.env.MOODLE_KEY, process.env.MOODLE_URL, "core_user_update_users", "users[0][id]=" + id + "&users[0][email]=" + mail)
-            }
-        });
-    }
+enum MoodleFunctions {
+    CREATE_USER = "core_user_create_users",
+    SEARCH_USER = "core_user_get_users_by_field",
+    DELETE_USER = "core_user_delete_users",
+}
+
+export class MoodleResponse {
+    exception: string = "";
+    errorcode: string = "";
+    message: string = "";
+    debuginfo: string = ""
+}
+
+export class MoodleCreateResponse extends MoodleResponse {
+    username: string = "";
+    id: number = 0;
+}
+
+export class MoodleUser extends MoodleResponse {
+    username: string = "";
+    id: number = 0;
+    auth: string = "";
 }

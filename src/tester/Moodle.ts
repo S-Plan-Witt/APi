@@ -9,17 +9,19 @@
 
 import {ApiGlobal} from "../types/global";
 import {Starter} from "../startEnviroment";
+import {Moodle, MoodleCreateResponse} from "../classes/Moodle";
 
 declare const global: ApiGlobal;
 
-let useStandardENV:boolean = true;
+let useStandardENV: boolean = true;
 
 (async () => {
     try {
         Starter.logger();
         Starter.config();
+        Starter.mysql();
 
-        if (!useStandardENV){
+        if (!useStandardENV) {
             setCustomParams();
         }
 

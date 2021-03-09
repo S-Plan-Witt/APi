@@ -511,3 +511,37 @@ router.delete('/jwt', async (req, res) => {
         res.sendStatus(500);
     }
 });
+
+/**
+ * Enables the Moodle user account
+ * @route GET /user/moodle/enable
+ * @group User
+ * @returns {Object} 200 - OK
+ * @returns {Error} 401 - JWT invalid
+ * @security JWT
+ */
+router.get('/moodle/enable', async (req, res) => {
+    try {
+        await req.user.enableMoodle();
+        res.sendStatus(200);
+    } catch (e) {
+        res.sendStatus(500);
+    }
+});
+
+/**
+ * Disables the Moodle user account
+ * @route GET /user/moodle/disable
+ * @group User
+ * @returns {Object} 200 - OK
+ * @returns {Error} 401 - JWT invalid
+ * @security JWT
+ */
+router.get('/moodle/disable', async (req, res) => {
+    try {
+        await req.user.disableMoodle();
+        res.sendStatus(200);
+    } catch (e) {
+        res.sendStatus(500);
+    }
+});

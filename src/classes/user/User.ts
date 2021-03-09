@@ -11,7 +11,7 @@
 import {Ldap} from '../external/Ldap';
 import {JWTInterface} from '../JWTInterface';
 import {ApiGlobal} from "../../types/global";
-import {Moodle} from "../Moodle";
+import {Moodle, MoodleUser} from "../Moodle";
 import {Device, DeviceType} from "../Device";
 import {Permissions} from "../Permissions";
 import {Student} from "./Student";
@@ -632,57 +632,53 @@ export class User {
     }
 
     /**
-     * Planned feature
+     * Creates / Enables the moodle user account.
      */
-    enableMoodleAccount() {
-        let uid = this.id;
-        let username: string = this.username;
-        let firstname: string = this.firstName;
-        let lastname: string = this.lastName;
-        let mail: string = this.username + "@netman.lokal";
+    enableMoodle() {
         return new Promise(async (resolve, reject) => {
-            let muid = null;
-            try {
-                muid = await Moodle.createUser(username, firstname, lastname, mail);
-            } catch (e) {
-                reject(e);
+            if(this.moodleUID != null){
+                resolve("ARS");
+                console.log("ARS")
+                return;
             }
-            if (muid != null) {
-                let conn;
+            let failed = false;
+            try {
+                await Moodle.createUser(this);
+                console.log("Created");
+                resolve("Done")
+                return;
+            } catch (e) {
+                failed = true;
+            }
+
+            let mUsers: MoodleUser[] = <any>await Moodle.find(this.username);
+            if (mUsers.length > 0) {
                 try {
-                    conn = await global.mySQLPool.getConnection();
-                    let result = await conn.query("INSERT INTO `user_moodleaccounts` (`userid`, `moodleid`) VALUES (?, ?);", [uid, muid]);
-                    resolve(muid);
-                } catch (e) {
-                    console.log(e);
-                } finally {
-                    await conn.end();
+                    await Moodle.saveMapping(this.id, mUsers[0].id);
+                    resolve("Done")
+                    return;
+                }catch (e) {
+                    reject("Association failed")
                 }
+            }else {
+                resolve('FAILED')
             }
         });
     }
 
     /**
-     * Planned feature
+     * Disables the moodle user account
      */
-    disableMoodleAccount() {
-        let mUID: number | null = this.moodleUID;
-        let uid: number | null = this.id;
+    disableMoodle() {
         return new Promise(async (resolve, reject) => {
-            if (mUID != null) {
-                let conn;
-                try {
-                    await Moodle.deleteUserById(mUID);
-
-                    conn = await global.mySQLPool.getConnection();
-                    let result = await conn.query("DELETE FROM `user_moodleaccounts` WHERE `userid` = ?", [uid]);
-                    await conn.end();
-                    resolve(mUID);
-                } catch (e) {
-                    console.log(e);
+            try {
+                if (this.moodleUID != null) {
+                    await Moodle.delete(this.moodleUID);
+                    console.log("Deleted");
                 }
-            } else {
-                console.log("NO account");
+                resolve("Done")
+            } catch (e) {
+                reject(e);
             }
         });
     }
