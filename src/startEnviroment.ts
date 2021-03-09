@@ -141,9 +141,11 @@ export class Starter {
     static express() {
         console.log("Starter: EXPRESS BEGIN");
         ExpressServer.init();
+        console.log("Starter: EXPRESS INIT DONE");
         this.swagger();
+        console.log("Starter: EXPRESS swagger DONE");
         ExpressServer.launch();
-        console.log("Starter: LDAP END");
+        console.log("Starter: EXPRESS END");
     }
 
     /**
