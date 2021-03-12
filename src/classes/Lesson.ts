@@ -9,8 +9,8 @@
  */
 
 import {Course} from "./Course";
-import assert from "assert";
 import {ApiGlobal} from "../types/global";
+import {ReplacementLesson} from "./ReplacementLesson";
 
 declare const global: ApiGlobal;
 
@@ -145,6 +145,12 @@ export class Lesson {
 
     delete(): Promise<void> {
         return new Promise(async (resolve, reject) => {
+            let rp = await ReplacementLesson.getByLesson(this);
+
+            for (let i = 0; i < rp.length; i++) {
+                await rp[i].delete();
+            }
+
             let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM lessons WHERE id_lessons=?", [this.id]);

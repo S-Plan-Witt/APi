@@ -133,7 +133,7 @@ export class Exam {
                 element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
                 let course = await Course.getById(element["courseId"])
 
-                data.push(new Exam(element["visibleOnDisplay"], element["date"], course, element["from"], element["to"], element["teacher"], element["students"], await RoomLink.getById(element["roomLink"]), element["iddata_klausuren"], element["uniqueIdentifier"]))
+                data.push(new Exam(element["visibleOnDisplay"], element["date"], course, element["from"], element["to"], element["teacher"], element["students"], await RoomLink.getById(element["roomLink"]), element["id_exam"], element["uniqueIdentifier"]))
             }
             resolve(data);
         });

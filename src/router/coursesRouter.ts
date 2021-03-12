@@ -61,3 +61,16 @@ router.post('/find/', async (req: Request, res: Response) => {
 
 //TODO add endpoints: ADD, DELETE, PUT
 
+
+router.delete('/', async (req, res) => {
+    try {
+        let courses = await Course.getAll();
+
+        for (let i = 0; i < courses.length; i++) {
+            await courses[i].delete();
+        }
+        res.sendStatus(200);
+    } catch (e) {
+        res.sendStatus(500);
+    }
+});

@@ -13,6 +13,7 @@ import path from "path";
 import {ApiGlobal} from "../types/global";
 import assert from "assert";
 import {Lesson} from "./Lesson";
+import {Exam} from "./Exam";
 
 declare const global: ApiGlobal;
 
@@ -164,6 +165,16 @@ export class Course {
 
     delete() {
         return new Promise(async (resolve, reject) => {
+            let lessons: Lesson[] = await this.getLessons();
+            for (let i = 0; i < lessons.length; i++) {
+                await lessons[i].delete();
+            }
+
+            let exams: Exam[] = await Exam.getByCourse(this);
+            for (let i = 0; i < exams.length; i++) {
+                await exams[i].delete();
+            }
+
             let conn = await global.mySQLPool.getConnection();
             try {
                 await conn.query("DELETE FROM courses WHERE id_courses=?", [this.id]);
