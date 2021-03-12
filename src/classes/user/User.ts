@@ -92,7 +92,7 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows: any[];
-                rows = await conn.query("SELECT * FROM users WHERE `username`= ?", [username]);
+                rows = await conn.query("SELECT * FROM users LEFT JOIN user_moodleaccounts ON users.id_users = user_moodleaccounts.userid WHERE `username`= ?", [username]);
                 if (rows.length > 0) {
                     global.logger.log({
                         level: 'silly',
