@@ -33,6 +33,7 @@ export class Course {
     public exams: boolean;
     public id: number | null;
     public teacherId: number | null;
+    public moodleId: number | null;
 
     /**
      * @param grade {String}
@@ -41,14 +42,16 @@ export class Course {
      * @param exams {boolean}
      * @param id {number}
      * @param teacherId {number}
+     * @param moodleId {number}
      */
-    constructor(grade: string, subject: string, group: string, exams = false, id: number | null = null, teacherId: number | null = null) {
+    constructor(grade: string, subject: string, group: string, exams = false, id: number | null = null, teacherId: number | null = null, moodleId: number | null = null) {
         this.grade = grade;
         this.subject = subject;
         this.group = group;
         this.exams = exams;
         this.id = id;
         this.teacherId = teacherId;
+        this.moodleId = moodleId;
     }
 
     /**
@@ -66,7 +69,7 @@ export class Course {
                 if (rows.length !== 1) {
                     reject("Course not found")
                 } else {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"]));
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"]));
                 }
             } catch (e) {
                 reject(e);
@@ -137,7 +140,7 @@ export class Course {
                 let rows = await conn.query("SELECT * FROM courses ORDER BY grade, subject, `group`");
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
-                    courses.push(new Course(row.grade,row.subject,row.group,false,row.id_courses,row.teacherId))
+                    courses.push(new Course(row.grade, row.subject, row.group, false, row.id_courses, row.teacherId, row.moodleId))
                 }
                 resolve(courses);
             } catch (e) {
@@ -177,6 +180,7 @@ export class Course {
 
             let conn = await global.mySQLPool.getConnection();
             try {
+                await conn.query("DELETE FROM user_student_courses WHERE courseId=?", [this.id]);
                 await conn.query("DELETE FROM courses WHERE id_courses=?", [this.id]);
                 resolve(this);
             } catch (e) {

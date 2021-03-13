@@ -10,8 +10,8 @@
 
 import https from 'https';
 import {User} from "./user/User";
-import {ReplacementLesson} from "./ReplacementLesson";
 import {ApiGlobal} from "../types/global";
+import {Course} from "./Course";
 
 declare const global: ApiGlobal;
 
@@ -35,7 +35,13 @@ export class Moodle {
 
                 res.on("end", (chunk: any) => {
                     let body = Buffer.concat(chunks);
-                    resolve(JSON.parse(body.toString()));
+                    let res = "";
+                    try {
+                        res = JSON.parse(body.toString())
+                    } catch (e) {
+                        console.log(body.toString())
+                    }
+                    resolve(res);
                 });
 
                 res.on("error", (error: Error) => {
@@ -50,12 +56,18 @@ export class Moodle {
 
     static createUser(user: User): Promise<MoodleCreateResponse> {
         return new Promise(async (resolve, reject) => {
-            let params = `users[0][username]=${user.username}&users[0][auth]=ldap&users[0][firstname]=${user.firstName}&users[0][lastname]=${user.lastName}&users[0][email]=${user.username}@netman.lokal`
-
+            let params = `users[0][username]=${user.username}&users[0][auth]=ldap&users[0][firstname]=${encodeURI(user.firstName)}&users[0][lastname]=${encodeURI(user.lastName)}&users[0][email]=${user.username}@netman.lokal`
+            console.log(params)
             let res: MoodleResponse = <any>await this.apiRequest(MoodleFunctions.CREATE_USER, params);
+            console.log(res)
             if (!res.exception) {
                 let mUser: MoodleCreateResponse = (<any>res)[0];
-                await this.saveMapping(user.id, mUser.id)
+                try{
+                    await this.saveMapping(user.id, mUser.id)
+                }catch (e) {
+                    console.log(e);
+                }
+
                 resolve(mUser);
             } else {
                 reject("Error: " + res.exception);
@@ -70,7 +82,7 @@ export class Moodle {
 
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("DELETE FROM user_moodleaccounts WHERE moodleid=?", [mUID]);
+                await conn.query("UPDATE users SET moodleId =null WHERE moodleId = ?", [mUID]);
                 resolve(res);
             } catch (e) {
                 reject(e);
@@ -98,12 +110,8 @@ export class Moodle {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                let rows = await conn.query("INSERT INTO user_moodleaccounts (userid, moodleid) VALUES (?,?)", [userId, moodleId]);
-                let replacementLessons: ReplacementLesson[] = [];
-                for (let i = 0; i < rows.length; i++) {
-                    replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));
-                }
-                resolve(replacementLessons);
+                await conn.query("UPDATE users SET moodleId = ? WHERE id_users = ?", [moodleId, userId]);
+                resolve("Saved");
             } catch (e) {
                 reject(e);
             } finally {
@@ -112,19 +120,81 @@ export class Moodle {
         });
     }
 
-    static getUidByUserId(userId: number) {
+    static createCourse(course: Course) {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let rows = await conn.query("SELECT * FROM user_moodleaccounts WHERE userid=?", [userId]);
+            let name = course.grade + "/" + course.subject + "-" + course.group;
+            let categoryId = 1;
+            let params = `courses[0][fullname]=${name}&courses[0][shortname]=${name}&courses[0][categoryid]=${categoryId}`
 
-                if (rows.length > 0) {
-                    resolve(rows[0].moodleid);
+            let res: any = <any>await this.apiRequest(MoodleFunctions.CREATE_COURSE, params);
+            if (!res.exception) {
+                let conn = await global.mySQLPool.getConnection();
+                try {
+                    await conn.query("UPDATE courses SET moodleId = ? WHERE id_courses = ?", [res[0].id, course.id]);
+                    course.moodleId = res[0].id;
+                    if(course.teacherId != null){
+                        await this.enrolUser(course, await User.getById(course.teacherId), MoodleRoles.TEACHER)
+                    }
+                    resolve("Saved");
+                } catch (e) {
+                    reject(e);
+                } finally {
+                    await conn.end();
                 }
-            } catch (e) {
-                reject(e);
-            } finally {
-                await conn.end();
+                resolve("");
+            } else {
+                if(res.errorcode == "shortnametaken"){
+                    resolve("exists");
+                }else {
+                    reject("Error: " + res.exception);
+                }
+            }
+        });
+    }
+
+    static getCourses(): Promise<MoodleCourse[]> {
+        return new Promise(async (resolve, reject) => {
+            let params = ``
+
+            let res: any = <any>await this.apiRequest(MoodleFunctions.GET_COURSES, params);
+            if (!res.hasOwnProperty('exception')) {
+                resolve(res);
+            } else {
+                reject("Error: " + res.exception);
+            }
+        });
+    }
+
+    static enrolUser(course: Course, user: User, role: MoodleRoles) {
+        return new Promise(async (resolve, reject) => {
+            if (user.moodleUID == null || course.moodleId == null) {
+                resolve("NV");
+                console.log("SN")
+                return;
+            }
+            let params = `enrolments[0][roleid]=${role}&enrolments[0][userid]=${user.moodleUID}&enrolments[0][courseid]=${course.moodleId}`
+
+            let res: MoodleResponse = <any>await this.apiRequest(MoodleFunctions.ENROL_USER, params);
+            console.log(res);
+            if (res == null) {
+                resolve("");
+            } else {
+                reject("Error: " + res.exception);
+            }
+        });
+    }
+
+    static unEnrolUser(course: Course, user: User) {
+        return new Promise(async (resolve, reject) => {
+            let name = course.grade + "/" + course.subject + "-" + course.group;
+            let categoryId = 1;
+            let params = `courses[0][fullname]=${name}&courses[0][shortname]=${name}&courses[0][categoryid]=${categoryId}`
+
+            let res: MoodleResponse = <any>await this.apiRequest(MoodleFunctions.UNENROL_USER, params);
+            if (!res.exception) {
+                resolve("");
+            } else {
+                reject("Error: " + res.exception);
             }
         });
     }
@@ -134,6 +204,21 @@ enum MoodleFunctions {
     CREATE_USER = "core_user_create_users",
     SEARCH_USER = "core_user_get_users_by_field",
     DELETE_USER = "core_user_delete_users",
+    CREATE_COURSE = "core_course_create_courses",
+    ENROL_USER = "enrol_manual_enrol_users",
+    UNENROL_USER = "enrol_manual_unenrol_users",
+    GET_COURSES = "core_course_get_courses",
+
+}
+
+enum MoodleRoles {
+    NONE,
+    MANAGER,
+    COURSE_CREATOR,
+    TEACHER,
+    NON_EDITING_TEACHER,
+    STUDENT,
+    GUEST
 }
 
 export class MoodleResponse {
@@ -152,4 +237,13 @@ export class MoodleUser extends MoodleResponse {
     username: string = "";
     id: number = 0;
     auth: string = "";
+}
+
+export class MoodleCourse {
+    id: number = -1;
+    shortname: string = "";
+    categoryId: number = -1;
+    fullname: string = "";
+    displayname: string = "";
+
 }
