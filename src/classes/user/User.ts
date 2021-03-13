@@ -272,7 +272,7 @@ export class User {
      * Returns all users with the given type
      * @param type
      */
-    static getUsersByType(type: UserType):Promise<User[]> {
+    static getUsersByType(type: UserType): Promise<User[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -642,33 +642,39 @@ export class User {
      */
     enableMoodle() {
         return new Promise(async (resolve, reject) => {
-            if(this.moodleUID != null){
+            if (this.moodleUID != null) {
                 resolve("ARS");
                 return;
             }
-            let failed = false;
             try {
                 await Moodle.createUser(this);
                 console.log("Created");
             } catch (e) {
-                failed = true;
             }
 
             let mUsers: MoodleUser[] = <any>await Moodle.find(this.username);
             if (mUsers.length > 0) {
                 try {
                     await Moodle.saveMapping(this.id, mUsers[0].id);
-                }catch (e) {
+                } catch (e) {
                     reject("Association failed");
                     return;
                 }
-            }else {
+            } else {
                 resolve('FAILED');
                 return;
             }
 
             for (let i = 0; i < this.courses.length; i++) {
-                await Moodle.updateCourseUsers(this.courses[i]);
+                console.log("Course: " + this.courses[i].id + "; " + this.courses[i].moodleId);
+                try {
+                    if (this.courses[i].moodleId != null) {
+                        await Moodle.updateCourseUsers(this.courses[i]);
+                    }
+
+                } catch (e) {
+                    console.log(e)
+                }
             }
 
             resolve("Done")

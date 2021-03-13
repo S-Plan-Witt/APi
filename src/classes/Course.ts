@@ -69,7 +69,7 @@ export class Course {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
                 if (rows.length !== 1) {
-                    reject("Course not found")
+                    reject("Course not found");
                 } else {
                     resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"], rows[0]["moodleId"]));
                 }
@@ -92,9 +92,9 @@ export class Course {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM courses WHERE (id_courses=?)", [id]);
                 if (rows.length === 1) {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"]));
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"], rows[0]["moodleId"]));
                 } else {
-                    reject()
+                    reject();
                 }
             } catch (e) {
                 reject(e);
@@ -117,7 +117,7 @@ export class Course {
                 let courses: Course[] = [];
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
-                    let course = new Course(row["grade"], row["subject"], row["group"], false, row["id_courses"], row["teacherId"]);
+                    let course = new Course(row["grade"], row["subject"], row["group"], false, row["id_courses"], row["teacherId"], row["moodleId"]);
                     courses.push(course);
                 }
                 resolve(courses);
