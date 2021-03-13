@@ -9,7 +9,7 @@
  */
 
 import https from 'https';
-import {User} from "./user/User";
+import {User, UserType} from "./user/User";
 import {ApiGlobal} from "../types/global";
 import {Course} from "./Course";
 
@@ -62,9 +62,9 @@ export class Moodle {
             console.log(res)
             if (!res.exception) {
                 let mUser: MoodleCreateResponse = (<any>res)[0];
-                try{
+                try {
                     await this.saveMapping(user.id, mUser.id)
-                }catch (e) {
+                } catch (e) {
                     console.log(e);
                 }
 
@@ -132,9 +132,7 @@ export class Moodle {
                 try {
                     await conn.query("UPDATE courses SET moodleId = ? WHERE id_courses = ?", [res[0].id, course.id]);
                     course.moodleId = res[0].id;
-                    if(course.teacherId != null){
-                        await this.enrolUser(course, await User.getById(course.teacherId), MoodleRoles.TEACHER)
-                    }
+                    await this.updateCourseUsers(course);
                     resolve("Saved");
                 } catch (e) {
                     reject(e);
@@ -143,11 +141,71 @@ export class Moodle {
                 }
                 resolve("");
             } else {
-                if(res.errorcode == "shortnametaken"){
+                if (res.errorcode == "shortnametaken") {
+                    await this.updateCourseUsers(course);
                     resolve("exists");
-                }else {
+                } else {
                     reject("Error: " + res.exception);
                 }
+            }
+        });
+    }
+
+    static updateCourseUsers(course: Course) {
+        return new Promise(async (resolve, reject) => {
+            let mUsers: MoodleUser[] = <any>await Moodle.getCourseUsers(course);
+            for (let i = 0; i < mUsers.length; i++) {
+                console.log(mUsers[i].username)
+            }
+            let localUsers = await course.getUsers();
+
+            for (let i = 0; i < mUsers.length; i++) {
+                let user = mUsers[i];
+                let found = false;
+                for (let j = 0; j < localUsers.length; j++) {
+                    if (localUsers[j].username == user.username) {
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    console.log("DELETE ----> Moodle: " + user.username);
+                   await this.unEnrolUser(course,user.id);
+                }
+            }
+
+            for (let i = 0; i < localUsers.length; i++) {
+                let user = localUsers[i];
+                let found = false;
+                for (let j = 0; j < mUsers.length; j++) {
+                    if (mUsers[j].username == user.username) {
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    console.log("UPDATE ----> Moodle: " + user.username);
+                    let userType = MoodleRoles.STUDENT;
+                    if (user.type == UserType.TEACHER) {
+                        userType = MoodleRoles.TEACHER;
+                    }
+                    if (user.moodleUID != null) {
+                        await this.enrolUser(course, user, userType);
+                    }
+
+                }
+            }
+            resolve("Done")
+        });
+    }
+
+    static getCourseUsers(course: Course) {
+        return new Promise(async (resolve, reject) => {
+            let params = `courseid=${course.moodleId}`;
+
+            let res: any = <any>await this.apiRequest(MoodleFunctions.GET_COURSE_USERS, params);
+            if (!res.hasOwnProperty('exception')) {
+                resolve(res);
+            } else {
+                reject("Error: " + res.exception);
             }
         });
     }
@@ -175,7 +233,6 @@ export class Moodle {
             let params = `enrolments[0][roleid]=${role}&enrolments[0][userid]=${user.moodleUID}&enrolments[0][courseid]=${course.moodleId}`
 
             let res: MoodleResponse = <any>await this.apiRequest(MoodleFunctions.ENROL_USER, params);
-            console.log(res);
             if (res == null) {
                 resolve("");
             } else {
@@ -184,14 +241,17 @@ export class Moodle {
         });
     }
 
-    static unEnrolUser(course: Course, user: User) {
+    static unEnrolUser(course: Course, moodleUserId: number) {
         return new Promise(async (resolve, reject) => {
-            let name = course.grade + "/" + course.subject + "-" + course.group;
-            let categoryId = 1;
-            let params = `courses[0][fullname]=${name}&courses[0][shortname]=${name}&courses[0][categoryid]=${categoryId}`
+            if (moodleUserId == null || course.moodleId == null) {
+                resolve("NV");
+                console.log("SN")
+                return;
+            }
+            let params = `enrolments[0][userid]=${moodleUserId}&enrolments[0][courseid]=${course.moodleId}`
 
             let res: MoodleResponse = <any>await this.apiRequest(MoodleFunctions.UNENROL_USER, params);
-            if (!res.exception) {
+            if (res == null) {
                 resolve("");
             } else {
                 reject("Error: " + res.exception);
@@ -208,7 +268,7 @@ enum MoodleFunctions {
     ENROL_USER = "enrol_manual_enrol_users",
     UNENROL_USER = "enrol_manual_unenrol_users",
     GET_COURSES = "core_course_get_courses",
-
+    GET_COURSE_USERS = "core_enrol_get_enrolled_users"
 }
 
 enum MoodleRoles {

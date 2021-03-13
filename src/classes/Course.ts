@@ -14,6 +14,8 @@ import {ApiGlobal} from "../types/global";
 import assert from "assert";
 import {Lesson} from "./Lesson";
 import {Exam} from "./Exam";
+import {User} from "./user/User";
+import {Moodle} from "./Moodle";
 
 declare const global: ApiGlobal;
 
@@ -69,7 +71,7 @@ export class Course {
                 if (rows.length !== 1) {
                     reject("Course not found")
                 } else {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"]));
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"], rows[0]["moodleId"]));
                 }
             } catch (e) {
                 reject(e);
@@ -157,6 +159,7 @@ export class Course {
             try {
                 let result = await conn.query("INSERT INTO `courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);", [this.grade, this.subject, this.group, this.teacherId]);
                 this.id = result.insertId;
+                await Moodle.createCourse(this)
                 resolve(this);
             } catch (e) {
                 reject(e);
@@ -241,6 +244,35 @@ export class Course {
                 await conn.end();
             }
 
+        });
+    }
+
+    getUsers() : Promise<User[]>{
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows = await conn.query("SELECT users.* FROM user_student_courses LEFT JOIN users ON user_student_courses.user_id = users.id_users WHERE (`courseId`=? )", [this.id]);
+
+                let users: User[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    users.push(await User.fromSqlUser(rows[i]));
+                }
+                if(this.teacherId != null){
+                    users.push(await User.getById(this.teacherId))
+                }
+
+                resolve(users);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getStudentDevicesByCourse: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                })
+                reject(e);
+            } finally {
+                await conn.end();
+            }
         });
     }
 }

@@ -650,8 +650,6 @@ export class User {
             try {
                 await Moodle.createUser(this);
                 console.log("Created");
-                resolve("Done")
-                return;
             } catch (e) {
                 failed = true;
             }
@@ -660,14 +658,20 @@ export class User {
             if (mUsers.length > 0) {
                 try {
                     await Moodle.saveMapping(this.id, mUsers[0].id);
-                    resolve("Done")
-                    return;
                 }catch (e) {
-                    reject("Association failed")
+                    reject("Association failed");
+                    return;
                 }
             }else {
-                resolve('FAILED')
+                resolve('FAILED');
+                return;
             }
+
+            for (let i = 0; i < this.courses.length; i++) {
+                await Moodle.updateCourseUsers(this.courses[i]);
+            }
+
+            resolve("Done")
         });
     }
 
