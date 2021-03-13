@@ -92,7 +92,7 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows: any[];
-                rows = await conn.query("SELECT * FROM users LEFT JOIN user_moodleaccounts ON users.id_users = user_moodleaccounts.userid WHERE `username`= ?", [username]);
+                rows = await conn.query("SELECT * FROM users WHERE `username`= ?", [username]);
                 if (rows.length > 0) {
                     global.logger.log({
                         level: 'silly',
@@ -141,7 +141,7 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows: any[];
-                rows = await conn.query("SELECT * FROM users LEFT JOIN user_moodleaccounts ON users.id_users = user_moodleaccounts.userid WHERE id_users= ?", [id]);
+                rows = await conn.query("SELECT * FROM users WHERE id_users= ?", [id]);
                 if (rows.length > 0) {
                     let loadedUser = await User.fromSqlUser(rows[0]);
                     await loadedUser.populateUser();
@@ -169,7 +169,7 @@ export class User {
      */
     static async fromSqlUser(sql: any): Promise<User> {
         return new Promise(async (resolve, eject) => {
-            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["id_users"], parseInt(sql["type"]), [], sql["active"], [], sql["twoFactor"], null, sql["moodleid"]))
+            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["id_users"], parseInt(sql["type"]), [], sql["active"], [], sql["twoFactor"], null, sql["moodleId"]))
         });
     }
 
@@ -272,12 +272,18 @@ export class User {
      * Returns all users with the given type
      * @param type
      */
-    static getUsersByType(type: UserType) {
+    static getUsersByType(type: UserType):Promise<User[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM users WHERE `type`= ? ", [type]);
-                resolve(rows);
+                let users: User[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    let user = await User.fromSqlUser(rows[i]);
+                    await user.populateUser();
+                    users.push(user)
+                }
+                resolve(users);
             } catch (e) {
                 reject(e);
             } finally {
@@ -638,7 +644,6 @@ export class User {
         return new Promise(async (resolve, reject) => {
             if(this.moodleUID != null){
                 resolve("ARS");
-                console.log("ARS")
                 return;
             }
             let failed = false;
