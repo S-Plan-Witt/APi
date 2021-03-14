@@ -169,7 +169,7 @@ export class Starter {
                     produces: [
                         "application/json"
                     ],
-                    schemes: ['http', 'https'],
+                    schemes: ['https'],
                     securityDefinitions: {
                         JWT: {
                             type: 'apiKey',
