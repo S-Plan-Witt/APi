@@ -34,7 +34,6 @@ router.use("/user", require('./userRouter').router);
 router.use("/users", require('./usersRouter').router);
 
 
-
 /*
 Models for Swagger documentation
  */
@@ -45,7 +44,54 @@ Models for Swagger documentation
  * @property {string} grade.required
  * @property {string} subject.required
  * @property {string} group.required
+ * @property {string} teacherId.required
  */
+
+/**
+ * @typedef CourseSearch
+ * @property {string} teacher
+ * @property {number} weekday
+ * @property {number} lesson
+ */
+
+/**
+ * @typedef Announcement
+ * @property {number} id
+ */
+
+
+/**
+ * @typedef RoomLink
+ * @property {string} date.required
+ * @property {string} from.required
+ * @property {string} to.required
+ * @property {string} room.required
+ * @property {number} id
+ */
+
+/**
+ * @typedef Exam
+ * @property {number} id
+ * @property {Course.model} course
+ * @property {string} date
+ * @property {string} from
+ * @property {string} to
+ * @property {string} teacher
+ * @property {string} uniqueIdentifier
+ * @property {RoomLink.model} roomLink
+ */
+
+/**
+ * @typedef ReplacementLesson
+ * @property {Course.model} course
+ * @property {string} teacher
+ * @property {number} lessonId
+ * @property {string} room
+ * @property {string} subject
+ * @property {string} info
+ * @property {string} date
+ */
+
 
 /**
  * @typedef LoginRequest
@@ -56,7 +102,7 @@ Models for Swagger documentation
 /**
  * @typedef LoginResponse
  * @property {string} token.required
- * @property {UserType} userType.required
+ * @property {number} userType.required
  */
 
 /**
@@ -104,4 +150,13 @@ Models for Swagger documentation
  * @property {number} secondFactor
  * @property {Permissions.model} permissions
  * @property {number} moodleUID
+ */
+
+/**
+ * @typedef Lesson
+ * @property {number} id
+ * @property {Course.model} course
+ * @property {number} lessonNumber
+ * @property {number} day
+ * @property {string} room
  */

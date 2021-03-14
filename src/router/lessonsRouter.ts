@@ -26,27 +26,25 @@ router.use((req, res, next) => {
     return res.sendStatus(401);
 });
 
-//TODO swagger
 /**
  * Returns all available lessons
  * @route GET /lessons
  * @group Lessons
  * @returns {Array.<Lesson>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/', async (req, res) => {
     res.json(await Lesson.getAll());
 });
 
-//TODO swagger
 /**
  * Adds Lessons
  * @route POST /lessons
  * @group Lessons
  * @param {Lesson.model} Lesson.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/', async (req, res) => {

@@ -16,35 +16,16 @@ declare const global: ApiGlobal;
 
 export let router = express.Router();
 
-//TODO swagger
-
-router.get('/', async (req, res) => {
-
-    try {
-        let endpoints:TOTP[] = await TOTP.getByUID(req.user.id);
-        for (let i = 0; i < endpoints.length; i++) {
-            endpoints[i].privateKey = "###"
-        }
-        res.json(endpoints)
-    } catch (e) {
-        console.log(e);
-        res.sendStatus(500);
-    }
-
-});
-
 /**
  * Submits a new totp key for secondFactor auth
- * @route POST /user/auth/totp
- * @group User - Operations about logged in user
+ * @route GET /user/totp/register
+ * @group User
  * @consumes application/json
- * @param {TotpAddRequest.model} TotpAddRequest.body.require
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/register', async (req, res) => {
-
     try {
         let endpoint: TOTP = await TOTP.new(req.user);
         await endpoint.save();
@@ -57,16 +38,16 @@ router.get('/register', async (req, res) => {
 
 /**
  * Submits a new totp key for secondFactor auth
- * @route POST /user/auth/totp
- * @group User - Operations about logged in user
+ * @route POST /user/totp/register
+ * @group User
  * @consumes application/json
- * @param {TotpAddRequest.model} TotpAddRequest.body.require
+ * @param {ValidationRequest.model} TotpAddRequest.body.require
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/register', async (req, res) => {
-    if (req.body.hasOwnProperty("password") && req.body.hasOwnProperty("key")) {
+    if (req.body.hasOwnProperty("code") && req.body.hasOwnProperty("requestId")) {
         let user;
         let tokenId;
         try {
@@ -99,41 +80,15 @@ router.post('/register', async (req, res) => {
 });
 
 /**
- * Verifies the given key with the correct totp code
- * @route POST /user/auth/totp/verify
- * @group User - Operations about logged in user
- * @consumes application/json
- * @param {TotpVerifyRequest.model} TotpVerifyRequest.body.require
- * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
- * @security JWT
- */
-router.post('/auth/totp/verify', async (req, res) => {
-    if (req.body.hasOwnProperty("keyId") && req.body.hasOwnProperty("code")) {
-        try {
-            let keyId = req.body["keyId"];
-            let code = req.body["code"];
-            // await Totp.verifyKey(keyId, code);
-            await res.sendStatus(200);
-        } catch (e) {
-            console.log(e);
-            await res.json({err: e})
-        }
-    } else {
-        res.json({"err": "Invalid Parameters", body: req.body});
-    }
-});
-
-/**
- * Deletes the totp device specified by id
- * @route DELETE /user/auth/totp/id/{id}
- * @group User - Operations about logged in user
+ * Deletes the totp device
+ * @route DELETE /user/totp
+ * @group User
  * @consumes application/json
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
-router.delete('/auth/totp/id/:id', async (req, res) => {
+router.delete('/', async (req, res) => {
     try {
         if (req.user.id != null) {
             // await Totp.removeById(parseInt(req.params.id), req.user.id);
@@ -144,3 +99,10 @@ router.delete('/auth/totp/id/:id', async (req, res) => {
         res.json({"err": e});
     }
 });
+
+class TOTPDevice {
+    requestId: string = ""
+    totp_key:string = ""
+    user_id: number = -1;
+    added: string = "";
+}

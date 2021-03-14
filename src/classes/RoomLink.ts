@@ -13,14 +13,7 @@ import path from "path";
 
 declare const global: ApiGlobal;
 
-/**
- * @typedef RoomLink
- * @property {string} date.required
- * @property {string} from.required
- * @property {string} to.required
- * @property {string} room.required
- * @property {number} id
- */
+
 export class RoomLink {
     public room: string;
     public from: string;

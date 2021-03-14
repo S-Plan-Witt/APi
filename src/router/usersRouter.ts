@@ -45,7 +45,7 @@ router.use((req, res, next) => {
  * @route GET /users/
  * @group Users
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/', async (req: Request, res: Response) => {
@@ -68,7 +68,7 @@ router.get('/', async (req: Request, res: Response) => {
  * @route GET /users/type/{type}
  * @group Users
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/type/:type', async (req: Request, res: Response) => {
@@ -92,7 +92,7 @@ router.get('/type/:type', async (req: Request, res: Response) => {
  * @route GET /users/username/{username}
  * @group Users
  * @returns {User.model} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/username/:username', async (req: Request, res: Response) => {
@@ -114,8 +114,8 @@ router.get('/username/:username', async (req: Request, res: Response) => {
  * Returns user specified by id
  * @route GET /users/id/{id}
  * @group Users
- * @returns {User.model} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {User.model} 200
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/id/:id', async (req: Request, res: Response) => {
@@ -139,7 +139,7 @@ router.get('/id/:id', async (req: Request, res: Response) => {
  * @group Users
  * @param {UserFilter.model} UserFilter.body.required
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/find', async (req: Request, res: Response) => {
@@ -180,7 +180,7 @@ router.post('/find', async (req: Request, res: Response) => {
  * @group Users
  * @param {Array.<Course>} Course.body
  * @returns {object} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/username/:username/courses', async (req: Request, res: Response) => {
@@ -248,11 +248,11 @@ router.post('/username/:username/courses', async (req: Request, res: Response) =
 });
 
 /**
- * Loads all teachers from AD Server
+ * Loads all teachers from AD Server -- FOR TESTING ONLY
  * @route GET /users/reload/teacher/
  * @group Users
  * @returns {object} 200 - OK
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/reload/teachers', async (req: Request, res: Response) => {
@@ -283,11 +283,11 @@ router.get('/reload/teachers', async (req: Request, res: Response) => {
 });
 
 /**
- * Loads all students from AD Server
+ * Loads all students from AD Server -- FOR TESTING ONLY
  * @route GET /users/reload/students
  * @group Users
  * @returns {object} 200 - OK
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/reload/students', async (req: Request, res: Response) => {
