@@ -410,6 +410,26 @@ export class User {
         });
     }
 
+    setSecondFactor(isActive: boolean): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("UPDATE users SET twoFactor = ? WHERE id_users = ?", [isActive, this.id]);
+                resolve();
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'TOTP',
+                    message: 'User second factor status change failed: ' + JSON.stringify(this) + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
     /**
      * Loads complete profile
      */

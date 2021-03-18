@@ -17,15 +17,25 @@ declare const global: ApiGlobal;
 export let router = express.Router();
 
 /**
- * Submits a new totp key for secondFactor auth
+ * Returns a new totp key for secondFactor auth
  * @route GET /user/totp/register
  * @group User
  * @consumes application/json
  * @returns {object} 200 - Success
  * @returns {Error} 401 - Bearer invalid
+ * @returns {Error} 423 - Request locked; already obtained
  * @security JWT
  */
 router.get('/register', async (req, res) => {
+    try {
+        await TOTP.getByUID(req.user.id);
+        res.status(423);
+        res.send("Already obtained");
+        return;
+    }catch (e) {
+    }
+
+
     try {
         let endpoint: TOTP = await TOTP.new(req.user);
         await endpoint.save();
@@ -33,6 +43,34 @@ router.get('/register', async (req, res) => {
         res.json(endpoint.regData)
     } catch (e) {
         res.sendStatus(500);
+    }
+});
+
+/**
+ * Terminates a active registration phase
+ * @route GET /user/totp/abort
+ * @group User
+ * @consumes application/json
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Bearer invalid
+ * @returns {Error} 423 - Request locked; no registration phase active
+ * @security JWT
+ */
+router.get('/abort', async (req, res) => {
+    try {
+        let registration = await TOTP.getByUID(req.user.id);
+        console.log(registration)
+        if(!registration.verified){
+            registration.delete();
+            res.sendStatus(200);
+        }else {
+            res.status(423);
+            res.send("Not active");
+        }
+    }catch (e) {
+        res.status(423);
+        res.send("Not active");
+        return;
     }
 });
 
@@ -47,9 +85,8 @@ router.get('/register', async (req, res) => {
  * @security JWT
  */
 router.post('/register', async (req, res) => {
-    if (req.body.hasOwnProperty("code") && req.body.hasOwnProperty("requestId")) {
+    if (req.body.hasOwnProperty("code")) {
         let user;
-        let tokenId;
         try {
             user = req.user;
         } catch (e) {
@@ -58,22 +95,28 @@ router.post('/register', async (req, res) => {
         }
         try {
             await user.verifyPassword(req.body["password"]);
-
         } catch (e) {
             res.json({"error": "Invalid Password"});
             return;
         }
-
+        let registration
         try {
-            let key = req.body["key"];
-            let alias = req.body["alias"];
-            if (user.id != null) {
-                //tokenId = await Totp.saveTokenForUser(key, user.id, alias)
-            }
+            registration = await TOTP.getByUID(req.user.id);
         } catch (e) {
-
+            res.status(423);
+            res.send("Not active");
+            return;
         }
-        res.json(tokenId)
+        try {
+            await registration.validateCode(req.body.code);
+            await registration.setVerified(true);
+            await req.user.setSecondFactor(true);
+        }catch (e) {
+            res.sendStatus(401);
+            return;
+        }
+
+        res.sendStatus(200);
     } else {
         res.json({"err": "Invalid Parameters"});
     }

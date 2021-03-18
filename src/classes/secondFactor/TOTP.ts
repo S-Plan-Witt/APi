@@ -50,24 +50,25 @@ export class TOTP implements SecondFactor {
         });
     }
 
-    static getByUID(id: number): Promise<TOTP[]> {
+    static getByUID(id: number): Promise<TOTP> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let result = await conn.query("SELECT * FROM user_secondfactor WHERE type=0 AND user_id=?", [id]);
-                let totps: TOTP[] = [];
-                for (let i = 0; i < result.length; i++) {
-                    let entity = result[i];
-                    console.log(entity)
+                if (result.length == 1) {
+                    let entity = result[0];
                     let totp = new TOTP(entity.id_secondfactor, entity.totp_key, id);
-                    totps.push(totp);
+                    totp.verified = entity.verified;
+                    resolve(totp);
+                } else {
+                    reject("not found")
                 }
                 resolve(totps);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'TOTP',
-                    message: 'TOTP Save failed: ' + JSON.stringify(this) + " Err: " + JSON.stringify(e),
+                    message: 'TOTP load failed: ' + JSON.stringify(this) + " Err: " + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
                 reject(e);
@@ -75,6 +76,42 @@ export class TOTP implements SecondFactor {
                 await conn.end();
             }
 
+        });
+    }
+
+    setVerified(isVerified: boolean) {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("UPDATE splan.user_secondfactor t SET t.verified = ? WHERE t.id_secondfactor = ?", [isVerified, this.id]);
+                this.verified = isVerified;
+                resolve(this);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'TOTP',
+                    message: 'TOTP verify failed: ' + JSON.stringify(this) + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    validateCode(code: string) {
+        return new Promise(async (resolve, reject) => {
+            let result = twofactor.verifyToken(this.privateKey, code)
+            if (result == null) {
+                reject("Invalid code");
+            } else {
+                if (result.delta < 3 && result.delta > -3) {
+                    resolve("");
+                } else {
+                    reject("Invalid code")
+                }
+            }
         });
     }
 
@@ -111,7 +148,23 @@ export class TOTP implements SecondFactor {
         });
     }
 
-    delete() {
-
+    delete(): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("DELETE FROM user_secondfactor WHERE id_secondfactor=?", [this.id]);
+                resolve();
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'TOTP',
+                    message: 'TOTP delete failed: ' + JSON.stringify(this) + " Err: " + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
     }
 }

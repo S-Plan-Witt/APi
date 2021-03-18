@@ -17,11 +17,11 @@ import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Exam} from "../classes/Exam";
 import {Announcement} from "../classes/Announcement";
-import {Supervisor} from "../classes/user/Supervisor";
 import path from "path";
 import {Device} from "../classes/Device";
 import {Course} from "../classes/Course";
 import {Lesson} from "../classes/Lesson";
+import {TOTP} from "../classes/secondFactor/TOTP";
 
 declare const global: ApiGlobal;
 
@@ -97,7 +97,7 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        assert(user.status == UserStatus.ENABLED,"User not enabled");
+        assert(user.status == UserStatus.ENABLED, "User not enabled");
         try {
             await user.verifyPassword(password);
         } catch (e) {
@@ -105,12 +105,11 @@ router.post('/login', async (req, res) => {
             return;
         }
         if (user.secondFactor === 1) {
-            if (req.body.hasOwnProperty("secondFactor")) {
-                let code = req.body["secondFactor"];
+            if (req.body.hasOwnProperty("code")) {
                 try {
-                    if (user.id != null) {
-                        //await Totp.verifyUserCode(code, user.id);
-                    }
+                    let registration = await TOTP.getByUID(user.id);
+                    await registration.validateCode(req.body.code);
+
                 } catch (e) {
                     res.sendStatus(401);
                     global.logger.log({
@@ -207,7 +206,7 @@ router.get('/lessons', async (req, res) => {
         let courses = req.user.courses;
         if (courses != null) {
             for (let coursePrototype of courses) {
-                let course = await Course.getByFields(coursePrototype.subject,coursePrototype.grade,coursePrototype.group);
+                let course = await Course.getByFields(coursePrototype.subject, coursePrototype.grade, coursePrototype.group);
                 try {
                     //Get lesson for course as array
                     let lessons: any = await course.getLessons();
@@ -273,7 +272,7 @@ router.get('/replacementlessons', async (req, res) => {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: 'Routing: /user/replacementlessons : rej (503)(' + req.user.type+ ')',
+                message: 'Routing: /user/replacementlessons : rej (503)(' + req.user.type + ')',
                 file: path.basename(__filename)
             });
 
