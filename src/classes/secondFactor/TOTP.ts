@@ -63,7 +63,6 @@ export class TOTP implements SecondFactor {
                 } else {
                     reject("not found")
                 }
-                resolve(totps);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
