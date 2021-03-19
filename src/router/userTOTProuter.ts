@@ -32,7 +32,7 @@ router.get('/register', async (req, res) => {
         res.status(423);
         res.send("Already obtained");
         return;
-    }catch (e) {
+    } catch (e) {
     }
 
 
@@ -60,14 +60,14 @@ router.get('/abort', async (req, res) => {
     try {
         let registration = await TOTP.getByUID(req.user.id);
         console.log(registration)
-        if(!registration.verified){
+        if (!registration.verified) {
             registration.delete();
             res.sendStatus(200);
-        }else {
+        } else {
             res.status(423);
             res.send("Not active");
         }
-    }catch (e) {
+    } catch (e) {
         res.status(423);
         res.send("Not active");
         return;
@@ -111,7 +111,7 @@ router.post('/register', async (req, res) => {
             await registration.validateCode(req.body.code);
             await registration.setVerified(true);
             await req.user.setSecondFactor(true);
-        }catch (e) {
+        } catch (e) {
             res.sendStatus(401);
             return;
         }
@@ -123,7 +123,7 @@ router.post('/register', async (req, res) => {
 });
 
 /**
- * Deletes the totp device
+ * Disables and removes the totp
  * @route DELETE /user/totp
  * @group User
  * @consumes application/json
@@ -133,10 +133,18 @@ router.post('/register', async (req, res) => {
  */
 router.delete('/', async (req, res) => {
     try {
-        if (req.user.id != null) {
-            // await Totp.removeById(parseInt(req.params.id), req.user.id);
+        if (req.user.secondFactor) {
+            let registration = await TOTP.getByUID(req.user.id);
+
+            await registration.validateCode(req.params.code);
+
+            await req.user.setSecondFactor(false);
+
+            await registration.delete();
+            res.sendStatus(200)
         }
-        res.sendStatus(200)
+
+
     } catch (e) {
         console.log(e);
         res.json({"err": e});
@@ -145,7 +153,7 @@ router.delete('/', async (req, res) => {
 
 class TOTPDevice {
     requestId: string = ""
-    totp_key:string = ""
+    totp_key: string = ""
     user_id: number = -1;
     added: string = "";
 }
