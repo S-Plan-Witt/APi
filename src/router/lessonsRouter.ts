@@ -65,6 +65,10 @@ router.post('/', async (req, res) => {
             if (course === undefined) {
                 let teacherId: number | null = null;
                 try {
+                    let teacherName: string = lessonDataSet["teacher"];
+                    teacherName = teacherName.replace("ä","ae");
+                    teacherName = teacherName.replace("ö","oe");
+                    teacherName = teacherName.replace("ü","ue");
                     let teacher: User = await User.getByUsername(lessonDataSet["teacher"]);
                     teacherId = teacher.id;
                 } catch (e) {
