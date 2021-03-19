@@ -389,12 +389,6 @@ export class User {
                 } else if (this.type == UserType.TEACHER) {
                     resolve(await Course.getByTeacherId(this.id))
                 }
-                global.logger.log({
-                    level: 'silly',
-                    label: 'User',
-                    message: 'Class: User; Function: getCourses: loaded',
-                    file: path.basename(__filename)
-                });
                 resolve(courses);
             } catch (e) {
                 global.logger.log({

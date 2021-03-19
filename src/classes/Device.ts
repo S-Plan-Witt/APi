@@ -93,12 +93,6 @@ export class Device {
                         devices.push(new Device(row.platform, parseInt(row.id_devices), row.userId, row.added, row.deviceIdentifier));
                     }
                 });
-                global.logger.log({
-                    level: 'silly',
-                    label: 'User',
-                    message: 'Class: Device; Function: getByUID: loaded',
-                    file: path.basename(__filename)
-                });
                 resolve(devices);
             } catch (e) {
                 global.logger.log({

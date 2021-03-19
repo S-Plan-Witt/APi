@@ -14,6 +14,7 @@ import express, {Request, Response} from "express";
 import {Course} from "../classes/Course";
 import {TimeTable} from "../classes/TimeTable";
 import path from "path";
+import {Moodle} from "../classes/Moodle";
 
 declare const global: ApiGlobal;
 
@@ -118,6 +119,23 @@ router.delete('/id/:id', async (req, res) => {
     try {
         let course = await Course.getById(parseInt(req.params.id));
         await course.delete();
+        res.sendStatus(200);
+    } catch (e) {
+        res.sendStatus(500);
+    }
+});
+
+/**
+ * Triggers a sync of all courses with moodle
+ * @route GET /courses/moodle/sync
+ * @group Courses
+ * @returns {Object} 200- Success
+ * @returns {Error} 401 - Wrong Credentials
+ * @security JWT
+ */
+router.get('/moodle/sync', async (req, res) => {
+    try {
+        await Moodle.sync();
         res.sendStatus(200);
     } catch (e) {
         res.sendStatus(500);

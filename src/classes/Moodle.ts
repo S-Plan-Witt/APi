@@ -39,7 +39,6 @@ export class Moodle {
                     try {
                         res = JSON.parse(body.toString())
                     } catch (e) {
-                        console.log(body.toString())
                     }
                     resolve(res);
                 });
@@ -54,18 +53,28 @@ export class Moodle {
         });
     }
 
+    static sync(): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            let courses = await Course.getAll();
+            for (const coursesKey in courses) {
+                let course = courses[coursesKey];
+                await Moodle.createCourse(course);
+                await Moodle.updateCourseUsers(course);
+                resolve();
+            }
+        })
+    }
+
     static createUser(user: User): Promise<MoodleCreateResponse> {
         return new Promise(async (resolve, reject) => {
             let params = `users[0][username]=${user.username}&users[0][auth]=ldap&users[0][firstname]=${encodeURI(user.firstName)}&users[0][lastname]=${encodeURI(user.lastName)}&users[0][email]=${user.username}@netman.lokal`
-            console.log(params)
             let res: MoodleResponse = <any>await this.apiRequest(MoodleFunctions.CREATE_USER, params);
-            console.log(res)
             if (!res.exception) {
                 let mUser: MoodleCreateResponse = (<any>res)[0];
                 try {
                     await this.saveMapping(user.id, mUser.id)
                 } catch (e) {
-                    console.log(e);
+                    reject("Error: " + e);
                 }
 
                 resolve(mUser);
@@ -154,9 +163,6 @@ export class Moodle {
     static updateCourseUsers(course: Course) {
         return new Promise(async (resolve, reject) => {
             let mUsers: MoodleUser[] = <any>await Moodle.getCourseUsers(course);
-            for (let i = 0; i < mUsers.length; i++) {
-                console.log(mUsers[i].username)
-            }
             let localUsers = await course.getUsers();
 
             for (let i = 0; i < mUsers.length; i++) {
@@ -168,8 +174,7 @@ export class Moodle {
                     }
                 }
                 if (!found) {
-                    console.log("DELETE ----> Moodle: " + user.username);
-                   await this.unEnrolUser(course,user.id);
+                    await this.unEnrolUser(course, user.id);
                 }
             }
 
@@ -182,7 +187,6 @@ export class Moodle {
                     }
                 }
                 if (!found) {
-                    console.log("UPDATE ----> Moodle: " + user.username);
                     let userType = MoodleRoles.STUDENT;
                     if (user.type == UserType.TEACHER) {
                         userType = MoodleRoles.TEACHER;
@@ -227,7 +231,6 @@ export class Moodle {
         return new Promise(async (resolve, reject) => {
             if (user.moodleUID == null || course.moodleId == null) {
                 resolve("NV");
-                console.log("SN")
                 return;
             }
             let params = `enrolments[0][roleid]=${role}&enrolments[0][userid]=${user.moodleUID}&enrolments[0][courseid]=${course.moodleId}`
@@ -245,7 +248,6 @@ export class Moodle {
         return new Promise(async (resolve, reject) => {
             if (moodleUserId == null || course.moodleId == null) {
                 resolve("NV");
-                console.log("SN")
                 return;
             }
             let params = `enrolments[0][userid]=${moodleUserId}&enrolments[0][courseid]=${course.moodleId}`
