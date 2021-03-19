@@ -405,6 +405,27 @@ router.get('/devices', async (req, res) => {
     }
 });
 
+
+/**
+ * Sends a test message to all devices
+ * @route GET /user/devices/test
+ * @group User
+ * @consumes application/json
+ * @returns {Object} 200
+ * @returns {Error} 401 - Bearer invalid
+ * @security JWT
+ */
+router.get('/devices/test', async (req, res) => {
+    try {
+        let devices = req.user.devices;
+        await global.pushNotifications.sendBulk(devices, "TEST", "Test message")
+        res.sendStatus(200);
+    } catch (e) {
+        console.log(e);
+        res.sendStatus(500);
+    }
+});
+
 /**
  * Adds a new device to the user
  * @route POST /user/devices
