@@ -18,10 +18,11 @@ import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Exam} from "../classes/Exam";
 import {Announcement} from "../classes/Announcement";
 import path from "path";
-import {Device} from "../classes/Device";
+import {Device, DeviceType} from "../classes/Device";
 import {Course} from "../classes/Course";
 import {Lesson} from "../classes/Lesson";
 import {TOTP} from "../classes/secondFactor/TOTP";
+import {Telegram} from "../classes/external/Telegram";
 
 declare const global: ApiGlobal;
 
@@ -437,10 +438,25 @@ router.get('/devices/test', async (req, res) => {
  */
 router.post('/devices', async (req: Request, res: Response) => {
     let deviceIdentifier = req.body.deviceIdentifier;
+    let requestId = req.body.requestId;
     let platform = req.body.platform;
 
     try {
-        let device = new Device(parseInt(platform), null, req.user.id, Date.now().toString(), deviceIdentifier);
+        let device: Device;
+        if (platform === DeviceType.TELEGRAM) {
+            let telegramId: number;
+            try {
+                telegramId = await Telegram.validateRequestToken(requestId);
+                await Telegram.revokeRequest(requestId);
+            } catch (e) {
+                res.sendStatus(500);
+                return;
+            }
+            device = new Device(DeviceType.TELEGRAM, null, req.user.id, Date.now().toString(), telegramId.toString());
+        } else {
+            device = new Device(parseInt(platform), null, req.user.id, Date.now().toString(), deviceIdentifier);
+        }
+
         if (await device.save()) {
             res.sendStatus(200);
         } else {
