@@ -8,7 +8,6 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
 import {Starter} from "./startEnviroment";
 
 (async () => {
@@ -19,35 +18,3 @@ import {Starter} from "./startEnviroment";
         process.exit(1);
     }
 })();
-
-
-
-
-//TODO move to router
-/*
-app.get('/telegram/confirm/:token', async (req: Request, res: Response) => {
-    let token = req.params.token;
-
-    let tgId: number = 0;
-
-    try {
-        tgId = await Telegram.validateRequestToken(token);
-    } catch (e) {
-        res.sendStatus(200);
-        return;
-    }
-
-    try {
-        let device = new Device(DeviceType.TELEGRAM, null, req.user.id, "", tgId.toString())
-        await req.user.addDevice(device);
-        await Telegram.revokeRequest(token);
-        if (global.pushNotifications.pushTelegram) {
-            await global.pushNotifications.pushTelegram.sendPush(tgId, "Connected to user " + req.user.username);
-        }
-        res.sendStatus(200);
-    } catch (e) {
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
-*/

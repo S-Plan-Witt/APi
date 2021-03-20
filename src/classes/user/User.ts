@@ -11,7 +11,7 @@
 import {Ldap} from '../external/Ldap';
 import {JWTInterface} from '../JWTInterface';
 import {ApiGlobal} from "../../types/global";
-import {Moodle} from "../Moodle";
+import {Moodle, MoodleUser} from "../Moodle";
 import {Device, DeviceType} from "../Device";
 import {Permissions} from "../Permissions";
 import {Student} from "./Student";
@@ -141,7 +141,7 @@ export class User {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows: any[];
-                rows = await conn.query("SELECT * FROM users LEFT JOIN user_moodleaccounts ON users.id_users = user_moodleaccounts.userid WHERE id_users= ?", [id]);
+                rows = await conn.query("SELECT * FROM users WHERE id_users= ?", [id]);
                 if (rows.length > 0) {
                     let loadedUser = await User.fromSqlUser(rows[0]);
                     await loadedUser.populateUser();
@@ -169,7 +169,7 @@ export class User {
      */
     static async fromSqlUser(sql: any): Promise<User> {
         return new Promise(async (resolve, eject) => {
-            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["id_users"], parseInt(sql["type"]), [], sql["active"], [], sql["twoFactor"], null, sql["moodleid"]))
+            resolve(new User(sql["firstname"], sql["lastname"], sql["displayname"], sql["username"], sql["id_users"], parseInt(sql["type"]), [], sql["active"], [], sql["twoFactor"], null, sql["moodleId"]))
         });
     }
 
@@ -272,12 +272,18 @@ export class User {
      * Returns all users with the given type
      * @param type
      */
-    static getUsersByType(type: any) {
+    static getUsersByType(type: UserType): Promise<User[]> {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM users WHERE `type`= ? ", [type]);
-                resolve(rows);
+                let users: User[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    let user = await User.fromSqlUser(rows[i]);
+                    await user.populateUser();
+                    users.push(user)
+                }
+                resolve(users);
             } catch (e) {
                 reject(e);
             } finally {
@@ -383,18 +389,32 @@ export class User {
                 } else if (this.type == UserType.TEACHER) {
                     resolve(await Course.getByTeacherId(this.id))
                 }
-                global.logger.log({
-                    level: 'silly',
-                    label: 'User',
-                    message: 'Class: User; Function: getCourses: loaded',
-                    file: path.basename(__filename)
-                });
                 resolve(courses);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: User; Function: getCourses: ' + JSON.stringify(e),
+                    message: 'Class: User; Function: getCourses(' + this.id + '): ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    setSecondFactor(isActive: boolean): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("UPDATE users SET twoFactor = ? WHERE id_users = ?", [isActive, this.id]);
+                resolve();
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'TOTP',
+                    message: 'User second factor status change failed: ' + JSON.stringify(this) + " Err: " + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
                 reject(e);
@@ -632,57 +652,62 @@ export class User {
     }
 
     /**
-     * Planned feature
+     * Creates / Enables the moodle user account.
      */
-    enableMoodleAccount() {
-        let uid = this.id;
-        let username: string = this.username;
-        let firstname: string = this.firstName;
-        let lastname: string = this.lastName;
-        let mail: string = this.username + "@netman.lokal";
+    enableMoodle() {
         return new Promise(async (resolve, reject) => {
-            let muid = null;
-            try {
-                muid = await Moodle.createUser(username, firstname, lastname, mail);
-            } catch (e) {
-                reject(e);
+            if (this.moodleUID != null) {
+                resolve("ARS");
+                return;
             }
-            if (muid != null) {
-                let conn;
+            try {
+                await Moodle.createUser(this);
+                console.log("Created");
+            } catch (e) {
+            }
+
+            let mUsers: MoodleUser[] = <any>await Moodle.find(this.username);
+            if (mUsers.length > 0) {
                 try {
-                    conn = await global.mySQLPool.getConnection();
-                    let result = await conn.query("INSERT INTO `user_moodleaccounts` (`userid`, `moodleid`) VALUES (?, ?);", [uid, muid]);
-                    resolve(muid);
+                    await Moodle.saveMapping(this.id, mUsers[0].id);
                 } catch (e) {
-                    console.log(e);
-                } finally {
-                    await conn.end();
+                    reject("Association failed");
+                    return;
+                }
+            } else {
+                resolve('FAILED');
+                return;
+            }
+
+            for (let i = 0; i < this.courses.length; i++) {
+                console.log("Course: " + this.courses[i].id + "; " + this.courses[i].moodleId);
+                try {
+                    if (this.courses[i].moodleId != null) {
+                        await Moodle.updateCourseUsers(this.courses[i]);
+                    }
+
+                } catch (e) {
+                    console.log(e)
                 }
             }
+
+            resolve("Done")
         });
     }
 
     /**
-     * Planned feature
+     * Disables the moodle user account
      */
-    disableMoodleAccount() {
-        let mUID: number | null = this.moodleUID;
-        let uid: number | null = this.id;
+    disableMoodle() {
         return new Promise(async (resolve, reject) => {
-            if (mUID != null) {
-                let conn;
-                try {
-                    await Moodle.deleteUserById(mUID);
-
-                    conn = await global.mySQLPool.getConnection();
-                    let result = await conn.query("DELETE FROM `user_moodleaccounts` WHERE `userid` = ?", [uid]);
-                    await conn.end();
-                    resolve(mUID);
-                } catch (e) {
-                    console.log(e);
+            try {
+                if (this.moodleUID != null) {
+                    await Moodle.delete(this.moodleUID);
+                    console.log("Deleted");
                 }
-            } else {
-                console.log("NO account");
+                resolve("Done")
+            } catch (e) {
+                reject(e);
             }
         });
     }

@@ -34,7 +34,6 @@ export class Starter {
                 await this.externalServers();
                 this.express();
                 this.pushNotifications();
-                this.swagger();
                 this.globalExceptionHandler();
                 console.log("Starter: FULL END");
             } catch (e) {
@@ -141,8 +140,12 @@ export class Starter {
      */
     static express() {
         console.log("Starter: EXPRESS BEGIN");
+        ExpressServer.init();
+        console.log("Starter: EXPRESS INIT DONE");
+        this.swagger();
+        console.log("Starter: EXPRESS swagger DONE");
         ExpressServer.launch();
-        console.log("Starter: LDAP END");
+        console.log("Starter: EXPRESS END");
     }
 
     /**
@@ -153,20 +156,20 @@ export class Starter {
         if (global.config.webServerConfig.apiDocumentation) {
 
             const expressSwagger = require('express-swagger-generator')(global.express.expressApp);
-
             let options = {
                 swaggerDefinition: {
                     info: {
                         description: 'S-Plan',
                         title: 'S-Plan',
-                        version: '1.0.2',
+                        version: '2.0.0',
+                        author: "Nils Witt"
                     },
                     host: 'localhost:3000',
                     basePath: '',
                     produces: [
                         "application/json"
                     ],
-                    schemes: ['http', 'https'],
+                    schemes: ['https'],
                     securityDefinitions: {
                         JWT: {
                             type: 'apiKey',
@@ -176,14 +179,14 @@ export class Starter {
                         }
                     }
                 },
-                basedir: __dirname, //app absolute path
-                files: ['./router/*.js'] //Path to the API handle folder
+                basedir: __dirname,
+                files: ['./router/*.js']
             };
             expressSwagger(options)
             global.logger.log({
                 level: 'debug',
                 label: 'Api-docs',
-                message: 'Api documentation available at http://' + global.config.webServerConfig.url + ':' + global.config.webServerConfig.port + '/api-docs/'
+                message: 'Api documentation available at ' + global.config.webServerConfig.url + ':' + global.config.webServerConfig.port + '/api-docs/'
             });
         }
         console.log("Starter: SWAGGER END");
