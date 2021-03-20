@@ -155,7 +155,7 @@ export class Course {
 
     save(): Promise<Course> {
         return new Promise(async (resolve, reject) => {
-            let conn;
+            let conn = await global.mySQLPool.getConnection();
             try {
                 let result = await conn.query("INSERT INTO `courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);", [this.grade, this.subject, this.group, this.teacherId]);
                 this.id = result.insertId;
@@ -195,23 +195,30 @@ export class Course {
     }
 
     /**
-     * Returns a course with the given teacher id
-     * @param id
+     * Get all student devices associated with the given course
+     * @returns Promise {device}
      */
-    static getByTeacherId(id: number): Promise<Course[]> {
+    getStudentDevices() {
         return new Promise(async (resolve, reject) => {
-            let conn;
+            let conn = await global.mySQLPool.getConnection();
             try {
-                conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM courses WHERE (teacherId=?)", [id]);
-                let courses: Course[] = [];
-                for (let i = 0; i < rows.length; i++) {
-                    let row = rows[i];
-                    let course = new Course(row["grade"], row["subject"], row["group"], false, row["id_courses"], row["teacherId"]);
-                    courses.push(course);
-                }
-                resolve(courses);
+                let rows = await conn.query("SELECT user_student_courses.*, devices.* FROM user_student_courses LEFT JOIN devices ON user_student_courses.user_id = devices.userID WHERE (`courseId`=? )", [this.id]);
+
+                let devices: any = [];
+                rows.forEach((row: any) => {
+                    if (row.deviceIdentifier != null) {
+                        let device = new Device(row.platform, row.id_devices, row.userId, row.added, row.deviceIdentifier);
+                        devices.push(device);
+                    }
+                });
+                resolve(devices);
             } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getStudentDevicesByCourse: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                })
                 reject(e);
             } finally {
                 await conn.end();
@@ -224,33 +231,19 @@ export class Course {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let courses: Course[] = [];
-                let rows = await conn.query("SELECT * FROM courses ORDER BY grade, subject, `group`");
-                for (let i = 0; i < rows.length; i++) {
-                    let row = rows[i];
-                    courses.push(new Course(row.grade,row.subject,row.group,false,row.id_courses,row.teacherId))
-                }
-                resolve(courses);
+                let lessons: Lesson[] = [];
+                assert(this.id != null);
+                let rows = await conn.query("SELECT * FROM lessons WHERE courseId = ?", [this.id]);
+                rows.forEach((row: any) => {
+                    lessons.push(new Lesson(this, row["lesson"], row["weekday"], row["room"], row["id_lessons"]));
+                });
+                resolve(lessons);
             } catch (e) {
                 reject(e);
             } finally {
                 await conn.end();
             }
-        });
-    }
 
-    save(): Promise<Course> {
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let result = await conn.query("INSERT INTO `courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);", [this.grade, this.subject, this.group, this.teacherId]);
-                this.id = result.insertId;
-                resolve(this);
-            } catch (e) {
-                reject(e);
-            } finally {
-                await conn.end();
-            }
         });
     }
 
@@ -280,7 +273,6 @@ export class Course {
             } finally {
                 await conn.end();
             }
-
         });
     }
 }

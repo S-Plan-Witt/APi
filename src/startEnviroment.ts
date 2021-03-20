@@ -162,7 +162,7 @@ export class Starter {
                         description: 'S-Plan',
                         title: 'S-Plan',
                         version: '2.0.0',
-                        author: "Nils WItt"
+                        author: "Nils Witt"
                     },
                     host: 'localhost:3000',
                     basePath: '',
