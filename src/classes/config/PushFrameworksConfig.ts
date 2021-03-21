@@ -12,7 +12,6 @@ export class PushFrameworksConfig {
     public fcm: FcmConfig = new FcmConfig();
     public telegram: TelegramConfig = new TelegramConfig();
     public webPush: WebPushConfig = new WebPushConfig();
-    public sendGrid: SendGridConfig = new SendGridConfig();
 
 }
 
@@ -33,10 +32,4 @@ export class WebPushConfig {
     public vapid_public: string = "";
     public vapid_private: string = "";
     public vapid_subject: string = "";
-}
-
-export class SendGridConfig {
-    public enabled: boolean = false;
-    public host: string = "";
-    public key: string = "";
 }

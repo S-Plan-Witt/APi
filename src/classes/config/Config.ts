@@ -64,10 +64,6 @@ export class Config {
         if (typeof process.env.FCM == "string") if (process.env.FCM === "true") config.pushFrameWorks.fcm.enabled = true;
         if (typeof process.env.FCM_URL == "string") config.pushFrameWorks.fcm.host = process.env.FCM_URL;
         if (typeof process.env.FCM_CREDENTIALS == "string") config.pushFrameWorks.fcm.certPath = process.env.FCM_CREDENTIALS;
-        //SendGrid
-        if (typeof process.env.SENDGRID == "string") if (process.env.SENDGRID === "true") config.pushFrameWorks.sendGrid.enabled = true;
-        if (typeof process.env.SENDGRID_HOST == "string") config.pushFrameWorks.sendGrid.host = process.env.SENDGRID_HOST;
-        if (typeof process.env.SENDGRID_KEY == "string") config.pushFrameWorks.sendGrid.key = process.env.SENDGRID_KEY;
 
         //WebPush
         if (typeof process.env.WEBPUSH == "string") if (process.env.WEBPUSH === "true") config.pushFrameWorks.webPush.enabled = true;

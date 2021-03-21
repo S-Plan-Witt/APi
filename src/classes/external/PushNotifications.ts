@@ -15,7 +15,6 @@ import {PushFCM} from "./PushFCM";
 import {Telegraf} from "telegraf";
 import path from "path";
 import {Device, DeviceType} from "../Device";
-import {PushSendGrid} from "./PushSendGrid";
 
 declare const global: ApiGlobal;
 
@@ -24,7 +23,6 @@ export class PushNotifications {
     public pushTelegram: PushTelegram | undefined;
     public pushWebPush: PushWebPush | undefined;
     public pushFCM: PushFCM | undefined;
-    public pushSendGrid: PushSendGrid | undefined;
 
     constructor() {
         if (global.config.pushFrameWorks.fcm.enabled) {
@@ -35,9 +33,6 @@ export class PushNotifications {
         }
         if (global.config.pushFrameWorks.webPush.enabled) {
             this.pushWebPush = new PushWebPush();
-        }
-        if (global.config.pushFrameWorks.sendGrid.enabled) {
-            this.pushSendGrid = new PushSendGrid();
         }
     }
 
