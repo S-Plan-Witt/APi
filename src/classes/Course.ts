@@ -13,6 +13,9 @@ import path from "path";
 import {ApiGlobal} from "../types/global";
 import assert from "assert";
 import {Lesson} from "./Lesson";
+import {Exam} from "./Exam";
+import {User} from "./user/User";
+import {Moodle} from "./Moodle";
 
 declare const global: ApiGlobal;
 
@@ -32,6 +35,7 @@ export class Course {
     public exams: boolean;
     public id: number | null;
     public teacherId: number | null;
+    public moodleId: number | null;
 
     /**
      * @param grade {String}
@@ -40,14 +44,16 @@ export class Course {
      * @param exams {boolean}
      * @param id {number}
      * @param teacherId {number}
+     * @param moodleId {number}
      */
-    constructor(grade: string, subject: string, group: string, exams = false, id: number | null = null, teacherId: number | null = null) {
+    constructor(grade: string, subject: string, group: string, exams = false, id: number | null = null, teacherId: number | null = null, moodleId: number | null = null) {
         this.grade = grade;
         this.subject = subject;
         this.group = group;
         this.exams = exams;
         this.id = id;
         this.teacherId = teacherId;
+        this.moodleId = moodleId;
     }
 
     /**
@@ -63,9 +69,9 @@ export class Course {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM courses WHERE (subject=? && `grade`=? && `group`=?)", [subject, grade, group]);
                 if (rows.length !== 1) {
-                    reject("Course not found")
+                    reject("Course not found");
                 } else {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"]));
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"], rows[0]["moodleId"]));
                 }
             } catch (e) {
                 reject(e);
@@ -86,9 +92,9 @@ export class Course {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM courses WHERE (id_courses=?)", [id]);
                 if (rows.length === 1) {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"]));
+                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"], rows[0]["moodleId"]));
                 } else {
-                    reject()
+                    reject();
                 }
             } catch (e) {
                 reject(e);
@@ -111,7 +117,7 @@ export class Course {
                 let courses: Course[] = [];
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
-                    let course = new Course(row["grade"], row["subject"], row["group"], false, row["id_courses"], row["teacherId"]);
+                    let course = new Course(row["grade"], row["subject"], row["group"], false, row["id_courses"], row["teacherId"], row["moodleId"]);
                     courses.push(course);
                 }
                 resolve(courses);
@@ -136,7 +142,7 @@ export class Course {
                 let rows = await conn.query("SELECT * FROM courses ORDER BY grade, subject, `group`");
                 for (let i = 0; i < rows.length; i++) {
                     let row = rows[i];
-                    courses.push(new Course(row.grade,row.subject,row.group,false,row.id_courses,row.teacherId))
+                    courses.push(new Course(row.grade, row.subject, row.group, false, row.id_courses, row.teacherId, row.moodleId))
                 }
                 resolve(courses);
             } catch (e) {
@@ -153,6 +159,7 @@ export class Course {
             try {
                 let result = await conn.query("INSERT INTO `courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);", [this.grade, this.subject, this.group, this.teacherId]);
                 this.id = result.insertId;
+                await Moodle.createCourse(this)
                 resolve(this);
             } catch (e) {
                 reject(e);
@@ -164,8 +171,19 @@ export class Course {
 
     delete() {
         return new Promise(async (resolve, reject) => {
+            let lessons: Lesson[] = await this.getLessons();
+            for (let i = 0; i < lessons.length; i++) {
+                await lessons[i].delete();
+            }
+
+            let exams: Exam[] = await Exam.getByCourse(this);
+            for (let i = 0; i < exams.length; i++) {
+                await exams[i].delete();
+            }
+
             let conn = await global.mySQLPool.getConnection();
             try {
+                await conn.query("DELETE FROM user_student_courses WHERE courseId=?", [this.id]);
                 await conn.query("DELETE FROM courses WHERE id_courses=?", [this.id]);
                 resolve(this);
             } catch (e) {
@@ -226,6 +244,35 @@ export class Course {
                 await conn.end();
             }
 
+        });
+    }
+
+    getUsers() : Promise<User[]>{
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows = await conn.query("SELECT users.* FROM user_student_courses LEFT JOIN users ON user_student_courses.user_id = users.id_users WHERE (`courseId`=? )", [this.id]);
+
+                let users: User[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    users.push(await User.fromSqlUser(rows[i]));
+                }
+                if(this.teacherId != null){
+                    users.push(await User.getById(this.teacherId))
+                }
+
+                resolve(users);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: User; Function: getStudentDevicesByCourse: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                })
+                reject(e);
+            } finally {
+                await conn.end();
+            }
         });
     }
 }

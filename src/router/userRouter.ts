@@ -17,11 +17,12 @@ import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Exam} from "../classes/Exam";
 import {Announcement} from "../classes/Announcement";
-import {Supervisor} from "../classes/user/Supervisor";
 import path from "path";
-import {Device} from "../classes/Device";
+import {Device, DeviceType} from "../classes/Device";
 import {Course} from "../classes/Course";
 import {Lesson} from "../classes/Lesson";
+import {TOTP} from "../classes/secondFactor/TOTP";
+import {Telegram} from "../classes/external/Telegram";
 
 declare const global: ApiGlobal;
 
@@ -29,10 +30,10 @@ export let router = express.Router();
 router.use("/totp", require('./userTOTProuter').router);
 /**
  * Return the current user
- * @route POST /user/
- * @group User - Operations about logged in user
+ * @route GET /user/
+ * @group User
  * @returns {User.model} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Wrong JWT
  * @security JWT
  */
 router.get('/', async (req, res) => {
@@ -47,12 +48,12 @@ router.get('/', async (req, res) => {
  * Return the JWT to access the Api
  * @sum Login
  * @route POST /user/login
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @param {LoginRequest.model} LoginRequest.body.required - username
  * @returns {LoginResponse.model} 200
  * @returns {Error} 602 - missing secondFactor
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Wrong Bearer
  */
 router.post('/login', async (req, res) => {
 
@@ -97,7 +98,7 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        assert(user.status == UserStatus.ENABLED,"User not enabled");
+        assert(user.status == UserStatus.ENABLED, "User not enabled");
         try {
             await user.verifyPassword(password);
         } catch (e) {
@@ -105,12 +106,11 @@ router.post('/login', async (req, res) => {
             return;
         }
         if (user.secondFactor === 1) {
-            if (req.body.hasOwnProperty("secondFactor")) {
-                let code = req.body["secondFactor"];
+            if (req.body.hasOwnProperty("code")) {
                 try {
-                    if (user.id != null) {
-                        //await Totp.verifyUserCode(code, user.id);
-                    }
+                    let registration = await TOTP.getByUID(user.id);
+                    await registration.validateCode(req.body.code);
+
                 } catch (e) {
                     res.sendStatus(401);
                     global.logger.log({
@@ -156,10 +156,9 @@ router.post('/login', async (req, res) => {
 /**
  * List all courses for the user
  * @route GET /user/courses
- * @group User - Operations about logged in user
+ * @group User
  * @returns {Array.<Course>} 200
- * @returns {Error} 602 - missing secondFactor
- * @returns {Error} 401 - Wrong JWT
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/courses', async (req, res) => {
@@ -191,24 +190,24 @@ router.get('/courses', async (req, res) => {
     }
 });
 
+
 /**
  * List all lessons for the user
  * @route GET /user/lessons
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {Array.<Lesson>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/lessons', async (req, res) => {
-    // => Array containing all lesson for user
     let response: any = [];
 
     try {
         let courses = req.user.courses;
         if (courses != null) {
             for (let coursePrototype of courses) {
-                let course = await Course.getByFields(coursePrototype.subject,coursePrototype.grade,coursePrototype.group);
+                let course = await Course.getByFields(coursePrototype.subject, coursePrototype.grade, coursePrototype.group);
                 try {
                     //Get lesson for course as array
                     let lessons: any = await course.getLessons();
@@ -238,13 +237,14 @@ router.get('/lessons', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * List all replacement lessons for the user
- * @route GET /user/lessons
- * @group User - Operations about logged in user
+ * @route GET /user/replacementlessons
+ * @group User
  * @consumes application/json
  * @returns {Array.<ReplacementLesson>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/replacementlessons', async (req, res) => {
@@ -273,7 +273,7 @@ router.get('/replacementlessons', async (req, res) => {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: 'Routing: /user/replacementlessons : rej (503)(' + req.user.type+ ')',
+                message: 'Routing: /user/replacementlessons : rej (503)(' + req.user.type + ')',
                 file: path.basename(__filename)
             });
 
@@ -311,13 +311,14 @@ router.get('/replacementlessons', async (req, res) => {
     }
 });
 
+//TODO swagger
 /**
  * Lists all Announcements for the user
  * @route GET /user/announcements
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {Array.<Announcement>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/announcements', async (req: Request, res: Response) => {
@@ -342,10 +343,10 @@ router.get('/announcements', async (req: Request, res: Response) => {
 /**
  * Lists all exams for the user or if teacher, for his courses
  * @route GET /user/exams
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {Array.<Exam>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/exams', async (req, res) => {
@@ -385,32 +386,14 @@ router.get('/exams', async (req, res) => {
     }
 });
 
-/**
- * only for teachers - returns all supervisor blocks
- * @route GET /user/supervisors
- * @group User - Operations about logged in user
- * @consumes application/json
- * @returns {Array.<Supervisor>} 200
- * @returns {Error} 401 - Wrong Credentials
- * @security JWT
- */
-router.get('/supervisors', async (req, res) => {
-    try {
-        let data = await Supervisor.getById(req.user.id);
-        res.json(data);
-    } catch (e) {
-        console.log(e);
-        res.sendStatus(500);
-    }
-});
 
 /**
  * Lists all devices for the user
  * @route GET /user/devices
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {Array.<Device>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/devices', async (req, res) => {
@@ -423,21 +406,57 @@ router.get('/devices', async (req, res) => {
     }
 });
 
+
+/**
+ * Sends a test message to all devices
+ * @route GET /user/devices/test
+ * @group User
+ * @consumes application/json
+ * @returns {Object} 200
+ * @returns {Error} 401 - Bearer invalid
+ * @security JWT
+ */
+router.get('/devices/test', async (req, res) => {
+    try {
+        let devices = req.user.devices;
+        await global.pushNotifications.sendBulk(devices, "TEST", "Test message")
+        res.sendStatus(200);
+    } catch (e) {
+        console.log(e);
+        res.sendStatus(500);
+    }
+});
+
 /**
  * Adds a new device to the user
  * @route POST /user/devices
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @param {Device.model} Device.body
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/devices', async (req: Request, res: Response) => {
     let deviceIdentifier = req.body.deviceIdentifier;
+    let requestId = req.body.requestId;
     let platform = req.body.platform;
 
     try {
-        let device = new Device(parseInt(platform), null, req.user.id, Date.now().toString(), deviceIdentifier);
+        let device: Device;
+        if (platform === DeviceType.TELEGRAM) {
+            let telegramId: number;
+            try {
+                telegramId = await Telegram.validateRequestToken(requestId);
+                await Telegram.revokeRequest(requestId);
+            } catch (e) {
+                res.sendStatus(500);
+                return;
+            }
+            device = new Device(DeviceType.TELEGRAM, null, req.user.id, Date.now().toString(), telegramId.toString());
+        } else {
+            device = new Device(parseInt(platform), null, req.user.id, Date.now().toString(), deviceIdentifier);
+        }
+
         if (await device.save()) {
             res.sendStatus(200);
         } else {
@@ -452,10 +471,10 @@ router.post('/devices', async (req: Request, res: Response) => {
 /**
  * Removes a device from the user account
  * @route DELETE /user/devices/deviceId/{id}
- * @group User - Operations about logged in user
+ * @group User
  * @consumes application/json
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.delete('/devices/deviceId/:id', async (req, res) => {
@@ -470,32 +489,50 @@ router.delete('/devices/deviceId/:id', async (req, res) => {
 });
 
 /**
- * Lists all mail addresses
- * @route GET /user/profile/emails
- * @group User - Operations about logged in user
- * @returns {Array.<Device>} 200
- * @returns {Error} 401 - Wrong JWT
+ * Deletes access jwt
+ * @route DELETE /user/jwt
+ * @group User
+ * @returns {object} 200
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
-router.get('/profile/emails', async (req, res) => {
+router.delete('/jwt', async (req, res) => {
     try {
-        res.json(await User.getEMails(req.user.id));
+        await JWTInterface.revokeById(req.decoded.jwtId);
+        res.sendStatus(200);
     } catch (e) {
         res.sendStatus(500);
     }
 });
 
 /**
- * Deletes access jwt
- * @route DELETE /user/jwt
- * @group User - Operations about logged in user
- * @returns {object} 200
- * @returns {Error} 401 - Wrong JWT
+ * Enables the Moodle user account
+ * @route GET /user/moodle/enable
+ * @group User
+ * @returns {Object} 200 - OK
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
-router.delete('/jwt', async (req, res) => {
+router.get('/moodle/enable', async (req, res) => {
     try {
-        await JWTInterface.revokeById(req.decoded.jwtId);
+        console.log(await req.user.enableMoodle());
+        res.sendStatus(200);
+    } catch (e) {
+        res.sendStatus(500);
+    }
+});
+
+/**
+ * Disables the Moodle user account
+ * @route GET /user/moodle/disable
+ * @group User
+ * @returns {Object} 200 - OK
+ * @returns {Error} 401 - Bearer invalid
+ * @security JWT
+ */
+router.get('/moodle/disable', async (req, res) => {
+    try {
+        await req.user.disableMoodle();
         res.sendStatus(200);
     } catch (e) {
         res.sendStatus(500);

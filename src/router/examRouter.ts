@@ -21,19 +21,47 @@ declare const global: ApiGlobal;
 export let router = express.Router();
 
 /**
+ * checks if the users has permission to access the endpoints
+ */
+router.use((req, res, next) => {
+    if (req.decoded.permissions.timeTable) {
+        next();
+        return;
+    }
+    global.logger.log({
+        level: 'notice',
+        label: 'Privileges violation',
+        message: `Path: ${req.path} By UserId ${req.decoded.userId}`,
+        file: path.basename(__filename)
+    });
+    return res.sendStatus(401);
+});
+
+/**
+ * Returns all Exams
+ * @route GET /exams/
+ * @group Exams
+ * @returns {Array.<Exam>} 200
+ * @returns {Error} 401 - Bearer invalid
+ * @security JWT
+ */
+router.get('/', async (req, res) => {
+    let rows = await Exam.getAll();
+    await res.json(rows);
+});
+
+/**
  * Adds a new Exam
  * @route POST /exams/
- * @group Exams - Management functions for Exams
- * @param {Exam.model} Exam.body.required
+ * @group Exams
+ * @param {Exam.model} Exam.body
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/', async (req, res) => {
-
     try {
         let body = req.body;
-
         for (let i = 0; i < body.length; i++) {
             try {
                 let element = body[i];
@@ -41,16 +69,15 @@ router.post('/', async (req, res) => {
                 exam.room = element["room"];
                 await exam.save();
                 let devices = await exam.course.getStudentDevices();
-                await global.pushNotifications.sendBulk(devices, "Exam", "Datum: "+ exam.date + " Fach: " + exam.course.subject + " wurde hinzugefügt");
+                await global.pushNotifications.sendBulk(devices, "Exam", "Datum: " + exam.date + " Fach: " + exam.course.subject + " wurde hinzugefügt");
+                res.sendStatus(200);
             } catch (e) {
-                //TODO add response code
                 if (e !== "row exists") {
                     console.log(e);
+                    res.sendStatus(500);
                 }
-                console.log(e)
             }
         }
-        res.sendStatus(200);
     } catch (e) {
         global.logger.log({
             level: 'error',
@@ -63,69 +90,45 @@ router.post('/', async (req, res) => {
 });
 
 /**
- * Returns all Exams
- * @route GET /exams/
- * @group Exams - Management functions for Exams
- * @param {Exam.model} Exam.body.required
- * @returns {Array.<Exam>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * Return the Exam if found
+ * @route GET /exams/id/{id}
+ * @group Exams
+ * @returns {Exam.model} 200
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
-router.get('/', async (req, res) => {
-
-    let rows = await Exam.getAll();
-    await res.json(rows);
-});
-
-/**
- * Updates a Exam
- * @route PUT /exams/{id}
- * @group Exams - Management functions for Exams
- * @param {Exam.model} Exam.body.required
- * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
- * @security JWT
- */
-router.put('/:id', async (req, res) => {
-    req.params.id;
-
-    //TODO add exam update
-    res.sendStatus(605);
+router.get('/id/:id', async (req, res) => {
+    try {
+        let exam = await Exam.getById(parseInt(req.params.id));
+        res.json(exam);
+    } catch (e) {
+        if (e === "Not found") {
+            res.sendStatus(404);
+        } else {
+            console.log(e);
+            res.sendStatus(500);
+        }
+    }
 });
 
 /**
  * Deletes an Exam
- * @route DELETE /exams/{id}
- * @group Exams - Management functions for Exams
- * @param {Exam.model} Exam.body.required
+ * @route DELETE /exams/id/{id}
+ * @group Exams
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.delete('/id/:id', async (req, res) => {
-    if (!req.decoded.admin) {
-        return res.sendStatus(401);
-    }
-    //TODO add Delete
-    res.sendStatus(605);
-});
-
-//TODO determine correct router for endpoint
-router.get('/exams/supervisors/:id', async (req, res) => {
-    if (!req.decoded.admin) {
-        return res.sendStatus(401);
-    }
-
     try {
-        let data = await Supervisor.getById(parseInt(req.params.id));
-        await res.json(data);
+        let exam = await Exam.getById(parseInt(req.params.id));
+        res.json(exam);
     } catch (e) {
-        global.logger.log({
-            level: 'error',
-            label: 'ExamsRouter',
-            message: 'Err: ' + JSON.stringify(e),
-            file: path.basename(__filename)
-        });
-        res.sendStatus(500);
+        if (e === "Not found") {
+            res.sendStatus(404);
+        } else {
+            console.log(e);
+            res.sendStatus(500);
+        }
     }
 });

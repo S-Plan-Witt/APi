@@ -26,10 +26,10 @@ export let router = express.Router();
 /**
  * Adds an ReplacementLesson
  * @route POST /replacementLessons/
- * @group ReplacementLesson - Management functions for ReplacementLesson
+ * @group ReplacementLesson
  * @param {ReplacementLesson.model} ReplacementLesson.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/', async (req, res) => {
@@ -91,9 +91,9 @@ router.post('/', async (req, res) => {
 /**
  * Returns all ReplacementLessons
  * @route GET /replacementLessons/
- * @group ReplacementLesson - Management functions for ReplacementLesson
+ * @group ReplacementLesson
  * @returns {Array.<ReplacementLesson>} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/', async (req, res) => {
@@ -109,9 +109,9 @@ router.get('/', async (req, res) => {
 /**
  * Returns all ReplacementLessons on specific date
  * @route GET /replacementLessons/date/{date}
- * @group ReplacementLesson - Management functions for ReplacementLesson
+ * @group ReplacementLesson
  * @returns {Array.<ReplacementLesson>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/date/:date', async (req, res) => {
@@ -142,9 +142,9 @@ router.get('/date/:date', async (req, res) => {
 /**
  * Gets a ReplacementLesson by id
  * @route GET /replacementLessons/id/{id}
- * @group ReplacementLesson - Management functions for ReplacementLesson
+ * @group ReplacementLesson
  * @returns {ReplacementLesson.model} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/id/:id', async (req, res) => {
@@ -155,12 +155,24 @@ router.get('/id/:id', async (req, res) => {
         let lesson = await ReplacementLesson.getById(req.params.id);
         res.json(lesson);
     } catch (e) {
-        console.log(e);
-        res.sendStatus(500);
+        if (e === "Not found") {
+            res.sendStatus(404);
+        } else {
+            console.log(e);
+            res.sendStatus(500);
+        }
     }
 
 });
 
+/**
+ * Returns lessons matching the info field
+ * @route DELETE /replacementLessons/id/{id}
+ * @group ReplacementLesson
+ * @returns {Array.<ReplacementLesson>} 200
+ * @returns {Error} 401 - Bearer invalid
+ * @security JWT
+ */
 router.post('/find', async (req, res) => {
     let info = req.body.info;
     try {
@@ -173,11 +185,11 @@ router.post('/find', async (req, res) => {
 });
 
 /**
- * Deletes an ReplacementLesson by replacement-id
+ * Deletes an ReplacementLesson by id
  * @route DELETE /replacementLessons/id/{id}
- * @group ReplacementLesson - Management functions for ReplacementLesson
+ * @group ReplacementLesson
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.delete('/id/:id', async (req, res) => {

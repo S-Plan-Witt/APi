@@ -9,20 +9,42 @@
 
 import {ApiGlobal} from "../types/global";
 import {Starter} from "../startEnviroment";
+import {Moodle} from "../classes/Moodle";
+import {Course} from "../classes/Course";
+import {User, UserType} from "../classes/user/User";
 
 declare const global: ApiGlobal;
 
-let useStandardENV:boolean = true;
+let useStandardENV: boolean = true;
 
 (async () => {
     try {
         Starter.logger();
         Starter.config();
+        Starter.mysql();
 
-        if (!useStandardENV){
+        if (!useStandardENV) {
             setCustomParams();
         }
 
+        let users: User[] = await User.getUsersByType(UserType.TEACHER);
+        for (let i = 0; i < users.length; i++) {
+            let user = users[i];
+            if (user.moodleUID == null) {
+                await user.enableMoodle();
+            }
+        }
+
+        let courses = await Course.getAll();
+        for (let i = 0; i < courses.length; i++) {
+            let course = courses[i];
+
+            if (course.moodleId == null) {
+                await Moodle.createCourse(course);
+            }
+        }
+
+        console.log("FINISHED")
     } catch (e) {
         console.log("The tester run into an error:")
         console.error(e);

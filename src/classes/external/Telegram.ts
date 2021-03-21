@@ -27,7 +27,7 @@ export class Telegram {
             try {
                 let rows = await conn.query("SELECT * FROM user_device_verification WHERE `token`= ? ", [token]);
                 if (rows.length === 1) {
-                    resolve(rows[0].telegramId);
+                    resolve(rows[0].deviceId);
                 } else {
                     reject("Token Invalid");
                 }

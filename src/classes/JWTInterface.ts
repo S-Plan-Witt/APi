@@ -24,8 +24,12 @@ const publicKey = fs.readFileSync('./keys/jwtRS256_pub.pem');
 
 //Paths without token validation
 const authFreePaths = [
-    '/user/login',
+    '/api-docs'
 ];
+
+const authFreeEndpoints = [
+    '/user/login'
+]
 
 export class JWTInterface {
 
@@ -114,17 +118,27 @@ export class JWTInterface {
      * @param next
      */
     static async checkToken(req: Request, res: Response, next: NextFunction) {
-        if (authFreePaths.includes(req.path)) {
+        let authFree: boolean = false;
+        if(authFreeEndpoints.includes(req.path)){
+            authFree = true;
+        }else {
+            for (let i = 0; i < authFreePaths.length; i++) {
+                let path = authFreePaths[i];
+                if(req.path.startsWith(path)){
+                    authFree = true;
+                }
+            }
+        }
+
+        if (authFree) {
             global.logger.log({
                 level: 'silly',
                 label: 'JWT',
-                message: 'auth validation free path: ' + req.path,
+                message: 'auth validation free endpoint: ' + req.path,
                 file: path.basename(__filename)
             });
             next();
         } else if (req.method === "OPTIONS") {
-            next();
-        } else if (req.path.substring(0, 8) === "/webcal/") {
             next();
         } else {
             //get auth header information containing auth token

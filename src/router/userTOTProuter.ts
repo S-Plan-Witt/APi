@@ -16,32 +16,25 @@ declare const global: ApiGlobal;
 
 export let router = express.Router();
 
-router.get('/', async (req, res) => {
-
-    try {
-        let endpoints:TOTP[] = await TOTP.getByUID(req.user.id);
-        for (let i = 0; i < endpoints.length; i++) {
-            endpoints[i].privateKey = "###"
-        }
-        res.json(endpoints)
-    } catch (e) {
-        console.log(e);
-        res.sendStatus(500);
-    }
-
-});
-
 /**
- * Submits a new totp key for secondFactor auth
- * @route POST /user/auth/totp
- * @group User - Operations about logged in user
+ * Returns a new totp key for secondFactor auth
+ * @route GET /user/totp/register
+ * @group User
  * @consumes application/json
- * @param {TotpAddRequest.model} TotpAddRequest.body.require
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
+ * @returns {Error} 423 - Request locked; already obtained
  * @security JWT
  */
 router.get('/register', async (req, res) => {
+    try {
+        await TOTP.getByUID(req.user.id);
+        res.status(423);
+        res.send("Already obtained");
+        return;
+    } catch (e) {
+    }
+
 
     try {
         let endpoint: TOTP = await TOTP.new(req.user);
@@ -54,19 +47,46 @@ router.get('/register', async (req, res) => {
 });
 
 /**
- * Submits a new totp key for secondFactor auth
- * @route POST /user/auth/totp
- * @group User - Operations about logged in user
+ * Terminates a active registration phase
+ * @route GET /user/totp/abort
+ * @group User
  * @consumes application/json
- * @param {TotpAddRequest.model} TotpAddRequest.body.require
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
+ * @returns {Error} 423 - Request locked; no registration phase active
  * @security JWT
  */
-router.post('/aregister', async (req, res) => {
-    if (req.body.hasOwnProperty("password") && req.body.hasOwnProperty("key")) {
+router.get('/abort', async (req, res) => {
+    try {
+        let registration = await TOTP.getByUID(req.user.id);
+        console.log(registration)
+        if (!registration.verified) {
+            registration.delete();
+            res.sendStatus(200);
+        } else {
+            res.status(423);
+            res.send("Not active");
+        }
+    } catch (e) {
+        res.status(423);
+        res.send("Not active");
+        return;
+    }
+});
+
+/**
+ * Submits a new totp key for secondFactor auth
+ * @route POST /user/totp/register
+ * @group User
+ * @consumes application/json
+ * @param {ValidationRequest.model} TotpAddRequest.body.require
+ * @returns {object} 200 - Success
+ * @returns {Error} 401 - Bearer invalid
+ * @security JWT
+ */
+router.post('/register', async (req, res) => {
+    if (req.body.hasOwnProperty("code")) {
         let user;
-        let tokenId;
         try {
             user = req.user;
         } catch (e) {
@@ -75,70 +95,65 @@ router.post('/aregister', async (req, res) => {
         }
         try {
             await user.verifyPassword(req.body["password"]);
-
         } catch (e) {
             res.json({"error": "Invalid Password"});
             return;
         }
-
+        let registration
         try {
-            let key = req.body["key"];
-            let alias = req.body["alias"];
-            if (user.id != null) {
-                //tokenId = await Totp.saveTokenForUser(key, user.id, alias)
-            }
+            registration = await TOTP.getByUID(req.user.id);
         } catch (e) {
-
+            res.status(423);
+            res.send("Not active");
+            return;
         }
-        res.json(tokenId)
+        try {
+            await registration.validateCode(req.body.code);
+            await registration.setVerified(true);
+            await req.user.setSecondFactor(true);
+        } catch (e) {
+            res.sendStatus(401);
+            return;
+        }
+
+        res.sendStatus(200);
     } else {
         res.json({"err": "Invalid Parameters"});
     }
 });
 
 /**
- * Verifies the given key with the correct totp code
- * @route POST /user/auth/totp/verify
- * @group User - Operations about logged in user
- * @consumes application/json
- * @param {TotpVerifyRequest.model} TotpVerifyRequest.body.require
- * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
- * @security JWT
- */
-router.post('/auth/totp/verify', async (req, res) => {
-    if (req.body.hasOwnProperty("keyId") && req.body.hasOwnProperty("code")) {
-        try {
-            let keyId = req.body["keyId"];
-            let code = req.body["code"];
-            // await Totp.verifyKey(keyId, code);
-            await res.sendStatus(200);
-        } catch (e) {
-            console.log(e);
-            await res.json({err: e})
-        }
-    } else {
-        res.json({"err": "Invalid Parameters", body: req.body});
-    }
-});
-
-/**
- * Deletes the totp device specified by id
- * @route DELETE /user/auth/totp/id/{id}
- * @group User - Operations about logged in user
+ * Disables and removes the totp
+ * @route DELETE /user/totp
+ * @group User
  * @consumes application/json
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
-router.delete('/auth/totp/id/:id', async (req, res) => {
+router.delete('/', async (req, res) => {
     try {
-        if (req.user.id != null) {
-            // await Totp.removeById(parseInt(req.params.id), req.user.id);
+        if (req.user.secondFactor) {
+            let registration = await TOTP.getByUID(req.user.id);
+
+            await registration.validateCode(req.params.code);
+
+            await req.user.setSecondFactor(false);
+
+            await registration.delete();
+            res.sendStatus(200)
         }
-        res.sendStatus(200)
+
+
     } catch (e) {
         console.log(e);
         res.json({"err": e});
     }
 });
+
+class TOTPDevice {
+    requestId: string = ""
+    totp_key: string = ""
+    user_id: number = -1;
+    added: string = "";
+}

@@ -9,7 +9,6 @@
  */
 
 import {Telegram} from "./Telegram";
-import {User} from "../user/User";
 import {ApiGlobal} from "../../types/global";
 import {Context, Telegraf} from "telegraf";
 import path from "path";
@@ -37,7 +36,7 @@ export class PushTelegram {
             }
             if (senderId != undefined) {
                 let token = await Telegram.createRequest(senderId);
-                let messageText = "Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: https://splan.nils-witt.de/pages/linkTelegram.html?token=" + token;
+                let messageText = "Logge dich mit diesem Link ein, um deinen Account zu verknüpfen: " + global.config.pushFrameWorks.telegram.validationUrl + "?token=" + token;
                 await ctx.reply(messageText);
                 global.logger.log({
                     level: 'silly',

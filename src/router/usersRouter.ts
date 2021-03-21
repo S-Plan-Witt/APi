@@ -17,7 +17,6 @@ import {UserFilter} from "../classes/user/UserFilter";
 import {Course} from "../classes/Course";
 import {Teacher} from "../classes/user/Teacher";
 import path from "path";
-import assert from "assert";
 import {Student} from "../classes/user/Student";
 
 declare const global: ApiGlobal;
@@ -44,9 +43,9 @@ router.use((req, res, next) => {
 /**
  * Returns all users
  * @route GET /users/
- * @group Users - Operations about all users
+ * @group Users
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/', async (req: Request, res: Response) => {
@@ -67,9 +66,9 @@ router.get('/', async (req: Request, res: Response) => {
 /**
  * Returns all users by a specific type
  * @route GET /users/type/{type}
- * @group Users - Operations about all users
+ * @group Users
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/type/:type', async (req: Request, res: Response) => {
@@ -91,15 +90,15 @@ router.get('/type/:type', async (req: Request, res: Response) => {
 /**
  * Returns user specified by username
  * @route GET /users/username/{username}
- * @group Users - Operations about all users
+ * @group Users
  * @returns {User.model} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/username/:username', async (req: Request, res: Response) => {
     try {
         let data = await User.getByUsername(req.params.username);
-        await res.json([data]);
+        await res.json(data);
     } catch (e) {
         global.logger.log({
             level: 'error',
@@ -114,15 +113,15 @@ router.get('/username/:username', async (req: Request, res: Response) => {
 /**
  * Returns user specified by id
  * @route GET /users/id/{id}
- * @group Users - Operations about all users
- * @returns {User.model} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @group Users
+ * @returns {User.model} 200
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/id/:id', async (req: Request, res: Response) => {
     try {
         let data = await User.getById(parseInt(req.params.id));
-        await res.json([data]);
+        await res.json(data);
     } catch (e) {
         global.logger.log({
             level: 'error',
@@ -136,34 +135,11 @@ router.get('/id/:id', async (req: Request, res: Response) => {
 
 /**
  * Returns all users from the connected Ldap server
- * @route GET /users/ldap
- * @group Users - Operations about all users
- * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Credentials
- * @security JWT
- */
-router.get('/ldap/', async (req: Request, res: Response) => {
-
-    try {
-        await res.json(await Ldap.getAllStudents());
-    } catch (e) {
-        global.logger.log({
-            level: 'error',
-            label: 'Express',
-            message: 'Routing: /users/ldap/ ; ' + JSON.stringify(e),
-            file: path.basename(__filename)
-        });
-        res.sendStatus(500);
-    }
-});
-
-/**
- * Returns all users from the connected Ldap server
  * @route POST /users/find
- * @group Users - Operations about all users
+ * @group Users
  * @param {UserFilter.model} UserFilter.body.required
  * @returns {Array.<User>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/find', async (req: Request, res: Response) => {
@@ -200,14 +176,14 @@ router.post('/find', async (req: Request, res: Response) => {
 
 /**
  * Sets courses for student
- * @route POST /users/{username}/courses
- * @group Users - Operations about all users
- * @param {Array.<Course>} Array<Course>.body.required
+ * @route POST /users/username/{username}/courses
+ * @group Users
+ * @param {Array.<Course>} Course.body
  * @returns {object} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
-router.post('/:username/courses', async (req: Request, res: Response) => {
+router.post('/username/:username/courses', async (req: Request, res: Response) => {
     if (!req.decoded.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
@@ -272,14 +248,14 @@ router.post('/:username/courses', async (req: Request, res: Response) => {
 });
 
 /**
- * Loads all teachers from AD Server
- * @route POST /users/teacher/reload
- * @group Users - Operations about all users
- * @returns {object} 200
- * @returns {Error} 401 - Wrong Credentials
+ * Loads all teachers from AD Server -- FOR TESTING ONLY
+ * @route GET /users/reload/teacher/
+ * @group Users
+ * @returns {object} 200 - OK
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
-router.get('/teacher/reload', async (req: Request, res: Response) => {
+router.get('/reload/teachers', async (req: Request, res: Response) => {
     if (!req.decoded.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
@@ -307,14 +283,14 @@ router.get('/teacher/reload', async (req: Request, res: Response) => {
 });
 
 /**
- * Loads all students from AD Server
- * @route POST /users/students/reload
- * @group Users - Operations about all users
- * @returns {object} 200
- * @returns {Error} 401 - Wrong Credentials
+ * Loads all students from AD Server -- FOR TESTING ONLY
+ * @route GET /users/reload/students
+ * @group Users
+ * @returns {object} 200 - OK
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
-router.get('/students/reload', async (req: Request, res: Response) => {
+router.get('/reload/students', async (req: Request, res: Response) => {
     if (!req.decoded.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
