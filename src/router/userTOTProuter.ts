@@ -112,6 +112,7 @@ router.post('/register', async (req, res) => {
 
         res.sendStatus(200);
     } else {
+        console.log(req.body);
         res.json({"err": "Invalid Parameters"});
     }
 });
@@ -136,10 +137,11 @@ router.delete('/', async (req, res) => {
 
             await registration.delete();
             res.sendStatus(200)
+        } else {
+            res.json({"err": "not active"});
         }
-
-
     } catch (e) {
+        console.log(req.body);
         console.log(e);
         res.json({"err": e});
     }
