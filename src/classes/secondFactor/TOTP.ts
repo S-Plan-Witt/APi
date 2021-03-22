@@ -78,6 +78,13 @@ export class TOTP implements SecondFactor {
         });
     }
 
+    generateCode(){
+        return new Promise(async (resolve, reject) => {
+            let token = twofactor.generateToken(this.privateKey);
+            resolve(token);
+        });
+    }
+
     setVerified(isVerified: boolean) {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
