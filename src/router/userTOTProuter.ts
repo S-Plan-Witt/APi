@@ -93,12 +93,6 @@ router.post('/register', async (req, res) => {
             res.sendStatus(602);
             return;
         }
-        try {
-            await user.verifyPassword(req.body["password"]);
-        } catch (e) {
-            res.json({"error": "Invalid Password"});
-            return;
-        }
         let registration
         try {
             registration = await TOTP.getByUID(req.user.id);
@@ -136,7 +130,7 @@ router.delete('/', async (req, res) => {
         if (req.user.secondFactor) {
             let registration = await TOTP.getByUID(req.user.id);
 
-            await registration.validateCode(req.params.code);
+            await registration.validateCode(req.body.code);
 
             await req.user.setSecondFactor(false);
 
