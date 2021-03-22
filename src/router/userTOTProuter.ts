@@ -35,7 +35,6 @@ router.get('/register', async (req, res) => {
     } catch (e) {
     }
 
-
     try {
         let endpoint: TOTP = await TOTP.new(req.user);
         await endpoint.save();
@@ -61,7 +60,7 @@ router.get('/abort', async (req, res) => {
         let registration = await TOTP.getByUID(req.user.id);
         console.log(registration)
         if (!registration.verified) {
-            registration.delete();
+            await registration.delete();
             res.sendStatus(200);
         } else {
             res.status(423);
@@ -112,7 +111,6 @@ router.post('/register', async (req, res) => {
 
         res.sendStatus(200);
     } else {
-        console.log(req.body);
         res.json({"err": "Invalid Parameters"});
     }
 });
@@ -132,17 +130,13 @@ router.delete('/', async (req, res) => {
             let registration = await TOTP.getByUID(req.user.id);
 
             await registration.validateCode(req.body.code);
-
             await req.user.setSecondFactor(false);
-
             await registration.delete();
             res.sendStatus(200)
         } else {
             res.json({"err": "not active"});
         }
     } catch (e) {
-        console.log(req.body);
-        console.log(e);
         res.json({"err": e});
     }
 });
