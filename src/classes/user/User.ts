@@ -722,5 +722,6 @@ export enum UserStatus {
 
 export enum UserType {
     STUDENT,
-    TEACHER
+    TEACHER,
+    DISPLAY
 }

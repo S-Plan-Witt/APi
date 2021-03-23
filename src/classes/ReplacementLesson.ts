@@ -13,6 +13,7 @@ import {Lesson} from "./Lesson";
 import {Utils} from "./Utils";
 import {TimeTable} from "./TimeTable";
 import {ApiGlobal} from "../types/global";
+import {Exam} from "./Exam";
 
 declare const global: ApiGlobal;
 
@@ -43,37 +44,6 @@ export class ReplacementLesson {
         this.subject = subject;
         this.info = info;
         this.date = date;
-    }
-
-
-    save(){
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let result = await conn.query("INSERT INTO replacementlessons (date, subject, room, info, lessonId, teacherId) VALUES (?, ?, ?, ?, ?, ?)", [this.date, this.subject, this.room, this.info,this.lesson.id,this.teacherId]);
-                this.id = result.insertId;
-                resolve(this);
-            } catch (e) {
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    delete(){
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                await conn.query("DELETE FROM replacementlessons WHERE id_replacementlessons=?", [this.id]);
-                resolve(this);
-            } catch (e) {
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-
-        });
     }
 
     /**
@@ -155,9 +125,9 @@ export class ReplacementLesson {
             let conn = await global.mySQLPool.getConnection();
             try {
                 let rows = await conn.query("SELECT * FROM `replacementlessons` WHERE `replacementId`= ? ", [id]);
-                if(rows.length == 1){
+                if (rows.length == 1) {
                     resolve(await ReplacementLesson.convertSqlRowToObjects(rows[0]));
-                }else {
+                } else {
                     reject("Not found");
                 }
 
@@ -220,6 +190,28 @@ export class ReplacementLesson {
     }
 
     /**
+     * Get upcoming replacement lessons
+     * @returns Promise {[replacementLessons]}
+     */
+    static getUpcoming(): Promise<ReplacementLesson[]> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows = await conn.query("SELECT * FROM `replacementlessons` WHERE `date` >= CURRENT_DATE");
+                let replacementLessons: ReplacementLesson[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));
+                }
+                resolve(replacementLessons);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    /**
      * Get replacement lessons by teacher
      * @param teacherId {number}
      * @param dateStart {String}
@@ -259,6 +251,36 @@ export class ReplacementLesson {
             } finally {
                 await conn.end();
             }
+        });
+    }
+
+    save() {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let result = await conn.query("INSERT INTO replacementlessons (date, subject, room, info, lessonId, teacherId) VALUES (?, ?, ?, ?, ?, ?)", [this.date, this.subject, this.room, this.info, this.lesson.id, this.teacherId]);
+                this.id = result.insertId;
+                resolve(this);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    delete() {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("DELETE FROM replacementlessons WHERE id_replacementlessons=?", [this.id]);
+                resolve(this);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+
         });
     }
 }

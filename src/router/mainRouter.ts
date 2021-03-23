@@ -32,6 +32,7 @@ router.use("/lessons", require('./lessonsRouter').router);
 router.use("/replacementLessons", require('./replacementLessonRouter').router);
 router.use("/user", require('./userRouter').router);
 router.use("/users", require('./usersRouter').router);
+router.use("/display", require('./displayRouter').router);
 
 
 /*

@@ -123,6 +123,24 @@ export class Exam {
         });
     }
 
+    static getUpcomingOnDisplay(): Promise<Exam[]> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows: any[] = await conn.query("SELECT * FROM `exams` WHERE `visibleOnDisplay`= 1 AND date >= CURRENT_DATE");
+                let exams: Exam[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    exams.push(await this.fromSqlRow(rows[i]));
+                }
+                resolve(exams);
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
     static fromSqlRow(row: any): Promise<Exam> {
         return new Promise(async (resolve, reject) => {
             let date = new Date(row["date"]);
