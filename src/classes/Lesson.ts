@@ -53,12 +53,11 @@ export class Lesson {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT lessons.id_lessons, lessons.room, lessons.lesson, lessons.weekday, lessons.identifier, courses.teacherId, lessons.courseId, courses.id_courses, courses.grade, courses.subject, courses.`group`, courses.coursename FROM lessons LEFT JOIN courses ON lessons.courseId = courses.id_courses WHERE id_lessons=?", [id.toString()]);
+                let rows = await conn.query("SELECT * FROM lessons WHERE id_lessons=?", [id.toString()]);
                 if (rows.length === 1) {
                     let row = rows[0];
-                    resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"], false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["id_lessons"]))
+                    resolve(new Lesson(await Course.getById(row["courseId"]), row["lesson"], row["weekday"], row["room"], row["id_lessons"]))
                 } else {
-                    //TODO error message
                     reject();
                 }
             } catch (e) {

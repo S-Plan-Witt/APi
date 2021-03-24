@@ -231,7 +231,7 @@ export class Exam {
         return new Promise(async (resolve, reject) => {
             let availRoomLinks: any = await RoomLink.getRoomLinks(this.date, this.room);
             if (availRoomLinks.length === 0) {
-                await (new RoomLink(this.room, this.from, this.to, this.date)).save();
+                //await (RL).save();
             }
             availRoomLinks = await RoomLink.getRoomLinks(this.date, this.room);
             if (availRoomLinks === 0) {

@@ -8,10 +8,10 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {User} from "./User";
 import {ApiGlobal} from "../../types/global";
 import {Exam} from "../Exam";
 import path from "path";
+import {User} from "./User";
 
 declare const global: ApiGlobal;
 
@@ -21,10 +21,27 @@ declare const global: ApiGlobal;
  * @property {string} lastName.required
  * @property {string} firstName.required
  * @property {string} username.required
- * @property {RoomLink.model} roomLink.required
  * @property {number} id
  */
-export class Supervisor extends User {
+export class Supervisor {
+    name: string;
+    from: string;
+    to: string;
+
+
+    constructor(name: string, from: string, to: string) {
+        this.name = name;
+        this.from = from;
+        this.to = to;
+    }
+
+    static fromSqlRow(row: SupervisorSqlRow): Promise<Supervisor> {
+        return new Promise(async (resolve, reject) => {
+
+            resolve(new Supervisor((await User.getById(row.teacherId)).username, row.from, row.to));
+        });
+    }
+
 
     /**
      * @param id
@@ -35,12 +52,12 @@ export class Supervisor extends User {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
+                let rows: SupervisorSqlRow[] = await conn.query("SELECT * FROM `exams_supervisors` LEFT JOIN `users` ON `exams_supervisors`.`teacherId` = `users`.id_users WHERE `RoomLink`= ?", [id]);
                 let data: Supervisor[] = [];
-                //TODO Add Supervisor object
-                let rows = await conn.query("SELECT * FROM `exams_supervisors` LEFT JOIN `users` ON `exams_supervisors`.`teacherId` = `users`.id_users WHERE `RoomLink`= ?", [id]);
-                rows.forEach((element: any) => {
-                    data.push(element);
-                });
+
+                for (let i = 0; i < rows.length; i++) {
+                    data.push(await this.fromSqlRow(rows[i]));
+                }
                 resolve(data);
             } catch (e) {
                 global.logger.log({
@@ -88,4 +105,12 @@ export class Supervisor extends User {
             }
         });
     }
+}
+
+type SupervisorSqlRow = {
+    id_exam_supervisor: number;
+    RoomLink: number;
+    teacherId: number;
+    from: string;
+    to: string;
 }

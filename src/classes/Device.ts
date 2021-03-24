@@ -34,7 +34,52 @@ export class Device {
         this.deviceIdentifier = deviceIdentifier;
     }
 
-    save(){
+    /**
+     * Remove device from Database
+     * @param deviceId {String}
+     * @returns Promise
+     */
+    static removeDevice(deviceId: string): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                await conn.query("DELETE FROM `devices` WHERE deviceIdentifier = ?", [deviceId]);
+                resolve();
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end()
+            }
+        });
+    }
+
+    static getByUID(id: number): Promise<Device[]> {
+        return new Promise(async (resolve, reject) => {
+            let conn = await global.mySQLPool.getConnection();
+            try {
+                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [id]);
+                let devices: Device[] = [];
+                rows.forEach((row: any) => {
+                    if (row.deviceIdentifier != null) {
+                        devices.push(new Device(row.platform, parseInt(row.id_devices), row.userId, row.added, row.deviceIdentifier));
+                    }
+                });
+                resolve(devices);
+            } catch (e) {
+                global.logger.log({
+                    level: 'error',
+                    label: 'User',
+                    message: 'Class: Device; Function: getByUID: ' + JSON.stringify(e),
+                    file: path.basename(__filename)
+                });
+                reject(e);
+            } finally {
+                await conn.end()
+            }
+        });
+    }
+
+    save() {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
@@ -59,51 +104,22 @@ export class Device {
         });
     }
 
-    delete(){
-        //TODO implement
-    }
-
-    /**
-     * Remove device from Database
-     * @param deviceId {String}
-     * @returns Promise
-     */
-    static removeDevice(deviceId: string): Promise<void> {
+    delete() {
         return new Promise(async (resolve, reject) => {
             let conn = await global.mySQLPool.getConnection();
             try {
-                await conn.query("DELETE FROM `devices` WHERE deviceIdentifier = ?", [deviceId]);
-                resolve();
+                await conn.query("DELETE FROM devices WHERE id_devices= ?;", [this.id]);
+                resolve(true);
             } catch (e) {
                 reject(e);
-            } finally {
-                await conn.end()
-            }
-        });
-    }
-
-    static getByUID(id: number): Promise<Device[]>{
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [id]);
-                let devices: Device[] = [];
-                rows.forEach((row: any) => {
-                    if (row.deviceIdentifier != null) {
-                        devices.push(new Device(row.platform, parseInt(row.id_devices), row.userId, row.added, row.deviceIdentifier));
-                    }
-                });
-                resolve(devices);
-            } catch (e) {
                 global.logger.log({
                     level: 'error',
                     label: 'User',
-                    message: 'Class: Device; Function: getByUID: ' + JSON.stringify(e),
+                    message: 'Class: Device; Function: delete: ' + JSON.stringify(e),
                     file: path.basename(__filename)
                 });
-                reject(e);
             } finally {
-                await conn.end()
+                await conn.end();
             }
         });
     }

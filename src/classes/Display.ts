@@ -13,6 +13,7 @@ import {ApiGlobal} from "../types/global";
 import {Exam} from "./Exam";
 import {ReplacementLesson} from "./ReplacementLesson";
 import {Announcement} from "./Announcement";
+import {User} from "./user/User";
 
 declare const global: ApiGlobal;
 
@@ -49,7 +50,14 @@ export class Display {
 
     getReplacementLessons(): Promise<ReplacementLesson[]> {
         return new Promise(async (resolve, reject) => {
-            resolve(ReplacementLesson.getUpcoming());
+            let replacementLessons: ReplacementLesson[] = await ReplacementLesson.getUpcoming();
+            for (let i = 0; i < replacementLessons.length; i++) {
+                if(replacementLessons[i].teacherId != null){
+                    // @ts-ignore
+                    replacementLessons[i].teacher = (await User.getById(replacementLessons[i].teacherId)).username
+                }
+            }
+            resolve(replacementLessons);
         });
     }
 

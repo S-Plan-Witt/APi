@@ -10,6 +10,7 @@
 
 import {ApiGlobal} from "../types/global";
 import path from "path";
+import {Supervisor} from "./user/Supervisor";
 
 declare const global: ApiGlobal;
 
@@ -20,13 +21,15 @@ export class RoomLink {
     public to: string;
     public date: string;
     public id: number;
+    public supervisors: Supervisor[];
 
-    constructor(room: any, from: any, to: any, date: any) {
+    constructor(room: string, from: string, to: string, date: string, id: number, supervisors: Supervisor[] = []) {
         this.room = room;
         this.from = from;
         this.to = to;
         this.date = date;
-        this.id = 0
+        this.id = id;
+        this.supervisors = supervisors;
     }
 
     /**
@@ -69,9 +72,7 @@ export class RoomLink {
                 let result = await conn.query("SELECT * FROM exams_rooms WHERE id_exam_rooms = ?", [id]);
                 if (result.length === 1) {
                     let row = result[0];
-                    let date = new Date(row["date"]);
-                    row["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
-                    resolve(new RoomLink(row["room"], row["from"], row["to"], row["date"]));
+                    resolve(await this.fromSqlRow(row));
                 } else {
                     reject("No roomlink");
                 }
@@ -81,6 +82,16 @@ export class RoomLink {
             } finally {
                 await conn.end();
             }
+        });
+    }
+
+    static fromSqlRow(row: RoomLinkSqlRow): Promise<RoomLink> {
+        return new Promise(async (resolve, reject) => {
+            let date = new Date(row["date"]);
+            let dateString = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
+            let rl = new RoomLink(row.room, row.from, row.to, dateString, row.id_exam_rooms, await Supervisor.getByRoomLink(row.id_exam_rooms));
+            resolve(rl);
+
         });
     }
 
@@ -107,4 +118,12 @@ export class RoomLink {
             }
         });
     }
+}
+
+type RoomLinkSqlRow = {
+    id_exam_rooms: number;
+    room: string;
+    from: string;
+    to: string;
+    date: string;
 }
