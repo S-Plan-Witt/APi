@@ -61,46 +61,49 @@ export class PushNotifications {
                                 resolve();
                             }
 
-                    } catch (e) {
-                        console.log(e)
-                        reject(e);
-                    }
-                } else if (endpoint.platform === DeviceType.WEBPUSH) {
-                    try {
-                        if (pushWebPush != undefined) {
-                            await pushWebPush.sendPush(JSON.parse(endpoint.deviceIdentifier), title, message);
-                        } else {
-                            console.log("WebPush offline - no push")
+                        } catch (e) {
+                            console.log(e)
+                            reject(e);
                         }
-                        resolve();
-                    } catch (e) {
-                        if (e.statusCode === 410 || e.statusCode === 403) {
-                            if (pushWebPush != undefined) {
-                                await pushWebPush.deleteSubscription(e.endpoint);
+                        break;
+                    case DeviceType.TELEGRAM:
+                        try {
+                            if (pushTelegram != undefined) {
+                                await pushTelegram.sendPush(parseInt(endpoint.deviceIdentifier), title + ": " + message);
                                 resolve();
                             } else {
-                                reject("WP Push Offline")
+                                console.log("TelegramBot offline - no push")
+                                resolve();
                             }
-                            return;
+                        } catch (e) {
+                            console.log(e)
+                            reject();
                         }
-                        console.log(e)
-                        reject(e);
-                    }
-                } else if (endpoint.platform === DeviceType.TELEGRAM) {
-                    try {
-                        if (pushTelegram != undefined) {
-                            await pushTelegram.sendPush(parseInt(endpoint.deviceIdentifier), title + ": " + message);
+                        break;
+                    case DeviceType.WEBPUSH:
+                        try {
+                            if (pushWebPush != undefined) {
+                                await pushWebPush.sendPush(JSON.parse(endpoint.deviceIdentifier), title, message);
+                            } else {
+                                console.log("WebPush offline - no push")
+                            }
                             resolve();
-                        } else {
-                            console.log("TelegramBot offline - no push")
-                            resolve();
+                        } catch (e) {
+                            if (e.statusCode === 410 || e.statusCode === 403) {
+                                if (pushWebPush != undefined) {
+                                    await pushWebPush.deleteSubscription(e.endpoint);
+                                    resolve();
+                                } else {
+                                    reject("WP Push Offline")
+                                }
+                                return;
+                            }
+                            console.log(e)
+                            reject(e);
                         }
-                    } catch (e) {
-                        console.log(e)
-                        reject();
-                    }
-                }else {
-                    resolve();
+                        break;
+                    default:
+                        resolve();
                 }
             } catch (e) {
                 reject(e);
