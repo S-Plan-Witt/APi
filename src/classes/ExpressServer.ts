@@ -11,6 +11,7 @@ import express, {Express, NextFunction, Request, Response} from "express";
 import {ApiGlobal} from "../types/global";
 import path from "path";
 import {JWTInterface} from "./JWTInterface";
+import {router} from "../router/mainRouter";
 
 declare const global: ApiGlobal;
 
@@ -49,6 +50,7 @@ export class ExpressServer {
      * Loads all router scripts
      */
     initRouter() {
+
         this.expressApp.use("/", require('../router/mainRouter').router);
     }
 
@@ -117,9 +119,15 @@ let reqLogger = (req: Request, res: Response, next: NextFunction) => {
  * @param next
  */
 const header = (req: Request, res: Response, next: NextFunction) => {
+    let origin = global.config.pwaConfig.url;
+
+    if(req.header("Origin") == "https://display.splan.nils-witt.de"){
+        origin = "https://display.splan.nils-witt.de";
+    }
+
     res.set({
         'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Origin': global.config.pwaConfig.url,
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma',
         'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
     });
