@@ -23,6 +23,7 @@ export class Config {
     public pushFrameWorks: PushFrameworksConfig = new PushFrameworksConfig();
     public webServerConfig: WebServerConfig = new WebServerConfig();
     public pwaConfig: PWAConfig = new PWAConfig();
+    public displayConfig: DisplayServerConfig = new DisplayServerConfig();
     public bCrypt: BcryptConf = new BcryptConf();
     public authy: AuthyConfig = new AuthyConfig();
     public moodleConfig: MoodleConfig = new MoodleConfig();
@@ -82,6 +83,11 @@ export class Config {
          * PWA
          **/
         if (typeof process.env.PWA_URL == "string") config.pwaConfig.url = process.env.PWA_URL;
+
+        /**
+         * Displays
+         **/
+        if (typeof process.env.DISPLAY_URL == "string") config.displayConfig.url = process.env.DISPLAY_URL;
 
         /**
          * Authy

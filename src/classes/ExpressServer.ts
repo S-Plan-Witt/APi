@@ -121,8 +121,8 @@ let reqLogger = (req: Request, res: Response, next: NextFunction) => {
 const header = (req: Request, res: Response, next: NextFunction) => {
     let origin = global.config.pwaConfig.url;
 
-    if(req.header("Origin") == "https://display.splan.nils-witt.de"){
-        origin = "https://display.splan.nils-witt.de";
+    if(req.header("Origin") == global.config.displayConfig.url){
+        origin = global.config.displayConfig.url;
     }
 
     res.set({
