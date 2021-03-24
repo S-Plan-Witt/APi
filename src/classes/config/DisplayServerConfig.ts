@@ -9,6 +9,6 @@
  *
  */
 
-class DisplayServerConfig {
+export class DisplayServerConfig {
     public url: string = "";
 }

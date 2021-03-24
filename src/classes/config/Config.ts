@@ -16,6 +16,7 @@ import {PWAConfig} from "./PWAConfig";
 import {BcryptConf} from "./BcryptConf";
 import {AuthyConfig} from "./AuthyConfig";
 import {MoodleConfig} from "./MoodleConfig";
+import {DisplayServerConfig} from "./DisplayServerConfig";
 
 export class Config {
     public ldapConfig: LdapConfig = new LdapConfig();
