@@ -49,16 +49,17 @@ export class PushNotifications {
         let pushTelegram = this.pushTelegram;
         return new Promise(async (resolve, reject) => {
             try {
-                //TODO replace if with switch
-                if (endpoint.platform === DeviceType.FIREBASE) {
-                    try {
-                        if (pushFCM != undefined) {
-                            await pushFCM.sendPush(parseInt(endpoint.deviceIdentifier), title, message);
-                            resolve();
-                        } else {
-                            console.log("FCM offline - no push")
-                            resolve();
-                        }
+                switch (endpoint.platform) {
+
+                    case DeviceType.FIREBASE:
+                        try {
+                            if (pushFCM != undefined) {
+                                await pushFCM.sendPush(parseInt(endpoint.deviceIdentifier), title, message);
+                                resolve();
+                            } else {
+                                console.log("FCM offline - no push")
+                                resolve();
+                            }
 
                     } catch (e) {
                         console.log(e)
