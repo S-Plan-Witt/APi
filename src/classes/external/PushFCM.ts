@@ -49,9 +49,6 @@ export class PushFCM {
                 });
                 resolve(response);
             } catch (e) {
-                if (e.code === "messaging/registration-token-not-registered") {
-                    //TODO add FCM delete registration
-                }
                 global.logger.log({
                     level: 'error',
                     label: 'FCM',
