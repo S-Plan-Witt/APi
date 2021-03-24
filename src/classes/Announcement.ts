@@ -71,6 +71,26 @@ export class Announcement {
     }
 
     /**
+     * Retrieves all Announcements to corresponding course from the database
+     * @returns {Promise<Announcement[]>}
+     * @param course
+     */
+    static getForDisplay(): Promise<Announcement[]> {
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                let rows = await conn.query("SELECT * FROM `announcements` WHERE global = 1");
+                resolve(this.convertSqlRowsToObjects(rows));
+            } catch (e) {
+                reject(e);
+            } finally {
+                await conn.end();
+            }
+        });
+    }
+
+    /**
      * Returns an array of Announcements from the given sql result
      * @param rows
      */

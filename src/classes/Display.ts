@@ -55,7 +55,7 @@ export class Display {
 
     getAnnouncements(): Promise<Announcement[]> {
         return new Promise(async (resolve, reject) => {
-            resolve([]);
+            resolve(await Announcement.getForDisplay());
         });
     }
 
