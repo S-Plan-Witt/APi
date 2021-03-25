@@ -33,27 +33,19 @@ router.use((req, res, next) => {
     return res.sendStatus(401);
 });
 
-
-//TODO swagger
 /**
  * Adds a new Announcement
  * @route POST /announcements/
  * @group Announcements
  * @param {Announcement.model} Announcement.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/', async (req, res) => {
     let body: { course: Course, content: string, date: string } = req.body;
     try {
         let course = await Course.getByFields(body.course.subject, body.course.grade, body.course.group)
-
-        if (!req.decoded.admin) {
-            if (!req.user.isTeacherOf(course)) {
-                return res.sendStatus(401);
-            }
-        }
 
         let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body.content, body.date, null);
         await announcement.create();
@@ -76,13 +68,12 @@ router.post('/', async (req, res) => {
     }
 });
 
-//TODO swagger
 /**
  * Lists all Announcements
  * @route GET /announcements/
  * @group Announcements
  * @returns {Array.<Announcement>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/', async (req, res) => {
@@ -90,19 +81,15 @@ router.get('/', async (req, res) => {
     await res.json(await Announcement.getAll());
 });
 
-//TODO swagger
 /**
  * Updates Announcement {id}
  * @route PUT /announcements/id/{id}
  * @group Announcements
  * @returns {Error} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.put('/id/:id', async (req, res) => {
-    if (!req.decoded.permissions.announcementsAdmin) {
-        return res.sendStatus(401);
-    }
     let body = req.body;
     let id: number = parseInt(req.params.id);
     let announcement: Announcement = await Announcement.getById(id);
@@ -120,13 +107,12 @@ router.put('/id/:id', async (req, res) => {
     res.sendStatus(200);
 });
 
-//TODO swagger
 /**
  * Returns Announcement {id}
  * @route GET /announcements/id/{id}
  * @group Announcements - Management functions for Announcements
  * @returns {Error} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/id/:id', async (req, res) => {
@@ -135,7 +121,6 @@ router.get('/id/:id', async (req, res) => {
     res.json(announcement)
 });
 
-//TODO swagger
 /**
  * Deletes Announcement {id}
  * @route DELETE /announcements/id/{id}
@@ -145,9 +130,6 @@ router.get('/id/:id', async (req, res) => {
  * @security JWT
  */
 router.delete('/id/:id', async (req, res) => {
-    if (!req.decoded.permissions.announcementsAdmin) {
-        return res.sendStatus(401);
-    }
     try {
         let id = parseInt(req.params.id);
         let announcement: Announcement = await Announcement.getById(id);
