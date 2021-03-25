@@ -258,8 +258,7 @@ export class Exam {
                 }
             }
 
-            // @ts-ignore
-            let linkId = availRoomLinks[0]["id_exam_rooms"];
+            let linkId = availRoomLinks[0].id;
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();

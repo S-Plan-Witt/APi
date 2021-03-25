@@ -86,7 +86,7 @@ export class RoomLink {
 
     static fromSqlRow(row: RoomLinkSqlRow): Promise<RoomLink> {
         return new Promise(async (resolve, reject) => {
-            let date = new Date(row["date"]);
+            let date = new Date(row.date);
             let dateString = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
             let rl = new RoomLink(row.room, row.from, row.to, dateString, row.id_exam_rooms, await Supervisor.getByRoomLink(row.id_exam_rooms));
             resolve(rl);

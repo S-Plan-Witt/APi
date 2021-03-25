@@ -61,7 +61,11 @@ export class Announcement {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM `announcements` WHERE `courseId`= ? ", [course.id]);
-                resolve(this.convertSqlRowsToObjects(rows));
+                let data: Announcement[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    data.push(await this.fromSqlRow(rows[i]))
+                }
+                resolve(data);
             } catch (e) {
                 reject(e);
             } finally {
@@ -80,7 +84,11 @@ export class Announcement {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM `announcements` WHERE global = 1");
-                resolve(this.convertSqlRowsToObjects(rows));
+                let data: Announcement[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    data.push(await this.fromSqlRow(rows[i]))
+                }
+                resolve(data);
             } catch (e) {
                 reject(e);
             } finally {
@@ -91,18 +99,12 @@ export class Announcement {
 
     /**
      * Returns an array of Announcements from the given sql result
-     * @param rows
+     * @param row
      */
-    static convertSqlRowsToObjects(rows: AnnouncementSqlRow[]): Promise<Announcement[]> {
+    static fromSqlRow(row: AnnouncementSqlRow): Promise<Announcement> {
         return new Promise(async (resolve, reject) => {
-
-            let announcements: Announcement[] = [];
-            for (let i = 0; i < rows.length; i++) {
-                let row = rows[i];
                 let dateString = Utils.convertMysqlDate(row.date);
-                announcements.push(new Announcement(await Course.getById(row.courseId), row.authorId, row.editorId, row.content, dateString, row.id_announcements));
-            }
-            resolve(announcements);
+                resolve(new Announcement(await Course.getById(row.courseId), row.authorId, row.editorId, row.content, dateString, row.id_announcements));
         });
     }
 
@@ -116,7 +118,11 @@ export class Announcement {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let rows: AnnouncementSqlRow[] = await conn.query("SELECT * FROM `announcements`");
-                resolve(this.convertSqlRowsToObjects(rows));
+                let data: Announcement[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    data.push(await this.fromSqlRow(rows[i]))
+                }
+                resolve(data);
             } catch (e) {
                 global.logger.log({
                     level: 'error',
@@ -143,9 +149,7 @@ export class Announcement {
                 conn = await global.mySQLPool.getConnection();
                 let rows: AnnouncementSqlRow[] = await conn.query("SELECT * FROM `announcements` WHERE id_announcements = ?", [id]);
                 if (rows.length === 1) {
-                    let row = rows[0];
-                    row["date"] = Utils.convertMysqlDate(row["date"])
-                    resolve(new Announcement(await Course.getById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["id_announcements"]));
+                    resolve(await this.fromSqlRow(rows[0]));
                 } else {
                     reject("no row");
                 }

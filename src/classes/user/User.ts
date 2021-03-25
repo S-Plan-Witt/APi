@@ -526,7 +526,7 @@ export class User {
                     try {
                         conn = await global.mySQLPool.getConnection();
                         let res: { hashedpassword: string }[] = await conn.query("SELECT hashedpassword FROM users WHERE id_users = ?", [this.id]);
-                        hashedpassword = res[0]["hashedpassword"];
+                        hashedpassword = res[0].hashedpassword;
                     } catch (e) {
                         global.logger.log({
                             level: 'error',

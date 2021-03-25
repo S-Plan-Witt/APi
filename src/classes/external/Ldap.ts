@@ -226,15 +226,15 @@ export class Ldap {
                     });
                     res.on('searchEntry', (entry: ActiveDirectorySearchEntry) => {
                         let obj: ActiveDirectorySearchEntryObject = entry.object;
-                        let dn = obj["dn"].toString().split(",");
+                        let dn = obj.dn.toString().split(",");
                         let grade = dn[1].substr(3, (dn[1].length - 1));
 
                         if (grade !== '_Removed') {
                             let user: User = new User(obj.givenName, obj.sn, obj.displayName, obj.sAMAccountName, -1, -1, [], UserStatus.ENABLED, [], null, Permissions.getDefault());
                             try {
-                                if (obj["memberOf"].includes(global.config.ldapConfig.studentGroup)) {
+                                if (obj.memberOf.includes(global.config.ldapConfig.studentGroup)) {
                                     user.type = 0;
-                                } else if (obj["memberOf"].includes(global.config.ldapConfig.teacherGroup)) {
+                                } else if (obj.memberOf.includes(global.config.ldapConfig.teacherGroup)) {
                                     user.type = 1;
                                 }
                                 users.push(user);
