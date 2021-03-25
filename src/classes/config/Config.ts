@@ -16,6 +16,7 @@ import {PWAConfig} from "./PWAConfig";
 import {BcryptConf} from "./BcryptConf";
 import {AuthyConfig} from "./AuthyConfig";
 import {MoodleConfig} from "./MoodleConfig";
+import {DisplayServerConfig} from "./DisplayServerConfig";
 
 export class Config {
     public ldapConfig: LdapConfig = new LdapConfig();
@@ -23,6 +24,7 @@ export class Config {
     public pushFrameWorks: PushFrameworksConfig = new PushFrameworksConfig();
     public webServerConfig: WebServerConfig = new WebServerConfig();
     public pwaConfig: PWAConfig = new PWAConfig();
+    public displayConfig: DisplayServerConfig = new DisplayServerConfig();
     public bCrypt: BcryptConf = new BcryptConf();
     public authy: AuthyConfig = new AuthyConfig();
     public moodleConfig: MoodleConfig = new MoodleConfig();
@@ -64,10 +66,6 @@ export class Config {
         if (typeof process.env.FCM == "string") if (process.env.FCM === "true") config.pushFrameWorks.fcm.enabled = true;
         if (typeof process.env.FCM_URL == "string") config.pushFrameWorks.fcm.host = process.env.FCM_URL;
         if (typeof process.env.FCM_CREDENTIALS == "string") config.pushFrameWorks.fcm.certPath = process.env.FCM_CREDENTIALS;
-        //SendGrid
-        if (typeof process.env.SENDGRID == "string") if (process.env.SENDGRID === "true") config.pushFrameWorks.sendGrid.enabled = true;
-        if (typeof process.env.SENDGRID_HOST == "string") config.pushFrameWorks.sendGrid.host = process.env.SENDGRID_HOST;
-        if (typeof process.env.SENDGRID_KEY == "string") config.pushFrameWorks.sendGrid.key = process.env.SENDGRID_KEY;
 
         //WebPush
         if (typeof process.env.WEBPUSH == "string") if (process.env.WEBPUSH === "true") config.pushFrameWorks.webPush.enabled = true;
@@ -86,6 +84,11 @@ export class Config {
          * PWA
          **/
         if (typeof process.env.PWA_URL == "string") config.pwaConfig.url = process.env.PWA_URL;
+
+        /**
+         * Displays
+         **/
+        if (typeof process.env.DISPLAY_URL == "string") config.displayConfig.url = process.env.DISPLAY_URL;
 
         /**
          * Authy

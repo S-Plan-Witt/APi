@@ -18,8 +18,8 @@ declare const global: ApiGlobal;
  * Class ExpressServer: Handles all http- server functionality.
  */
 export class ExpressServer {
+    static instance: ExpressServer;
     expressApp: Express;
-    static instance : ExpressServer;
 
     constructor() {
         this.expressApp = express();
@@ -30,7 +30,7 @@ export class ExpressServer {
         this.instance = new ExpressServer();
     }
 
-    static launch(){
+    static launch() {
         this.instance.exposeServer();
     }
 
@@ -49,6 +49,7 @@ export class ExpressServer {
      * Loads all router scripts
      */
     initRouter() {
+
         this.expressApp.use("/", require('../router/mainRouter').router);
     }
 
@@ -78,7 +79,7 @@ export class ExpressServer {
     /**
      * Exposes the server
      */
-    exposeServer(){
+    exposeServer() {
         /**
          * Start HTTP Server to listen for in-bound requests
          */
@@ -117,9 +118,15 @@ let reqLogger = (req: Request, res: Response, next: NextFunction) => {
  * @param next
  */
 const header = (req: Request, res: Response, next: NextFunction) => {
+    let origin = global.config.pwaConfig.url;
+
+    if (req.header("Origin") == global.config.displayConfig.url) {
+        origin = global.config.displayConfig.url;
+    }
+
     res.set({
         'Access-Control-Allow-Credentials': 'true',
-        'Access-Control-Allow-Origin': global.config.pwaConfig.url,
+        'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma',
         'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, HEAD, OPTIONS'
     });

@@ -24,14 +24,14 @@ export let router = express.Router();
  * checks if the users has permission to access the endpoints
  */
 router.use((req, res, next) => {
-    if (req.decoded.permissions.timeTable) {
+    if (req.user.permissions.timeTable) {
         next();
         return;
     }
     global.logger.log({
         level: 'notice',
         label: 'Privileges violation',
-        message: `Path: ${req.path} By UserId ${req.decoded.userId}`,
+        message: `Path: ${req.path} By UserId ${req.user.id}`,
         file: path.basename(__filename)
     });
     return res.sendStatus(401);

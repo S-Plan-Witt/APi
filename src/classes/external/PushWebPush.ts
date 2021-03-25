@@ -56,14 +56,15 @@ export class PushWebPush {
      */
     deleteSubscription(endpoint: any): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE FROM `devices` WHERE (deviceIdentifier LIKE ?);", ['%' + endpoint + '%']);
                 resolve();
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }

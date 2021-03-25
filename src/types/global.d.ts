@@ -13,9 +13,10 @@ import {Logger} from "winston";
 import {Config} from "../classes/config/Config";
 import {PushNotifications} from "../classes/external/PushNotifications";
 import {ExpressServer} from "../classes/ExpressServer";
+import {Pool} from "mariadb";
 
 export interface ApiGlobal extends Global {
-    mySQLPool: any,
+    mySQLPool: Pool,
     logger: Logger,
     config: Config,
     pushNotifications: PushNotifications;

@@ -23,8 +23,9 @@ export class Telegram {
      */
     static validateRequestToken(token: string): Promise<number> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM user_device_verification WHERE `token`= ? ", [token]);
                 if (rows.length === 1) {
                     resolve(rows[0].deviceId);
@@ -40,7 +41,7 @@ export class Telegram {
                 });
                 reject(e)
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -52,8 +53,9 @@ export class Telegram {
      */
     static revokeRequest(token: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE FROM `user_device_verification` WHERE (`token` = ?);", [token]);
                 resolve();
             } catch (e) {
@@ -63,9 +65,9 @@ export class Telegram {
                     message: '(revokeRequest) error: ' + e,
                     file: path.basename(__filename)
                 });
-                reject(e)
+                reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -77,18 +79,17 @@ export class Telegram {
      */
     static createRequest(telegramId: number) {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let tokenId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
                 await conn.query("INSERT INTO `user_device_verification` (`deviceId`, `token`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token`=?;", [telegramId, tokenId, tokenId]);
                 resolve(tokenId);
             } catch (e) {
                 reject(e)
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
 }
-
-module.exports.Telegram = Telegram;

@@ -18,7 +18,7 @@ export class Database {
     /**
      * Connects to the database server
      */
-    static connect(){
+    static connect() {
 
         global.mySQLPool = mySQL.createPool({
             host: global.config.mysqlConfig.hostname,
@@ -36,26 +36,5 @@ export class Database {
             message: 'MySql Connected',
             file: path.basename(__filename)
         });
-    }
-
-    /**
-     * Deletes all data from the database
-     */
-    static clear(){
-        //TODO implement Database: clear()
-    }
-
-    /**
-     * Loads the template schema into the database
-     */
-    static init(){
-        //TODO implement Database: init()
-    }
-
-    /**
-     * updates the schema version
-     */
-    static update(){
-        //TODO implement Database: update()
     }
 }

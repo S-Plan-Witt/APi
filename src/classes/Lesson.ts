@@ -44,6 +44,17 @@ export class Lesson {
         this.id = id;
     }
 
+
+    /**
+     * Returns the lesson object
+     * @param row
+     */
+    static fromSqlRow(row: LessonSqlRow): Promise<Lesson> {
+        return new Promise(async (resolve, reject) => {
+            resolve(new Lesson(await Course.getById(row.courseId), row.lesson, row.weekday, row.room, row.id_lessons));
+        });
+    }
+
     /**
      * Returns the lesson with the given id or rejects if not available
      * @param id
@@ -53,18 +64,16 @@ export class Lesson {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT lessons.id_lessons, lessons.room, lessons.lesson, lessons.weekday, lessons.identifier, courses.teacherId, lessons.courseId, courses.id_courses, courses.grade, courses.subject, courses.`group`, courses.coursename FROM lessons LEFT JOIN courses ON lessons.courseId = courses.id_courses WHERE id_lessons=?", [id.toString()]);
+                let rows: LessonSqlRow[] = await conn.query("SELECT * FROM lessons WHERE id_lessons=?", [id.toString()]);
                 if (rows.length === 1) {
-                    let row = rows[0];
-                    resolve(new Lesson(new Course(row["grade"], row["subject"], row["group"], false, row["courseId"]), row["lesson"], row["weekday"], row["room"], row["id_lessons"]))
+                    resolve(this.fromSqlRow(rows[0]))
                 } else {
-                    //TODO error message
                     reject();
                 }
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
@@ -82,17 +91,16 @@ export class Lesson {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM lessons WHERE `courseId`=? && `lesson`=? AND weekday = ?", [course.id, lessonNum, weekday]);
+                let rows: LessonSqlRow[] = await conn.query("SELECT * FROM lessons WHERE `courseId`=? && `lesson`=? AND weekday = ?", [course.id, lessonNum, weekday]);
                 if (rows.length === 1) {
-                    let row = rows[0];
-                    resolve(new Lesson(course, row["lesson"], row["weekday"], row["room"], parseInt(row["id_lessons"])));
+                    resolve(await this.fromSqlRow(rows[0]));
                 } else {
                     reject("No lesson: " + lessonNum + "; " + course.grade + "/" + course.subject + "-" + course.group);
                 }
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
@@ -108,17 +116,15 @@ export class Lesson {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let lessons: Lesson[] = [];
-                let rows = await conn.query("SELECT * FROM lessons");
+                let rows: LessonSqlRow[] = await conn.query("SELECT * FROM lessons");
                 for (let i = 0; i < rows.length; i++) {
-                    let row = rows[i];
-                    let course: Course = await Course.getById(row["courseId"]);
-                    lessons.push(new Lesson(course, row["lesson"], row["weekday"], row["room"], row["id_lessons"]));
+                    lessons.push(await this.fromSqlRow(rows[i]));
                 }
                 resolve(lessons);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
@@ -126,19 +132,19 @@ export class Lesson {
 
     /**
      * Adds one lesson
-     * @param lesson {Lesson}
-     * @returns Promise
+     * @returns Promise<void>
      */
     save(): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("INSERT INTO `lessons` (`courseId`, `room`, `lesson`, weekday) VALUES (?, ?, ?, ?);", [this.course.id, this.room, this.lessonNumber, this.day]);
                 resolve();
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -151,15 +157,25 @@ export class Lesson {
                 await rp[i].delete();
             }
 
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE FROM lessons WHERE id_lessons=?", [this.id]);
                 resolve();
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
+}
+
+export type LessonSqlRow = {
+    id_lessons: number;
+    room: string;
+    lesson: number;
+    weekday: number;
+    identifier: string;
+    courseId: number;
 }

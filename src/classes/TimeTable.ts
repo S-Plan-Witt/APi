@@ -9,9 +9,7 @@
  */
 
 import {ApiGlobal} from "../types/global";
-import assert from "assert";
-import {Course} from "./Course";
-import {Lesson} from "./Lesson";
+import {Course, CourseSqlRow} from "./Course";
 
 
 declare const global: ApiGlobal;
@@ -25,21 +23,22 @@ export class TimeTable {
      * @param lesson
      * @returns {Promise<Course[]>}
      */
-    static getCourseByTeacherDayLesson(teacherId: number, weekday: any, lesson: any): Promise<Course[]> {
+    static getCourseByTeacherDayLesson(teacherId: number, weekday: number, lesson: any): Promise<Course[]> {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let lessons: any = [];
-                let rows = await conn.query("SELECT lessons.* FROM lessons left join courses on lessons.courseId = courses.id_courses where (`teacherId`=? && `lesson`=? && `weekday`=?)", [teacherId, lesson, weekday]);
-                rows.forEach((lesson: any) => {
-                    lessons.push(lesson);
-                });
-                resolve(lessons);
+                let courses: Course[] = [];
+                let rows: CourseSqlRow[] = await conn.query("SELECT lessons.* FROM lessons left join courses on lessons.courseId = courses.id_courses where (`teacherId`=? && `lesson`=? && `weekday`=?)", [teacherId, lesson, weekday]);
+
+                for (let i = 0; i < rows.length; i++) {
+                    courses.push(await Course.fromSqlRow(rows[i]));
+                }
+                resolve(courses);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }

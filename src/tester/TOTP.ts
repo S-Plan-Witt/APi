@@ -35,7 +35,7 @@ let useStandardENV: boolean = true;
         let token: string = (twofactor.generateToken(secret)).token;
         console.log(token)
 
-       // await totp.verify(secret, token);
+        // await totp.verify(secret, token);
 
         console.log("SUCCESSFUL")
         process.exit(0)

@@ -11,7 +11,6 @@
 import {Course} from "./Course";
 import {Lesson} from "./Lesson";
 import {Utils} from "./Utils";
-import {TimeTable} from "./TimeTable";
 import {ApiGlobal} from "../types/global";
 
 declare const global: ApiGlobal;
@@ -45,37 +44,6 @@ export class ReplacementLesson {
         this.date = date;
     }
 
-
-    save(){
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                let result = await conn.query("INSERT INTO replacementlessons (date, subject, room, info, lessonId, teacherId) VALUES (?, ?, ?, ?, ?, ?)", [this.date, this.subject, this.room, this.info,this.lesson.id,this.teacherId]);
-                this.id = result.insertId;
-                resolve(this);
-            } catch (e) {
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-        });
-    }
-
-    delete(){
-        return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
-            try {
-                await conn.query("DELETE FROM replacementlessons WHERE id_replacementlessons=?", [this.id]);
-                resolve(this);
-            } catch (e) {
-                reject(e);
-            } finally {
-                await conn.end();
-            }
-
-        });
-    }
-
     /**
      * Get replacement lessons by course
      * @param lesson {Lesson}
@@ -83,18 +51,19 @@ export class ReplacementLesson {
      */
     static getByLesson(lesson: Lesson): Promise<ReplacementLesson[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query("SELECT * FROM replacementlessons WHERE lessonId = ?", [lesson.id]);
+                conn = await global.mySQLPool.getConnection();
+                let rows: ReplacementLessonSqlRow[] = await conn.query("SELECT * FROM replacementlessons WHERE lessonId = ?", [lesson.id]);
                 let replacementLessons: ReplacementLesson[] = [];
                 for (let i = 0; i < rows.length; i++) {
-                    replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));
+                    replacementLessons.push(await this.fromSqlRow(rows[i]));
                 }
                 resolve(replacementLessons);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
@@ -106,18 +75,19 @@ export class ReplacementLesson {
      */
     static getAll(): Promise<ReplacementLesson[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query("SELECT * FROM replacementlessons");
+                conn = await global.mySQLPool.getConnection();
+                let rows: ReplacementLessonSqlRow[] = await conn.query("SELECT * FROM replacementlessons");
                 let replacementLessons: ReplacementLesson[] = [];
                 for (let i = 0; i < rows.length; i++) {
-                    replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));
+                    replacementLessons.push(await this.fromSqlRow(rows[i]));
                 }
                 resolve(replacementLessons);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -129,18 +99,19 @@ export class ReplacementLesson {
      */
     static getByDate(date: string): Promise<ReplacementLesson[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query("SELECT * FROM `replacementlessons` WHERE `date`= ? ", [date]);
+                conn = await global.mySQLPool.getConnection();
+                let rows: ReplacementLessonSqlRow[] = await conn.query("SELECT * FROM `replacementlessons` WHERE `date`= ? ", [date]);
                 let replacementLessons: ReplacementLesson[] = [];
                 for (let i = 0; i < rows.length; i++) {
-                    replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));
+                    replacementLessons.push(await this.fromSqlRow(rows[i]));
                 }
                 resolve(replacementLessons);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
@@ -152,19 +123,20 @@ export class ReplacementLesson {
      */
     static getById(id: string): Promise<ReplacementLesson> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query("SELECT * FROM `replacementlessons` WHERE `replacementId`= ? ", [id]);
-                if(rows.length == 1){
-                    resolve(await ReplacementLesson.convertSqlRowToObjects(rows[0]));
-                }else {
+                conn = await global.mySQLPool.getConnection();
+                let rows: ReplacementLessonSqlRow[] = await conn.query("SELECT * FROM `replacementlessons` WHERE `replacementId`= ? ", [id]);
+                if (rows.length == 1) {
+                    resolve(await this.fromSqlRow(rows[0]));
+                } else {
                     reject("Not found");
                 }
 
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
@@ -174,13 +146,12 @@ export class ReplacementLesson {
      * returns the entry as object
      * @param entry
      */
-    static convertSqlRowToObjects(entry: any): Promise<ReplacementLesson> {
+    static fromSqlRow(entry: ReplacementLessonSqlRow): Promise<ReplacementLesson> {
         return new Promise(async (resolve, reject) => {
+            entry.date = Utils.convertMysqlDate(entry.date)
+            let lesson: Lesson = await Lesson.getById(entry.lessonId);
 
-            entry["date"] = Utils.convertMysqlDate(entry["date"])
-            let lesson: Lesson = await Lesson.getById(entry["lessonId"]);
-
-            resolve(new ReplacementLesson(entry["id_replacementlessons"], lesson.course, lesson, entry["teacherId"], entry["room"], entry["subject"], entry["info"], entry["date"]));
+            resolve(new ReplacementLesson(entry.id_replacementlessons, lesson.course, lesson, entry.teacherId, entry.room, entry.subject, entry.info, entry.date));
         });
     }
 
@@ -191,8 +162,9 @@ export class ReplacementLesson {
      */
     static add(replacementLesson: ReplacementLesson) {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
 
                 try {
                     let rows = await conn.query("INSERT INTO `replacementlessons` (`date`, `lessonId`, `subject`, `teacherId`, `room`, `info`) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE subject = ?, teacherId = ?, room = ?, info = ?"
@@ -214,7 +186,30 @@ export class ReplacementLesson {
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
+            }
+        });
+    }
+
+    /**
+     * Get upcoming replacement lessons
+     * @returns Promise {[replacementLessons]}
+     */
+    static getUpcoming(): Promise<ReplacementLesson[]> {
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                let rows: ReplacementLessonSqlRow[] = await conn.query("SELECT * FROM `replacementlessons` WHERE `date` >= CURRENT_DATE");
+                let replacementLessons: ReplacementLesson[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    replacementLessons.push(await this.fromSqlRow(rows[i]));
+                }
+                resolve(replacementLessons);
+            } catch (e) {
+                reject(e);
+            } finally {
+                if (conn) await conn.end();
             }
         });
     }
@@ -226,39 +221,84 @@ export class ReplacementLesson {
      * @param dateEnd {String}
      * @returns Promise {[replacementLessons]}
      */
-    static getByTeacher(teacherId: number, dateStart: string, dateEnd: string) {
+    static getByTeacher(teacherId: number, dateStart: string, dateEnd: string): Promise<ReplacementLesson[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query("SELECT * FROM `replacementlessons` WHERE `teacherId` = ? AND `date` >= ? AND `date`<= ?", [teacherId, dateStart, dateEnd]);
+                conn = await global.mySQLPool.getConnection();
+                let rows: ReplacementLessonSqlRow[] = await conn.query("SELECT * FROM `replacementlessons` WHERE `teacherId` = ? AND `date` >= ? AND `date`<= ?", [teacherId, dateStart, dateEnd]);
                 let replacementLessons: ReplacementLesson[] = [];
                 for (let i = 0; i < rows.length; i++) {
-                    replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));
+                    replacementLessons.push(await this.fromSqlRow(rows[i]));
                 }
                 resolve(replacementLessons);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
 
     static search(info: string) {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query("SELECT * FROM `replacementlessons` WHERE `info` LIKE ? ", [info]);
+                conn = await global.mySQLPool.getConnection();
+                let rows: ReplacementLessonSqlRow[] = await conn.query("SELECT * FROM `replacementlessons` WHERE `info` LIKE ? ", [info]);
                 let replacementLessons: ReplacementLesson[] = [];
                 for (let i = 0; i < rows.length; i++) {
-                    replacementLessons.push(await ReplacementLesson.convertSqlRowToObjects(rows[i]));
+                    replacementLessons.push(await this.fromSqlRow(rows[i]));
                 }
                 resolve(replacementLessons);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
+
+    save() {
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                let result = await conn.query("INSERT INTO replacementlessons (date, subject, room, info, lessonId, teacherId) VALUES (?, ?, ?, ?, ?, ?)", [this.date, this.subject, this.room, this.info, this.lesson.id, this.teacherId]);
+                this.id = result.insertId;
+                resolve(this);
+            } catch (e) {
+                reject(e);
+            } finally {
+                if (conn) await conn.end();
+            }
+        });
+    }
+
+    delete() {
+        return new Promise(async (resolve, reject) => {
+            let conn;
+            try {
+                conn = await global.mySQLPool.getConnection();
+                await conn.query("DELETE FROM replacementlessons WHERE id_replacementlessons=?", [this.id]);
+                resolve(this);
+            } catch (e) {
+                reject(e);
+            } finally {
+                if (conn) await conn.end();
+            }
+
+        });
+    }
+}
+
+type ReplacementLessonSqlRow = {
+    id_replacementlessons: number;
+    date: string;
+    subject: string;
+    room: string;
+    info: string;
+    lessonId: number;
+    teacherId: number;
+    replacementId: string;
 }

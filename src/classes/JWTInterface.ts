@@ -14,7 +14,6 @@ import {User, UserType} from './user/User';
 import {ApiGlobal} from "../types/global";
 import {NextFunction, Request, Response} from "express";
 import path from "path";
-import {Permissions} from "./Permissions";
 
 declare const global: ApiGlobal;
 
@@ -38,8 +37,9 @@ export class JWTInterface {
      */
     static verifyId(id: string): Promise<never> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM `user_token` WHERE `tokenIdentifier`= ?", [id]);
                 if (rows.length === 1) {
                     resolve(rows[0]['idjwt_Token']);
@@ -62,7 +62,7 @@ export class JWTInterface {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -83,7 +83,7 @@ export class JWTInterface {
 
             } catch (e) {
                 reject(e);
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
 
@@ -97,10 +97,12 @@ export class JWTInterface {
      */
     static createJWT(userId: number, userType: UserType, sessionId: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
-            let payload: any = {};
-            payload.userId = userId;
-            payload.session = sessionId;
-            payload.userType = userType;
+            let payload: JwtPayload = {
+                userId: userId,
+                session: sessionId,
+                userType: userType
+            };
+
             try {
                 await JWTInterface.saveToken(userId, sessionId);
                 let token = jwt.sign(payload, privateKey, {algorithm: global.config.webServerConfig.authAlgo});
@@ -119,12 +121,12 @@ export class JWTInterface {
      */
     static async checkToken(req: Request, res: Response, next: NextFunction) {
         let authFree: boolean = false;
-        if(authFreeEndpoints.includes(req.path)){
+        if (authFreeEndpoints.includes(req.path)) {
             authFree = true;
-        }else {
+        } else {
             for (let i = 0; i < authFreePaths.length; i++) {
                 let path = authFreePaths[i];
-                if(req.path.startsWith(path)){
+                if (req.path.startsWith(path)) {
                     authFree = true;
                 }
             }
@@ -151,13 +153,10 @@ export class JWTInterface {
                 try {
                     let decoded: any = jwt.verify(token, publicKey);
                     if (typeof decoded == 'object') {
-                        decoded['jwtId'] = await JWTInterface.verifyId(decoded.session)
-                        req.decoded = decoded;
-                        req.user = await User.getById(req.decoded.userId);
+                        req.jwtId = await JWTInterface.verifyId(decoded.session);
+                        req.user = await User.getById(decoded.userId);
                         await req.user.populateUser();
-                        if (req.user.permissions instanceof Permissions) {
-                            req.decoded.permissions = req.user.permissions;
-                        }
+
                         next();
                     } else {
                         global.logger.log({
@@ -191,9 +190,12 @@ export class JWTInterface {
     static revokeById(id: string): Promise<void> {
         //Delete token from DB
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                await conn.query(`DELETE FROM user_token WHERE tokenIdentifier = ?`, [id]);
+                conn = await global.mySQLPool.getConnection();
+                await conn.query(`DELETE
+                                  FROM user_token
+                                  WHERE tokenIdentifier = ?`, [id]);
                 global.logger.log({
                     level: 'silly',
                     label: 'JWT',
@@ -210,7 +212,7 @@ export class JWTInterface {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -221,9 +223,12 @@ export class JWTInterface {
      */
     static getByUser(uid: number) {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query(`SELECT * FROM user_token WHERE userid = ?`, [uid.toString()]);
+                conn = await global.mySQLPool.getConnection();
+                let rows = await conn.query(`SELECT *
+                                             FROM user_token
+                                             WHERE userid = ?`, [uid.toString()]);
                 resolve(rows);
             } catch (e) {
                 global.logger.log({
@@ -234,7 +239,7 @@ export class JWTInterface {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -243,10 +248,10 @@ export class JWTInterface {
      * Returns all active tokens
      */
     static getAll() {
-        //Load all issued tokens from DB
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM `user_token`");
                 resolve(rows);
             } catch (e) {
@@ -258,7 +263,7 @@ export class JWTInterface {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -270,8 +275,9 @@ export class JWTInterface {
     static revokeUser(uid: number): Promise<void> {
         //Delete all tokens for specified user
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE From `user_token` where `userid`=?", [uid.toString()]);
                 global.logger.log({
                     level: 'silly',
@@ -289,8 +295,14 @@ export class JWTInterface {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
+}
+
+type JwtPayload = {
+    userType: UserType;
+    session: string;
+    userId: number;
 }

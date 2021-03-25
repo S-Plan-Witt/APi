@@ -12,9 +12,7 @@ import express from 'express';
 import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
 import {Exam} from "../classes/Exam";
-import {Supervisor} from "../classes/user/Supervisor";
 import path from "path";
-import {User} from "../classes/user/User";
 
 declare const global: ApiGlobal;
 
@@ -24,14 +22,14 @@ export let router = express.Router();
  * checks if the users has permission to access the endpoints
  */
 router.use((req, res, next) => {
-    if (req.decoded.permissions.timeTable) {
+    if (req.user.permissions.timeTable) {
         next();
         return;
     }
     global.logger.log({
         level: 'notice',
         label: 'Privileges violation',
-        message: `Path: ${req.path} By UserId ${req.decoded.userId}`,
+        message: `Path: ${req.path} By UserId ${req.user.id}`,
         file: path.basename(__filename)
     });
     return res.sendStatus(401);

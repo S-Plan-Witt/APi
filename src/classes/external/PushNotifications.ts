@@ -15,7 +15,6 @@ import {PushFCM} from "./PushFCM";
 import {Telegraf} from "telegraf";
 import path from "path";
 import {Device, DeviceType} from "../Device";
-import {PushSendGrid} from "./PushSendGrid";
 
 declare const global: ApiGlobal;
 
@@ -24,7 +23,6 @@ export class PushNotifications {
     public pushTelegram: PushTelegram | undefined;
     public pushWebPush: PushWebPush | undefined;
     public pushFCM: PushFCM | undefined;
-    public pushSendGrid: PushSendGrid | undefined;
 
     constructor() {
         if (global.config.pushFrameWorks.fcm.enabled) {
@@ -36,9 +34,6 @@ export class PushNotifications {
         if (global.config.pushFrameWorks.webPush.enabled) {
             this.pushWebPush = new PushWebPush();
         }
-        if (global.config.pushFrameWorks.sendGrid.enabled) {
-            this.pushSendGrid = new PushSendGrid();
-        }
     }
 
     /**
@@ -48,63 +43,67 @@ export class PushNotifications {
      * @param message
      * @returns Promise resolves when push is send
      */
-    send(endpoint: Device, title: any, message: any): Promise<void> {
+    send(endpoint: Device, title: string, message: string): Promise<void> {
         let pushFCM = this.pushFCM;
         let pushWebPush = this.pushWebPush;
         let pushTelegram = this.pushTelegram;
         return new Promise(async (resolve, reject) => {
             try {
-                //TODO replace if with switch
-                if (endpoint.platform === DeviceType.FIREBASE) {
-                    try {
-                        if (pushFCM != undefined) {
-                            await pushFCM.sendPush(parseInt(endpoint.deviceIdentifier), title, message);
-                            resolve();
-                        } else {
-                            console.log("FCM offline - no push")
-                            resolve();
-                        }
+                switch (endpoint.platform) {
 
-                    } catch (e) {
-                        console.log(e)
-                        reject(e);
-                    }
-                } else if (endpoint.platform === DeviceType.WEBPUSH) {
-                    try {
-                        if (pushWebPush != undefined) {
-                            await pushWebPush.sendPush(JSON.parse(endpoint.deviceIdentifier), title, message);
-                        } else {
-                            console.log("WebPush offline - no push")
-                        }
-                        resolve();
-                    } catch (e) {
-                        if (e.statusCode === 410 || e.statusCode === 403) {
-                            if (pushWebPush != undefined) {
-                                await pushWebPush.deleteSubscription(e.endpoint);
+                    case DeviceType.FIREBASE:
+                        try {
+                            if (pushFCM != undefined) {
+                                await pushFCM.sendPush(parseInt(endpoint.deviceIdentifier), title, message);
                                 resolve();
                             } else {
-                                reject("WP Push Offline")
+                                console.log("FCM offline - no push");
+                                resolve();
                             }
-                            return;
+
+                        } catch (e) {
+                            reject(e);
                         }
-                        console.log(e)
-                        reject(e);
-                    }
-                } else if (endpoint.platform === DeviceType.TELEGRAM) {
-                    try {
-                        if (pushTelegram != undefined) {
-                            await pushTelegram.sendPush(parseInt(endpoint.deviceIdentifier), title + ": " + message);
-                            resolve();
-                        } else {
-                            console.log("TelegramBot offline - no push")
-                            resolve();
+
+                        break;
+                    case DeviceType.TELEGRAM:
+                        try {
+                            if (pushTelegram != undefined) {
+                                await pushTelegram.sendPush(parseInt(endpoint.deviceIdentifier), title + ": " + message);
+                                resolve();
+                            } else {
+                                console.log("TelegramBot offline - no push");
+                                resolve();
+                            }
+                        } catch (e) {
+                            reject(e);
                         }
-                    } catch (e) {
-                        console.log(e)
-                        reject();
-                    }
-                }else {
-                    resolve();
+
+                        break;
+                    case DeviceType.WEBPUSH:
+                        try {
+                            if (pushWebPush != undefined) {
+                                await pushWebPush.sendPush(JSON.parse(endpoint.deviceIdentifier), title, message);
+                            } else {
+                                console.log("WebPush offline - no push");
+                            }
+                            resolve();
+                        } catch (e) {
+                            if (e.statusCode === 410 || e.statusCode === 403) {
+                                if (pushWebPush != undefined) {
+                                    await pushWebPush.deleteSubscription(e.endpoint);
+                                    resolve();
+                                } else {
+                                    reject("WP Push Offline");
+                                }
+                                return;
+                            }
+
+                            reject(e);
+                        }
+                        break;
+                    default:
+                        resolve();
                 }
             } catch (e) {
                 reject(e);
@@ -118,7 +117,7 @@ export class PushNotifications {
      * @param title
      * @param message
      */
-    sendBulk(devices: any, title: any, message: any): Promise<void> {
+    sendBulk(devices: any, title: string, message: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
                 for (let id in devices) {

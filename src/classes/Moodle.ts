@@ -17,7 +17,7 @@ declare const global: ApiGlobal;
 
 export class Moodle {
 
-    static apiRequest(mFunction: string, parameters: any): Promise<string> {
+    static apiRequest(mFunction: string, parameters: string): Promise<string> {
         return new Promise(async (resolve, reject) => {
             let options = {
                 'method': 'GET',
@@ -33,7 +33,7 @@ export class Moodle {
                     chunks.push(chunk);
                 });
 
-                res.on("end", (chunk: any) => {
+                res.on("end", () => {
                     let body = Buffer.concat(chunks);
                     let res = "";
                     try {
@@ -44,11 +44,9 @@ export class Moodle {
                 });
 
                 res.on("error", (error: Error) => {
-                    console.error(error);
                     reject(error);
                 });
             });
-
             req.end();
         });
     }
@@ -89,14 +87,15 @@ export class Moodle {
             let params = `userids[0]=${mUID}`
             let res = await this.apiRequest(MoodleFunctions.DELETE_USER, params);
 
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("UPDATE users SET moodleId =null WHERE moodleId = ?", [mUID]);
                 resolve(res);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -117,14 +116,15 @@ export class Moodle {
 
     static saveMapping(userId: number, moodleId: number) {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("UPDATE users SET moodleId = ? WHERE id_users = ?", [moodleId, userId]);
                 resolve("Saved");
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -137,8 +137,9 @@ export class Moodle {
 
             let res: any = <any>await this.apiRequest(MoodleFunctions.CREATE_COURSE, params);
             if (!res.exception) {
-                let conn = await global.mySQLPool.getConnection();
+                let conn;
                 try {
+                    conn = await global.mySQLPool.getConnection();
                     await conn.query("UPDATE courses SET moodleId = ? WHERE id_courses = ?", [res[0].id, course.id]);
                     course.moodleId = res[0].id;
                     await this.updateCourseUsers(course);
@@ -146,7 +147,7 @@ export class Moodle {
                 } catch (e) {
                     reject(e);
                 } finally {
-                    await conn.end();
+                    if (conn) await conn.end();
                 }
                 resolve("");
             } else {

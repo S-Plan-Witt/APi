@@ -35,7 +35,6 @@ router.get('/register', async (req, res) => {
     } catch (e) {
     }
 
-
     try {
         let endpoint: TOTP = await TOTP.new(req.user);
         await endpoint.save();
@@ -61,7 +60,7 @@ router.get('/abort', async (req, res) => {
         let registration = await TOTP.getByUID(req.user.id);
         console.log(registration)
         if (!registration.verified) {
-            registration.delete();
+            await registration.delete();
             res.sendStatus(200);
         } else {
             res.status(423);
@@ -86,19 +85,6 @@ router.get('/abort', async (req, res) => {
  */
 router.post('/register', async (req, res) => {
     if (req.body.hasOwnProperty("code")) {
-        let user;
-        try {
-            user = req.user;
-        } catch (e) {
-            res.sendStatus(602);
-            return;
-        }
-        try {
-            await user.verifyPassword(req.body["password"]);
-        } catch (e) {
-            res.json({"error": "Invalid Password"});
-            return;
-        }
         let registration
         try {
             registration = await TOTP.getByUID(req.user.id);
@@ -136,17 +122,14 @@ router.delete('/', async (req, res) => {
         if (req.user.secondFactor) {
             let registration = await TOTP.getByUID(req.user.id);
 
-            await registration.validateCode(req.params.code);
-
+            await registration.validateCode(req.body.code);
             await req.user.setSecondFactor(false);
-
             await registration.delete();
             res.sendStatus(200)
+        } else {
+            res.json({"err": "not active"});
         }
-
-
     } catch (e) {
-        console.log(e);
         res.json({"err": e});
     }
 });

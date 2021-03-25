@@ -8,10 +8,7 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {TimeTable} from "../classes/TimeTable";
-
 import express from 'express';
-import {User} from '../classes/user/User';
 import {PushNotifications} from '../classes/external/PushNotifications';
 import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
@@ -26,36 +23,31 @@ export let router = express.Router();
  * checks if the users has permission to access the endpoints
  */
 router.use((req, res, next) => {
-    if (req.decoded.permissions.announcements) {
+    if (req.user.permissions.announcements) {
         next();
         return;
     }
     return res.sendStatus(401);
 });
 
-
-//TODO swagger
 /**
  * Adds a new Announcement
  * @route POST /announcements/
  * @group Announcements
  * @param {Announcement.model} Announcement.body.required
  * @returns {object} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.post('/', async (req, res) => {
-    let body: { course: Course, content: string, date: string } = req.body;
+    let body: { course: Course, content: string, date: string, global: boolean } = req.body;
     try {
         let course = await Course.getByFields(body.course.subject, body.course.grade, body.course.group)
 
-        if (!req.decoded.admin) {
-            if (!req.user.isTeacherOf(course)) {
-                return res.sendStatus(401);
-            }
+        let announcement = new Announcement(course, req.user.id, req.user.id, body.content, body.date, null);
+        if (body.global) {
+            announcement.isGlobal = true;
         }
-
-        let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body.content, body.date, null);
         await announcement.create();
 
         let devices = await announcement.course.getStudentDevices();
@@ -76,13 +68,12 @@ router.post('/', async (req, res) => {
     }
 });
 
-//TODO swagger
 /**
  * Lists all Announcements
  * @route GET /announcements/
  * @group Announcements
  * @returns {Array.<Announcement>} 200
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/', async (req, res) => {
@@ -90,19 +81,15 @@ router.get('/', async (req, res) => {
     await res.json(await Announcement.getAll());
 });
 
-//TODO swagger
 /**
  * Updates Announcement {id}
  * @route PUT /announcements/id/{id}
  * @group Announcements
  * @returns {Error} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.put('/id/:id', async (req, res) => {
-    if (!req.decoded.permissions.announcementsAdmin) {
-        return res.sendStatus(401);
-    }
     let body = req.body;
     let id: number = parseInt(req.params.id);
     let announcement: Announcement = await Announcement.getById(id);
@@ -120,13 +107,12 @@ router.put('/id/:id', async (req, res) => {
     res.sendStatus(200);
 });
 
-//TODO swagger
 /**
  * Returns Announcement {id}
  * @route GET /announcements/id/{id}
  * @group Announcements - Management functions for Announcements
  * @returns {Error} 200 - Success
- * @returns {Error} 401 - Wrong Credentials
+ * @returns {Error} 401 - Bearer invalid
  * @security JWT
  */
 router.get('/id/:id', async (req, res) => {
@@ -135,7 +121,6 @@ router.get('/id/:id', async (req, res) => {
     res.json(announcement)
 });
 
-//TODO swagger
 /**
  * Deletes Announcement {id}
  * @route DELETE /announcements/id/{id}
@@ -145,14 +130,11 @@ router.get('/id/:id', async (req, res) => {
  * @security JWT
  */
 router.delete('/id/:id', async (req, res) => {
-    if (!req.decoded.permissions.announcementsAdmin) {
-        return res.sendStatus(401);
-    }
     try {
         let id = parseInt(req.params.id);
         let announcement: Announcement = await Announcement.getById(id);
 
-        if (!req.decoded.admin) {
+        if (!req.user.permissions.announcementsAdmin) {
             if (!req.user.isTeacherOf(announcement.course)) {
                 return res.sendStatus(401);
             }
