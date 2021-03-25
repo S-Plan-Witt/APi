@@ -1,63 +1,65 @@
 #API Self
 PORT=3000
-API_URL=https://api.example.com
+API_URL=https://api.splan.nils-witt.de
 
 
 #Developer Settings
 APIDOC=true
 
 #PWA
-PWA_URL=https://pwa.example.com
-
+PWA_URL=http://localhost:3001
+DISPLAY_URL=http://localhost:3001
 #Notifications
 
 ##Telegram
 TELEGRAM=true
-TELEGRAM_KEY=933041301:AAFLwVl5tJOlw2VpWjhnjPOhAzE6a9W-fMU
-TELEGRAM_VALIDATION_URL=TGVADURL
+TELEGRAM_KEY=1647448654:AAF1L0BSwvahOwha97BlZqmuVI23IFqwUrc
+TELEGRAM_VALIDATION_URL="https://pwa.splan.nils-witt.de/pages/linkTelegram.html"
 
 ##FCM
-FCM=true
-FCM_URL=https://url_server.firebaseio.com
-FCM_CREDENTIALS="/path/to/keys/fcm_key.json"
+FCM=false
+FCM_URL=https://fir-plan-194f7.firebaseio.com
+FCM_CRE
+DENTIALS="/Users/nilswitt/Desktop/Splan Development/S-Plan_API/keys/fcm_key.json"
 
 #WebPush
 WEBPUSH=true
-VAPID_PUBLIC=YOUR_VAPID_PUBIC
-VAPID_PRIVATE=YOUR_VAPID_PRIVATE
-VAPID_SUBJECT=YOUR_VAPID_SUBJECT
+VAPID_PUBLIC=BBDWHJkJr4mFzQwkNVWKG_Lj6NTXFx38XxBvUCHV9Sm_U4xlvMYapvImY8BBUSd6UI8NkzNygJRZ5J_MMgsSTek
+VAPID_PRIVATE=zvf9qKdL5Np5Y2KWrliUmoDnzZfGNM9yGJT8B1rBjeU
+VAPID_SUBJECT=mailto:nils@nils-witt.de
 
 ##Sendgrid
 SENDGRID=true
-SENDGRID_KEY=SG.BEARER_TOKEN
-SENDGRID_HOST=YOUT_SG_HOST
-SENDGRID_PW_VALIDATION_URL=SG_VALIDATION_HOST
+SENDGRID_KEY=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
+SENDGRID_HOST=TEST
+SENDGRID_PW_VALIDATION_URL=SGURL
 
 #LDAP
 LDAP=true
 
-LDAP_HOST=ldap://127.0.0.1:389
-LDAP_ROOT=DC=example,DC=com
-LDAP_DOMAIN=example
+LDAP_HOST=ldap://10.200.1.1:14002
+LDAP_ROOT=DC=netman,DC=lokal
+LDAP_DOMAIN=netman
 
-LDAP_STUDENTSGROUP=CN=Students,DC=example,DC=com
-LDAP_TEACHERGROUP=CN=Teacher,DC=example,DC=com
+LDAP_STUDENTSGROUP=CN=NMStudents-global,OU=Students,DC=netman,DC=lokal
+LDAP_TEACHERGROUP=CN=NMTeachers-global,OU=Teachers,DC=netman,DC=lokal
 
-LDAP_USER=user
-LDAP_PASS=password
+LDAP_USER=wittnil1611
+LDAP_PASS=l8keGMqB*3
 
 LDAP_TLS=false
-LDAP_CA_PATH="/path/to/keys/ldap-ca.pem"
+LDAP_CA_PATH="/Users/nilswitt/Desktop/Splan Development/S-Plan_API/keys/ldap-ca.pem"
 
 #MySQL
 SQL_PORT=3306
-SQL_HOST=127.0.0.1
-SQL_USER=user
-SQL_PASS=pass
-SQL_DB=database
+SQL_HOST=10.200.1.1
+SQL_USER=root
+SQL_PASS=MehS2545fYcYEgvj6eQmAcv2wK
+SQL_DB=splan
 
 #Moodle
-MOODLE=false
-MOODLE_URL=https://moodleServer.example.de/webservice/rest/server.php'
-MOODLE_KEY=MOODLE_KEY
+MOODLE=true
+MOODLE_HOST=moodle.splan.nils-witt.de
+MOODLE_PATH=
+MOODLE_KEY=cadb6df41179b3791f63415f82878c7a
 

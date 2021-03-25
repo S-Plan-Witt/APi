@@ -1,5 +1,5 @@
 {
-  "name": "siks",
+  "name": "splanapi",
   "version": "1.0.0",
   "description": "",
   "main": "build/index.js",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.cloud.nils-witt.de/nilswitt/splan-api.git"
+    "url": "git+https://github.com/Nils-witt/S-Plan_APi.git"
   },
   "author": "Nils Witt",
   "contributors": [
@@ -22,10 +22,10 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://gitlab.cloud.nils-witt.de/nilswitt/splan-api/-/issues"
+    "url": "https://github.com/Nils-witt/S-Plan_APi/-/issues"
   },
-  "homepage": "https://gitlab.cloud.nils-witt.de/nilswitt/splan-api/-/blob/master/README.md",
-  "readme": "https://gitlab.cloud.nils-witt.de/nilswitt/splan-api/-/blob/master/README.md",
+  "homepage": "https://github.com/Nils-witt/S-Plan_APi/splan-api/-/blob/master/README.md",
+  "readme": "https://github.com/Nils-witt/S-Plan_APi/-/blob/master/README.md",
   "engines": {
     "node": ">= 14.0.0"
   },

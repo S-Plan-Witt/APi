@@ -1,29 +1,28 @@
-version: "3"
+
+version: '3'
 
 services:
-  node:
-    image: "node:14"
-    user: "node"
-    working_dir: /home/node/app
-    volumes:
-    - ./:/home/node/app
-    command: "node build/app.js"
+  api:
+    image: ghcr.io/nils-witt/s-plan_api:latest
+    restart: always
     environment:
       # API Self
-      API_URL: "https://api.example.com"
+      API_URL: "https://api.splan.nils-witt.de"
 
       # Developer Settings
-      APIDOC: "true"
+      APIDOC: "false"
 
       #PWA
-      PWA_URL: "https://pwa.example.com"
+      PWA_URL: "https://pwa.splan.example.de"
 
+      #Display
+      DISPLAY_URL: "https://display.splan.example.de"
       #Notifications
 
       ##Telegram
-      TELEGRAM: "true"
-      TELEGRAM_KEY: "TelegramKey"
-      TELEGRAM_VALIDATION_URL: "VALIDATION_URL"
+      TELEGRAM: "false"
+      TELEGRAM_KEY: ""
+      TELEGRAM_VALIDATION_URL: "https://pwa.splan.example.de/pages/linkTelegram.html"
 
       # FCM
       FCM: "false"
@@ -32,58 +31,35 @@ services:
 
       # WebPush
       WEBPUSH: "false"
-      VAPID_PUBLIC: "YOUR_VAPID_PUBIC"
-      VAPID_PRIVATE: "YOUR_VAPID_PRIVATE"
-      VAPID_SUBJECT: "YOUR_VAPID_SUBJECT"
-
-      # Sendgrid
-      SENDGRID: "true"
-      SENDGRID_KEY: "SG.BEARER_TOKEN"
-      SENDGRID_HOST: "YOUT_SG_HOST"
-      SENDGRID_PW_VALIDATION_URL: "SG_VALIDATION_HOST"
+      VAPID_PUBLIC: "VAPID_PUBLIC"
+      VAPID_PRIVATE: "VAPID_PRIVATE"
+      VAPID_SUBJECT: "mailto:admin@example.de"
 
       # LDAP
       LDAP: "true"
 
       LDAP_HOST: "ldap://127.0.0.1:389"
-      LDAP_ROOT: "DC=example,DC=com"
-      LDAP_DOMAIN: "example"
+      LDAP_ROOT: "DC=domain,DC=local"
+      LDAP_DOMAIN: "domain"
 
-      LDAP_STUDENTSGROUP: "CN=Students,DC=example,DC=com"
-      LDAP_TEACHERGROUP: "CN=Teacher,DC=example,DC=com"
+      LDAP_STUDENTSGROUP: "CN=Students,DC=domain,DC=local"
+      LDAP_TEACHERGROUP: "CN=Teachers,DC=domain,DC=local"
 
       LDAP_USER: "user"
-      LDAP_PASS: "password"
+      LDAP_PASS: "pass"
 
       LDAP_TLS: "false"
       LDAP_CA_PATH: "/home/node/app/keys/ldap-ca.pem"
 
       # MySQL
-      SQL_PORT: 3306
+      SQL_PORT: "3306"
       SQL_HOST: "mysql"
       SQL_USER: "splan"
-      SQL_PASS: "pass"
+      SQL_PASS: ""
       SQL_DB: "splan"
 
       # Moodle
       MOODLE: "false"
-      MOODLE_URL: "https://moodleServer.example.de/webservice/rest/server.php"
-      MOODLE_KEY: "MOODLE_KEY"
-
-    expose:
-      - 3000
-    links:
-      - mysql
-    depends_on:
-      - mysql
-  mysql:
-    image: mysql:5.7
-    environment:
-      MYSQL_ROOT_PASSWORD: "my-secret-pw"
-      MYSQL_USER: "splan"
-      MYSQL_PASSWORD: "splan"
-      MYSQL_DATABASE: "splan"
-    ports:
-      - 3306:3306
-    volumes:
-      - ./data/database:/var/lib/mysql
+      MOODLE_HOST: "moodle.example.de"
+      MOODLE_PATH: ""
+      MOODLE_KEY: "KEY"
