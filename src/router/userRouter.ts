@@ -290,7 +290,7 @@ router.get('/replacementlessons', async (req, res) => {
                 });
             }
         }
-        if (req.user.type === UserType.TEACHER) {
+        if (req.user.type == UserType.TEACHER) {
             assert(req.user.id != null)
             let data: ReplacementLesson[] = await ReplacementLesson.getByTeacher(req.user.id, dateToday, dateEnd);
             data.forEach((replacementLesson) => {
@@ -347,7 +347,7 @@ router.get('/announcements', async (req: Request, res: Response) => {
 router.get('/exams', async (req, res) => {
     try {
         let response: Exam[] = [];
-        if (req.user.type === UserType.STUDENT) {
+        if (req.user.type == UserType.STUDENT) {
             let courses = req.user.courses;
             console.log(courses)
             for (const course of courses) {
@@ -359,19 +359,13 @@ router.get('/exams', async (req, res) => {
                         data.forEach(exam => {
                             response.push(exam);
                         });
-                    } else if (req.user.type === 2) {
-                        //Get exams by course
-                        let data: Exam[] = await Exam.getByCourse(course);
-                        data.forEach(exam => {
-                            response.push(exam);
-                        });
                     }
                 } catch (e) {
                     console.log(e)
                 }
             }
 
-        } else if (req.user.type === UserType.TEACHER) {
+        } else if (req.user.type == UserType.TEACHER) {
             response = await Exam.getByTeacher(req.user.username);
         }
         res.json(response);
