@@ -8,10 +8,7 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {TimeTable} from "../classes/TimeTable";
-
 import express from 'express';
-import {User} from '../classes/user/User';
 import {PushNotifications} from '../classes/external/PushNotifications';
 import {ApiGlobal} from "../types/global";
 import {Course} from "../classes/Course";
@@ -43,11 +40,14 @@ router.use((req, res, next) => {
  * @security JWT
  */
 router.post('/', async (req, res) => {
-    let body: { course: Course, content: string, date: string } = req.body;
+    let body: { course: Course, content: string, date: string, global: boolean } = req.body;
     try {
         let course = await Course.getByFields(body.course.subject, body.course.grade, body.course.group)
 
         let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body.content, body.date, null);
+        if (body.global) {
+            announcement.global = true;
+        }
         await announcement.create();
 
         let devices = await announcement.course.getStudentDevices();
