@@ -31,7 +31,7 @@ export class Announcement {
     public content: string;
     public date: string;
     public id: number | null;
-    public global: boolean = false;
+    public isGlobal: boolean = false;
 
     /**
      * @param course {Course}
@@ -179,7 +179,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                await conn.query("INSERT INTO `announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`,global) VALUES (?, ?, ?, ?, ?,?)", [content, date, authorId, editorId, courseId, global]);
+                await conn.query("INSERT INTO `announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`,global) VALUES (?, ?, ?, ?, ?,?)", [content, date, authorId, editorId, courseId, this.isGlobal]);
                 resolve(true);
             } catch (e) {
                 global.logger.log({

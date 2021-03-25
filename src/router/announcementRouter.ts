@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
 
         let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body.content, body.date, null);
         if (body.global) {
-            announcement.global = true;
+            announcement.isGlobal = true;
         }
         await announcement.create();
 
