@@ -15,21 +15,21 @@ import {Teacher} from "../classes/user/Teacher";
 
 declare const global: ApiGlobal;
 
-let useStandardENV:boolean = true;
+let useStandardENV: boolean = true;
 
 (async () => {
     try {
         Starter.logger();
         Starter.config();
 
-        if (!useStandardENV){
+        if (!useStandardENV) {
             setCustomParams();
         }
 
         await Ldap.bindTest();
         console.log("SUCCESSFUL 1/4 (General connection)");
 
-        await Ldap.bindLDAPAsUser("user","pass")
+        await Ldap.bindLDAPAsUser("user", "pass")
         console.log("SUCCESSFUL 2/4");
 
         let students: Student[] = await Ldap.getAllStudents();

@@ -11,6 +11,7 @@ import {ApiGlobal} from "../types/global";
 import path from "path";
 
 declare const global: ApiGlobal;
+
 /**
  * @typedef Device
  * @property {number} id
@@ -35,35 +36,48 @@ export class Device {
     }
 
     /**
+     * Returns a device object
+     * @param row
+     */
+    static fromSqlRow(row: DeviceSqlRow): Promise<Device> {
+        return new Promise(async (resolve, reject) => {
+            resolve(new Device(row.platform, row.id_devices, row.userId, row.added, row.deviceIdentifier));
+        });
+    }
+
+    /**
      * Remove device from Database
      * @param deviceId {String}
      * @returns Promise
      */
     static removeDevice(deviceId: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE FROM `devices` WHERE deviceIdentifier = ?", [deviceId]);
                 resolve();
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end()
+                if (conn) await conn.end()
             }
         });
     }
 
     static getByUID(id: number): Promise<Device[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows: Device[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [id]);
+                conn = await global.mySQLPool.getConnection();
+                let rows: DeviceSqlRow[] = await conn.query("SELECT * FROM devices WHERE `userId`= ?;", [id]);
                 let devices: Device[] = [];
-                rows.forEach((row: any) => {
-                    if (row.deviceIdentifier != null) {
-                        devices.push(new Device(row.platform, parseInt(row.id_devices), row.userId, row.added, row.deviceIdentifier));
+
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].deviceIdentifier != null) {
+                        devices.push(await this.fromSqlRow(rows[i]));
                     }
-                });
+                }
                 resolve(devices);
             } catch (e) {
                 global.logger.log({
@@ -74,15 +88,16 @@ export class Device {
                 });
                 reject(e);
             } finally {
-                await conn.end()
+                if (conn) await conn.end()
             }
         });
     }
 
     save() {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let rows: Device[] = await conn.query("SELECT * FROM devices WHERE deviceIdentifier= ?;", [this.deviceIdentifier]);
                 if (rows.length !== 0) {
                     resolve(false);
@@ -99,15 +114,16 @@ export class Device {
                     file: path.basename(__filename)
                 });
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
 
     delete() {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE FROM devices WHERE id_devices= ?;", [this.id]);
                 resolve(true);
             } catch (e) {
@@ -119,7 +135,7 @@ export class Device {
                     file: path.basename(__filename)
                 });
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -131,4 +147,12 @@ export enum DeviceType {
     FIREBASE = 2,
     WEBPUSH = 3,
     MAIL = 4
+}
+
+export type DeviceSqlRow = {
+    id_devices: number;
+    userId: number
+    deviceIdentifier: string;
+    platform: number;
+    added: string;
 }

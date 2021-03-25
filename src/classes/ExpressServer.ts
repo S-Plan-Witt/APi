@@ -11,7 +11,6 @@ import express, {Express, NextFunction, Request, Response} from "express";
 import {ApiGlobal} from "../types/global";
 import path from "path";
 import {JWTInterface} from "./JWTInterface";
-import {router} from "../router/mainRouter";
 
 declare const global: ApiGlobal;
 
@@ -19,8 +18,8 @@ declare const global: ApiGlobal;
  * Class ExpressServer: Handles all http- server functionality.
  */
 export class ExpressServer {
+    static instance: ExpressServer;
     expressApp: Express;
-    static instance : ExpressServer;
 
     constructor() {
         this.expressApp = express();
@@ -31,7 +30,7 @@ export class ExpressServer {
         this.instance = new ExpressServer();
     }
 
-    static launch(){
+    static launch() {
         this.instance.exposeServer();
     }
 
@@ -80,7 +79,7 @@ export class ExpressServer {
     /**
      * Exposes the server
      */
-    exposeServer(){
+    exposeServer() {
         /**
          * Start HTTP Server to listen for in-bound requests
          */
@@ -121,7 +120,7 @@ let reqLogger = (req: Request, res: Response, next: NextFunction) => {
 const header = (req: Request, res: Response, next: NextFunction) => {
     let origin = global.config.pwaConfig.url;
 
-    if(req.header("Origin") == global.config.displayConfig.url){
+    if (req.header("Origin") == global.config.displayConfig.url) {
         origin = global.config.displayConfig.url;
     }
 

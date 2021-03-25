@@ -37,15 +37,14 @@ export class RoomLink {
      */
     static getRoomLinks(date: string, room: string): Promise<RoomLink[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let roomLinks: RoomLink[] = [];
-                let rows = await conn.query("SELECT * FROM `exams_rooms` WHERE `date`= ? AND `room`= ? ", [date, room]);
-                rows.forEach((element: any) => {
-                    let date = new Date(element["date"]);
-                    element["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
-                    roomLinks.push(element);
-                });
+                let rows: RoomLinkSqlRow[] = await conn.query("SELECT * FROM `exams_rooms` WHERE `date`= ? AND `room`= ? ", [date, room]);
+                for (let i = 0; i < rows.length; i++) {
+                    roomLinks.push(await this.fromSqlRow(rows[i]))
+                }
                 resolve(roomLinks);
             } catch (e) {
                 global.logger.log({
@@ -56,7 +55,7 @@ export class RoomLink {
                 });
                 reject();
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -69,9 +68,9 @@ export class RoomLink {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let result = await conn.query("SELECT * FROM exams_rooms WHERE id_exam_rooms = ?", [id]);
-                if (result.length === 1) {
-                    let row = result[0];
+                let rows: RoomLinkSqlRow[] = await conn.query("SELECT * FROM exams_rooms WHERE id_exam_rooms = ?", [id]);
+                if (rows.length === 1) {
+                    let row = rows[0];
                     resolve(await this.fromSqlRow(row));
                 } else {
                     reject("No roomlink");
@@ -80,7 +79,7 @@ export class RoomLink {
             } catch (e) {
 
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -91,7 +90,6 @@ export class RoomLink {
             let dateString = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
             let rl = new RoomLink(row.room, row.from, row.to, dateString, row.id_exam_rooms, await Supervisor.getByRoomLink(row.id_exam_rooms));
             resolve(rl);
-
         });
     }
 
@@ -101,8 +99,9 @@ export class RoomLink {
      */
     save(): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("INSERT INTO exams_rooms (room, `from`, `to`, date) VALUES (?, ?, ?, ?)", [this.room, this.from, this.to, this.date]);
                 resolve();
             } catch (e) {
@@ -114,7 +113,7 @@ export class RoomLink {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }

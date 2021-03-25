@@ -13,14 +13,14 @@ import {Starter} from "../startEnviroment";
 
 declare const global: ApiGlobal;
 
-let useStandardENV:boolean = true;
+let useStandardENV: boolean = true;
 
 (async () => {
     try {
         Starter.logger();
         Starter.config();
 
-        if (!useStandardENV){
+        if (!useStandardENV) {
             setCustomParams();
         }
 

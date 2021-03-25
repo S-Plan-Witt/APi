@@ -12,7 +12,6 @@ import express from 'express';
 
 import {User} from '../classes/user/User';
 import {PushNotifications} from '../classes/external/PushNotifications';
-import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
 import {ReplacementLesson} from "../classes/ReplacementLesson";
 import {Course} from "../classes/Course";
@@ -148,7 +147,7 @@ router.get('/date/:date', async (req, res) => {
  * @security JWT
  */
 router.get('/id/:id', async (req, res) => {
-    if (!req.decoded.admin) {
+    if (!req.user.permissions.replacementLessons) {
         return res.sendStatus(401);
     }
     try {

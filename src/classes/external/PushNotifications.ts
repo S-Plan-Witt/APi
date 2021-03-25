@@ -43,7 +43,7 @@ export class PushNotifications {
      * @param message
      * @returns Promise resolves when push is send
      */
-    send(endpoint: Device, title: any, message: any): Promise<void> {
+    send(endpoint: Device, title: string, message: string): Promise<void> {
         let pushFCM = this.pushFCM;
         let pushWebPush = this.pushWebPush;
         let pushTelegram = this.pushTelegram;
@@ -57,14 +57,14 @@ export class PushNotifications {
                                 await pushFCM.sendPush(parseInt(endpoint.deviceIdentifier), title, message);
                                 resolve();
                             } else {
-                                console.log("FCM offline - no push")
+                                console.log("FCM offline - no push");
                                 resolve();
                             }
 
                         } catch (e) {
-                            console.log(e)
                             reject(e);
                         }
+
                         break;
                     case DeviceType.TELEGRAM:
                         try {
@@ -72,20 +72,20 @@ export class PushNotifications {
                                 await pushTelegram.sendPush(parseInt(endpoint.deviceIdentifier), title + ": " + message);
                                 resolve();
                             } else {
-                                console.log("TelegramBot offline - no push")
+                                console.log("TelegramBot offline - no push");
                                 resolve();
                             }
                         } catch (e) {
-                            console.log(e)
-                            reject();
+                            reject(e);
                         }
+
                         break;
                     case DeviceType.WEBPUSH:
                         try {
                             if (pushWebPush != undefined) {
                                 await pushWebPush.sendPush(JSON.parse(endpoint.deviceIdentifier), title, message);
                             } else {
-                                console.log("WebPush offline - no push")
+                                console.log("WebPush offline - no push");
                             }
                             resolve();
                         } catch (e) {
@@ -94,11 +94,11 @@ export class PushNotifications {
                                     await pushWebPush.deleteSubscription(e.endpoint);
                                     resolve();
                                 } else {
-                                    reject("WP Push Offline")
+                                    reject("WP Push Offline");
                                 }
                                 return;
                             }
-                            console.log(e)
+
                             reject(e);
                         }
                         break;
@@ -117,7 +117,7 @@ export class PushNotifications {
      * @param title
      * @param message
      */
-    sendBulk(devices: any, title: any, message: any): Promise<void> {
+    sendBulk(devices: any, title: string, message: string): Promise<void> {
         return new Promise(async (resolve, reject) => {
             try {
                 for (let id in devices) {

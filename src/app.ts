@@ -13,7 +13,7 @@ import {Starter} from "./startEnviroment";
 (async () => {
     try {
         await Starter.full();
-    }catch (e) {
+    } catch (e) {
         console.log("Start errored")
         process.exit(1);
     }

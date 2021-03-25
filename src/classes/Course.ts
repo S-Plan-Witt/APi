@@ -8,13 +8,13 @@
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import {Device} from "./Device";
+import {Device, DeviceSqlRow} from "./Device";
 import path from "path";
 import {ApiGlobal} from "../types/global";
 import assert from "assert";
-import {Lesson} from "./Lesson";
+import {Lesson, LessonSqlRow} from "./Lesson";
 import {Exam} from "./Exam";
-import {User} from "./user/User";
+import {User, UserSqlRow} from "./user/User";
 import {Moodle} from "./Moodle";
 
 declare const global: ApiGlobal;
@@ -57,6 +57,16 @@ export class Course {
     }
 
     /**
+     * Returns a course object
+     * @param row
+     */
+    static fromSqlRow(row: CourseSqlRow): Promise<Course> {
+        return new Promise(async (resolve, reject) => {
+            resolve(new Course(row.grade, row.subject, row.group, false, row.id_courses, row.teacherId, row.moodleId));
+        });
+    }
+
+    /**
      * Returns a course if found else rejects
      * @param subject
      * @param grade
@@ -71,12 +81,12 @@ export class Course {
                 if (rows.length !== 1) {
                     reject("Course not found");
                 } else {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"], rows[0]["moodleId"]));
+                    resolve(await this.fromSqlRow(rows[0]));
                 }
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -92,14 +102,14 @@ export class Course {
                 conn = await global.mySQLPool.getConnection();
                 let rows = await conn.query("SELECT * FROM courses WHERE (id_courses=?)", [id]);
                 if (rows.length === 1) {
-                    resolve(new Course(rows[0]["grade"], rows[0]["subject"], rows[0]["group"], false, rows[0]["id_courses"], rows[0]["teacherId"], rows[0]["moodleId"]));
+                    resolve(await this.fromSqlRow(rows[0]));
                 } else {
                     reject();
                 }
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -113,18 +123,16 @@ export class Course {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM courses WHERE (teacherId=?)", [id]);
+                let rows: CourseSqlRow[] = await conn.query("SELECT * FROM courses WHERE (teacherId=?)", [id]);
                 let courses: Course[] = [];
                 for (let i = 0; i < rows.length; i++) {
-                    let row = rows[i];
-                    let course = new Course(row["grade"], row["subject"], row["group"], false, row["id_courses"], row["teacherId"], row["moodleId"]);
-                    courses.push(course);
+                    courses.push(await this.fromSqlRow(rows[i]));
                 }
                 resolve(courses);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -139,24 +147,24 @@ export class Course {
             try {
                 conn = await global.mySQLPool.getConnection();
                 let courses: Course[] = [];
-                let rows = await conn.query("SELECT * FROM courses ORDER BY grade, subject, `group`");
+                let rows: CourseSqlRow[] = await conn.query("SELECT * FROM courses ORDER BY grade, subject, `group`");
                 for (let i = 0; i < rows.length; i++) {
-                    let row = rows[i];
-                    courses.push(new Course(row.grade, row.subject, row.group, false, row.id_courses, row.teacherId, row.moodleId))
+                    courses.push(await this.fromSqlRow(rows[i]))
                 }
                 resolve(courses);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
 
     save(): Promise<Course> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let result = await conn.query("INSERT INTO `courses` (grade, subject, `group`, teacherId) VALUES (?, ?, ?, ?);", [this.grade, this.subject, this.group, this.teacherId]);
                 this.id = result.insertId;
                 await Moodle.createCourse(this)
@@ -164,7 +172,7 @@ export class Course {
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -181,15 +189,16 @@ export class Course {
                 await exams[i].delete();
             }
 
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE FROM user_student_courses WHERE courseId=?", [this.id]);
                 await conn.query("DELETE FROM courses WHERE id_courses=?", [this.id]);
                 resolve(this);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -200,17 +209,17 @@ export class Course {
      */
     getStudentDevices() {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query("SELECT user_student_courses.*, devices.* FROM user_student_courses LEFT JOIN devices ON user_student_courses.user_id = devices.userID WHERE (`courseId`=? )", [this.id]);
+                conn = await global.mySQLPool.getConnection();
+                let rows: DeviceSqlRow[] = await conn.query("SELECT user_student_courses.*, devices.* FROM user_student_courses LEFT JOIN devices ON user_student_courses.user_id = devices.userID WHERE (`courseId`=? )", [this.id]);
 
-                let devices: any = [];
-                rows.forEach((row: any) => {
-                    if (row.deviceIdentifier != null) {
-                        let device = new Device(row.platform, row.id_devices, row.userId, row.added, row.deviceIdentifier);
-                        devices.push(device);
+                let devices: Device[] = [];
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].deviceIdentifier != null) {
+                        devices.push(await Device.fromSqlRow(rows[i]));
                     }
-                });
+                }
                 resolve(devices);
             } catch (e) {
                 global.logger.log({
@@ -221,7 +230,7 @@ export class Course {
                 })
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -230,37 +239,38 @@ export class Course {
         return new Promise(async (resolve, reject) => {
             let conn;
             try {
-                conn = await global.mySQLPool.getConnection();
-                let lessons: Lesson[] = [];
                 assert(this.id != null);
-                let rows = await conn.query("SELECT * FROM lessons WHERE courseId = ?", [this.id]);
-                rows.forEach((row: any) => {
-                    lessons.push(new Lesson(this, row["lesson"], row["weekday"], row["room"], row["id_lessons"]));
-                });
+                conn = await global.mySQLPool.getConnection();
+
+                let lessons: Lesson[] = [];
+                let rows: LessonSqlRow[] = await conn.query("SELECT * FROM lessons WHERE courseId = ?", [this.id]);
+                for (let i = 0; i < rows.length; i++) {
+                    lessons.push(await Lesson.fromSqlRow(rows[i]));
+                }
                 resolve(lessons);
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
     }
 
-    getUsers() : Promise<User[]>{
+    getUsers(): Promise<User[]> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
-                let rows = await conn.query("SELECT users.* FROM user_student_courses LEFT JOIN users ON user_student_courses.user_id = users.id_users WHERE (`courseId`=? )", [this.id]);
+                conn = await global.mySQLPool.getConnection();
+                let rows: UserSqlRow[] = await conn.query("SELECT users.* FROM user_student_courses LEFT JOIN users ON user_student_courses.user_id = users.id_users WHERE (`courseId`=? )", [this.id]);
 
                 let users: User[] = [];
                 for (let i = 0; i < rows.length; i++) {
                     users.push(await User.fromSqlUser(rows[i]));
                 }
-                if(this.teacherId != null){
+                if (this.teacherId != null) {
                     users.push(await User.getById(this.teacherId))
                 }
-
                 resolve(users);
             } catch (e) {
                 global.logger.log({
@@ -271,8 +281,18 @@ export class Course {
                 })
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
+}
+
+export type CourseSqlRow = {
+    id_courses: number;
+    grade: string;
+    group: string;
+    subject: string;
+    coursename: string;
+    teacherId: number;
+    moodleId: number;
 }

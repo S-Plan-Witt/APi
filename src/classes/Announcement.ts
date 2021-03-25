@@ -65,7 +65,7 @@ export class Announcement {
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -73,7 +73,6 @@ export class Announcement {
     /**
      * Retrieves all Announcements to corresponding course from the database
      * @returns {Promise<Announcement[]>}
-     * @param course
      */
     static getForDisplay(): Promise<Announcement[]> {
         return new Promise(async (resolve, reject) => {
@@ -85,7 +84,7 @@ export class Announcement {
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -94,14 +93,14 @@ export class Announcement {
      * Returns an array of Announcements from the given sql result
      * @param rows
      */
-    static convertSqlRowsToObjects(rows: any): Promise<Announcement[]> {
+    static convertSqlRowsToObjects(rows: AnnouncementSqlRow[]): Promise<Announcement[]> {
         return new Promise(async (resolve, reject) => {
 
             let announcements: Announcement[] = [];
             for (let i = 0; i < rows.length; i++) {
                 let row = rows[i];
-                row["date"] = Utils.convertMysqlDate(row["date"]);
-                announcements.push(new Announcement(await Course.getById(row["courseId"]), row["authorId"], row["editorId"], row["content"], row["date"], row["id_announcements"]));
+                let dateString = Utils.convertMysqlDate(row.date);
+                announcements.push(new Announcement(await Course.getById(row.courseId), row.authorId, row.editorId, row.content, dateString, row.id_announcements));
             }
             resolve(announcements);
         });
@@ -116,7 +115,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM `announcements`");
+                let rows: AnnouncementSqlRow[] = await conn.query("SELECT * FROM `announcements`");
                 resolve(this.convertSqlRowsToObjects(rows));
             } catch (e) {
                 global.logger.log({
@@ -127,7 +126,7 @@ export class Announcement {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -142,7 +141,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT * FROM `announcements` WHERE id_announcements = ?", [id]);
+                let rows: AnnouncementSqlRow[] = await conn.query("SELECT * FROM `announcements` WHERE id_announcements = ?", [id]);
                 if (rows.length === 1) {
                     let row = rows[0];
                     row["date"] = Utils.convertMysqlDate(row["date"])
@@ -159,7 +158,7 @@ export class Announcement {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -190,7 +189,7 @@ export class Announcement {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -220,7 +219,7 @@ export class Announcement {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -246,8 +245,20 @@ export class Announcement {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
+}
+
+type AnnouncementSqlRow = {
+    id_announcements: number;
+    content: string;
+    created: string;
+    edited: string;
+    date: string;
+    authorId: number;
+    editorId: number;
+    courseId: number;
+    global: boolean;
 }

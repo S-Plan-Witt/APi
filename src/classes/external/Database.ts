@@ -18,7 +18,7 @@ export class Database {
     /**
      * Connects to the database server
      */
-    static connect(){
+    static connect() {
 
         global.mySQLPool = mySQL.createPool({
             host: global.config.mysqlConfig.hostname,

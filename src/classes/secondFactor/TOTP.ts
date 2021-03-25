@@ -16,7 +16,6 @@ import {SecondFactor, SecondFactorType} from "./SecondFactor";
 declare const global: ApiGlobal;
 
 export class TOTP implements SecondFactor {
-
     id: number | null;
     privateKey: string;
     type: SecondFactorType = SecondFactorType.TOTP;
@@ -34,7 +33,7 @@ export class TOTP implements SecondFactor {
         return new Promise(async (resolve, reject) => {
             let endpoint = twofactor.generateSecret({name: "S-Plan", account: user.displayName});
             try {
-                let totp = new TOTP(null, endpoint.secret, user.id)
+                let totp = new TOTP(null, endpoint.secret, user.id);
                 totp.regData = endpoint;
                 resolve(totp);
             } catch (e) {
@@ -52,8 +51,9 @@ export class TOTP implements SecondFactor {
 
     static getByUID(id: number): Promise<TOTP> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let result = await conn.query("SELECT * FROM user_secondfactor WHERE type=0 AND user_id=?", [id]);
                 if (result.length == 1) {
                     let entity = result[0];
@@ -61,7 +61,7 @@ export class TOTP implements SecondFactor {
                     totp.verified = entity.verified;
                     resolve(totp);
                 } else {
-                    reject("not found")
+                    reject("not found");
                 }
             } catch (e) {
                 global.logger.log({
@@ -72,13 +72,13 @@ export class TOTP implements SecondFactor {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
     }
 
-    generateCode(){
+    generateCode() {
         return new Promise(async (resolve, reject) => {
             let token = twofactor.generateToken(this.privateKey);
             resolve(token);
@@ -87,8 +87,9 @@ export class TOTP implements SecondFactor {
 
     setVerified(isVerified: boolean) {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("UPDATE splan.user_secondfactor t SET t.verified = ? WHERE t.id_secondfactor = ?", [isVerified, this.id]);
                 this.verified = isVerified;
                 resolve(this);
@@ -101,7 +102,7 @@ export class TOTP implements SecondFactor {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -115,7 +116,7 @@ export class TOTP implements SecondFactor {
                 if (result.delta < 3 && result.delta > -3) {
                     resolve("");
                 } else {
-                    reject("Invalid code")
+                    reject("Invalid code");
                 }
             }
         });
@@ -123,8 +124,9 @@ export class TOTP implements SecondFactor {
 
     save() {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let result = await conn.query("INSERT INTO user_secondfactor (user_id, totp_key, type) VALUES (?,  ?, ?)", [this.userId, this.privateKey, SecondFactorType.TOTP]);
                 this.id = result.insertId;
                 resolve(this);
@@ -137,7 +139,7 @@ export class TOTP implements SecondFactor {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
 
         });
@@ -156,8 +158,9 @@ export class TOTP implements SecondFactor {
 
     delete(): Promise<void> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 await conn.query("DELETE FROM user_secondfactor WHERE id_secondfactor=?", [this.id]);
                 resolve();
             } catch (e) {
@@ -169,7 +172,7 @@ export class TOTP implements SecondFactor {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }

@@ -9,9 +9,8 @@
  */
 
 import express, {Request, Response} from 'express';
-import {User, UserStatus, UserType} from '../classes/user/User';
+import {User, UserType} from '../classes/user/User';
 import {Ldap} from '../classes/external/Ldap';
-import {TimeTable} from "../classes/TimeTable";
 import {ApiGlobal} from "../types/global";
 import {UserFilter} from "../classes/user/UserFilter";
 import {Course} from "../classes/Course";
@@ -27,14 +26,14 @@ export let router = express.Router();
  * checks if the users has permission to access the endpoints
  */
 router.use((req, res, next) => {
-    if (req.decoded.permissions.users) {
+    if (req.user.permissions.users) {
         next();
         return;
     }
     global.logger.log({
         level: 'notice',
         label: 'Privileges violation',
-        message: `Path: ${req.path} By UserId ${req.decoded.userId}`,
+        message: `Path: ${req.path} By UserId ${req.user.id}`,
         file: path.basename(__filename)
     });
     return res.sendStatus(401);
@@ -184,7 +183,7 @@ router.post('/find', async (req: Request, res: Response) => {
  * @security JWT
  */
 router.post('/username/:username/courses', async (req: Request, res: Response) => {
-    if (!req.decoded.permissions.usersAdmin) {
+    if (!req.user.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
             label: 'Express',
@@ -256,7 +255,7 @@ router.post('/username/:username/courses', async (req: Request, res: Response) =
  * @security JWT
  */
 router.get('/reload/teachers', async (req: Request, res: Response) => {
-    if (!req.decoded.permissions.usersAdmin) {
+    if (!req.user.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
             label: 'Express',
@@ -291,7 +290,7 @@ router.get('/reload/teachers', async (req: Request, res: Response) => {
  * @security JWT
  */
 router.get('/reload/students', async (req: Request, res: Response) => {
-    if (!req.decoded.permissions.usersAdmin) {
+    if (!req.user.permissions.usersAdmin) {
         global.logger.log({
             level: 'debug',
             label: 'Express',

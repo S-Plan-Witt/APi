@@ -86,7 +86,7 @@ export class Starter {
             try {
                 console.log("Starter: ExSERVER BEGIN");
                 this.mysql();
-                if(global.config.ldapConfig.enabled){
+                if (global.config.ldapConfig.enabled) {
                     await this.ldap();
                 }
                 console.log("Starter: ExSERVER END");

@@ -14,7 +14,7 @@ import {User, UserType} from "../classes/user/User";
 
 declare const global: ApiGlobal;
 
-let useStandardENV:boolean = true;
+let useStandardENV: boolean = true;
 
 (async () => {
     try {
@@ -22,13 +22,13 @@ let useStandardENV:boolean = true;
         Starter.config();
         Starter.mysql();
 
-        if (!useStandardENV){
+        if (!useStandardENV) {
             setCustomParams();
         }
         let user = await User.getByUsername("user")
 
         let sessID = "TT22";
-        let token = await JWTInterface.createJWT(user.id,UserType.STUDENT,sessID);
+        let token = await JWTInterface.createJWT(user.id, UserType.STUDENT, sessID);
         console.log("Token Created");
         console.log(token);
         await JWTInterface.verifyId(sessID);
@@ -38,7 +38,7 @@ let useStandardENV:boolean = true;
         try {
             await JWTInterface.verifyId(sessID);
             console.log("token was not successfully revoked")
-        }catch (e) {
+        } catch (e) {
             console.log("token is successfully revoked")
         }
     } catch (e) {

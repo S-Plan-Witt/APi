@@ -175,7 +175,7 @@ router.get('/courses', async (req, res) => {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: 'Routing: /user/courses : invalid usertype :' + req.decoded.userType,
+                message: 'Routing: /user/courses : invalid usertype :' + req.user.type,
                 file: path.basename(__filename)
             });
             res.sendStatus(401);
@@ -209,10 +209,8 @@ router.get('/lessons', async (req, res) => {
             for (let coursePrototype of courses) {
                 let course = await Course.getByFields(coursePrototype.subject, coursePrototype.grade, coursePrototype.group);
                 try {
-                    //Get lesson for course as array
-                    let lessons: any = await course.getLessons();
-                    lessons.forEach((lesson: any) => {
-                        //Add lesson to response array
+                    let lessons: Lesson[] = await course.getLessons();
+                    lessons.forEach((lesson) => {
                         response.push(lesson);
                     });
                 } catch (e) {
@@ -284,21 +282,18 @@ router.get('/replacementlessons', async (req, res) => {
         for (const course of courses) {
             let lessons: Lesson[] = await course.getLessons();
             for (const lesson of lessons) {
-                //Get replacement lessons with today and today + 6 days
-                let data: any = await ReplacementLesson.getByLesson(lesson);
-                data.forEach((replacementLesson: ReplacementLesson) => {
+                let data: ReplacementLesson[] = await ReplacementLesson.getByLesson(lesson);
+                data.forEach((replacementLesson) => {
                     console.log(replacementLesson.lesson)
-                    //Add replacement lesson to all replacement lessons
                     let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, info: replacementLesson.info, date: replacementLesson.date}
                     response.push(dataset);
                 });
             }
         }
-        if (req.decoded.userType === "teacher") {
-            //Get replacement lessons hold by teacher
+        if (req.user.type === UserType.TEACHER) {
             assert(req.user.id != null)
-            let data: any = await ReplacementLesson.getByTeacher(req.user.id, dateToday, dateEnd);
-            data.forEach((replacementLesson: any) => {
+            let data: ReplacementLesson[] = await ReplacementLesson.getByTeacher(req.user.id, dateToday, dateEnd);
+            data.forEach((replacementLesson) => {
                 let dataset = {id: replacementLesson.id, courseId: replacementLesson.course.id, lessonId: replacementLesson.lesson.id, room: replacementLesson.room, subject: replacementLesson.subject, teacherId: replacementLesson.teacherId, info: replacementLesson.info, date: replacementLesson.date}
                 response.push(dataset);
             });
@@ -328,7 +323,7 @@ router.get('/announcements', async (req: Request, res: Response) => {
         try {
             let data: Announcement[] = await Announcement.getByCourse(course);
             for (let i = 0; i < data.length; i++) {
-                let announcement: any = data[i];
+                let announcement = data[i];
                 response.push({courseId: announcement.course.id, authorId: announcement.authorId, editorId: announcement.editorId, date: announcement.date, id: announcement.id, content: announcement.content})
             }
 
@@ -498,7 +493,7 @@ router.delete('/devices/deviceId/:id', async (req, res) => {
  */
 router.delete('/jwt', async (req, res) => {
     try {
-        await JWTInterface.revokeById(req.decoded.jwtId);
+        await JWTInterface.revokeById(req.jwtId);
         res.sendStatus(200);
     } catch (e) {
         res.sendStatus(500);

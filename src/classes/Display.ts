@@ -26,8 +26,9 @@ export class Display {
 
     static getById(id: number): Promise<Display> {
         return new Promise(async (resolve, reject) => {
-            let conn = await global.mySQLPool.getConnection();
+            let conn;
             try {
+                conn = await global.mySQLPool.getConnection();
                 let rows: DisplayTableRow[] = await conn.query("SELECT * FROM `displays` WHERE `iddisplays`= ?", [id]);
                 if (rows.length == 1) {
                     resolve(new Display(new DisplayConfig(rows[0].exams, rows[0].replacementLessons, rows[0].announcements, rows[0].turnOnTime, rows[0].turnOffTime, rows[0].autoTurnOnOffActive, rows[0].updateInterval), rows[0].iddisplays));
@@ -37,7 +38,7 @@ export class Display {
             } catch (e) {
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -52,7 +53,7 @@ export class Display {
         return new Promise(async (resolve, reject) => {
             let replacementLessons: ReplacementLesson[] = await ReplacementLesson.getUpcoming();
             for (let i = 0; i < replacementLessons.length; i++) {
-                if(replacementLessons[i].teacherId != null){
+                if (replacementLessons[i].teacherId != null) {
                     // @ts-ignore
                     replacementLessons[i].teacher = (await User.getById(replacementLessons[i].teacherId)).username
                 }

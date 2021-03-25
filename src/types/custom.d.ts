@@ -14,8 +14,9 @@ import {Permissions} from "../classes/Permissions";
 declare global {
     namespace Express {
         export interface Request {
-            decoded: Decoded,
-            user: User
+            // decoded: Decoded,
+            user: User,
+            jwtId: string;
         }
 
     }

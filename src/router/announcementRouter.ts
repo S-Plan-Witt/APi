@@ -23,7 +23,7 @@ export let router = express.Router();
  * checks if the users has permission to access the endpoints
  */
 router.use((req, res, next) => {
-    if (req.decoded.permissions.announcements) {
+    if (req.user.permissions.announcements) {
         next();
         return;
     }
@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
     try {
         let course = await Course.getByFields(body.course.subject, body.course.grade, body.course.group)
 
-        let announcement = new Announcement(course, req.decoded.userId, req.decoded.userId, body.content, body.date, null);
+        let announcement = new Announcement(course, req.user.id, req.user.id, body.content, body.date, null);
         if (body.global) {
             announcement.isGlobal = true;
         }
@@ -134,7 +134,7 @@ router.delete('/id/:id', async (req, res) => {
         let id = parseInt(req.params.id);
         let announcement: Announcement = await Announcement.getById(id);
 
-        if (!req.decoded.admin) {
+        if (!req.user.permissions.announcementsAdmin) {
             if (!req.user.isTeacherOf(announcement.course)) {
                 return res.sendStatus(401);
             }

@@ -9,7 +9,6 @@
  */
 
 import {ApiGlobal} from "../../types/global";
-import {Exam} from "../Exam";
 import path from "path";
 import {User} from "./User";
 
@@ -28,20 +27,21 @@ export class Supervisor {
     from: string;
     to: string;
 
-
     constructor(name: string, from: string, to: string) {
         this.name = name;
         this.from = from;
         this.to = to;
     }
 
+    /**
+     * Returns a supervisor object
+     * @param row
+     */
     static fromSqlRow(row: SupervisorSqlRow): Promise<Supervisor> {
         return new Promise(async (resolve, reject) => {
-
             resolve(new Supervisor((await User.getById(row.teacherId)).username, row.from, row.to));
         });
     }
-
 
     /**
      * @param id
@@ -68,7 +68,7 @@ export class Supervisor {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }
@@ -82,12 +82,9 @@ export class Supervisor {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                let rows = await conn.query("SELECT `exams_supervisors`.*,`users`.*, `exams_rooms`.`room`, `exams_rooms`.`date` FROM `exams_supervisors` LEFT JOIN `users` ON `exams_supervisors`.`TeacherId` = `users`.id_users LEFT JOIN `exams_rooms` ON `exams_supervisors`.`RoomLink` = `exams_rooms`.id_exam_rooms WHERE id_exam_supervisor= ?", [id]);
-                if (rows.length > 0) {
-                    let date = new Date(rows[0]["date"]);
-                    rows[0]["date"] = date.getFullYear() + "-" + (date.getMonth() + 1).toString().padStart(2, "0") + "-" + date.getDate().toString().padStart(2, "0");
-                    rows[0]["exams"] = await Exam.getByRoomLink(rows[0]["RoomLink"]);
-                    resolve(rows[0]);
+                let rows: SupervisorSqlRow[] = await conn.query("SELECT * FROM `exams_supervisors` WHERE id_exam_supervisor= ?", [id]);
+                if (rows.length == 1) {
+                    resolve(this.fromSqlRow(rows[0]));
                 } else {
                     reject("no row");
                 }
@@ -101,7 +98,7 @@ export class Supervisor {
                 });
                 reject(e);
             } finally {
-                await conn.end();
+                if (conn) await conn.end();
             }
         });
     }

@@ -85,13 +85,6 @@ router.get('/abort', async (req, res) => {
  */
 router.post('/register', async (req, res) => {
     if (req.body.hasOwnProperty("code")) {
-        let user;
-        try {
-            user = req.user;
-        } catch (e) {
-            res.sendStatus(602);
-            return;
-        }
         let registration
         try {
             registration = await TOTP.getByUID(req.user.id);
