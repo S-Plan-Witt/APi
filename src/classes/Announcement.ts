@@ -11,7 +11,6 @@
 import {Course} from "./Course";
 import {ApiGlobal} from "../types/global";
 import {Utils} from "./Utils";
-import {TimeTable} from "./TimeTable";
 import path from "path";
 
 declare const global: ApiGlobal;
@@ -32,6 +31,7 @@ export class Announcement {
     public content: string;
     public date: string;
     public id: number | null;
+    public global: boolean = false;
 
     /**
      * @param course {Course}
@@ -179,7 +179,7 @@ export class Announcement {
             let conn;
             try {
                 conn = await global.mySQLPool.getConnection();
-                await conn.query("INSERT INTO `announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`) VALUES (?, ?, ?, ?, ?)", [content, date, authorId, editorId, courseId]);
+                await conn.query("INSERT INTO `announcements` (`content`, `date`, `authorId`, `editorId`, `courseId`,global) VALUES (?, ?, ?, ?, ?,?)", [content, date, authorId, editorId, courseId, global]);
                 resolve(true);
             } catch (e) {
                 global.logger.log({
