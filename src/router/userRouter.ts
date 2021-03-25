@@ -165,17 +165,17 @@ router.get('/courses', async (req, res) => {
     let user = req.user;
     let courses;
     try {
-        if (req.user.type === UserType.STUDENT) {
+        if (req.user.type == UserType.STUDENT) {
             courses = req.user.courses;
             await res.json(courses);
-        } else if (req.user.type === UserType.TEACHER) {
+        } else if (req.user.type == UserType.TEACHER) {
             courses = user.courses;
             await res.json(courses);
         } else {
             global.logger.log({
                 level: 'error',
                 label: 'Express',
-                message: 'Routing: /user/courses : invalid usertype :' + req.user.type,
+                message: 'Routing: /user/courses : invalid usertype: ' + req.user.type,
                 file: path.basename(__filename)
             });
             res.sendStatus(401);
