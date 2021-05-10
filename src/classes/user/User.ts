@@ -315,8 +315,16 @@ export class User {
 
                 if (global.config.ldapConfig.enabled) {
                     let ldapUsers = await Ldap.searchUsers(filter);
-                    ldapUsers.forEach((a) => {
-                        users.push(a);
+                    ldapUsers.forEach((user) => {
+                        let found: boolean = false;
+                        for (let i = 0; i < users.length; i++) {
+                            if(users[i].username.toLowerCase() == user.username.toLowerCase()){
+                                found = true;
+                            }
+                        }
+                        if(!found){
+                            users.push(user);
+                        }
                     });
                 }
 
