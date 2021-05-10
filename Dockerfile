@@ -3,9 +3,8 @@ FROM node:current-alpine
 WORKDIR /usr/src/splan
 COPY package.json ./
 RUN apk add mysql-client
-RUN apk add --no-cache --virtual .gyp python make g++
+RUN apk add --no-cache python make g++
 RUN npm install --only=prod
-RUN apk del .gyp
 RUN mkdir /var/log/splan/
 
 ENV PORT=3000
