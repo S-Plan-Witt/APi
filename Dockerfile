@@ -1,9 +1,8 @@
-FROM node:current-alpine
+FROM node:15-buster
 
 WORKDIR /usr/src/splan
 COPY package.json ./
-RUN apk add mysql-client
-RUN apk add --no-cache python make g++
+RUN apt update && apt install mariadb-client python make g++ -y
 RUN npm install --only=prod
 RUN mkdir /var/log/splan/
 
