@@ -527,3 +527,7 @@ router.get('/moodle/disable', async (req, res) => {
         res.sendStatus(500);
     }
 });
+
+router.get('/dump',async (req, res) => {
+    res.json(req.user);
+});
