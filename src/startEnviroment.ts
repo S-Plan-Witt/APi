@@ -35,6 +35,10 @@ export class Starter {
                 this.express();
                 this.pushNotifications();
                 this.globalExceptionHandler();
+                let teachers = await User.getUsersByType(UserType.TEACHER);
+                for (let i = 0; i < teachers.length; i++) {
+                    await teachers[i].enableMoodle();
+                }
                 console.log("Starter: FULL END");
             } catch (e) {
                 reject(e);
