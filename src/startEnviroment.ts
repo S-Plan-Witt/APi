@@ -17,6 +17,7 @@ import {ExpressServer} from "./classes/ExpressServer";
 import {PushNotifications} from "./classes/external/PushNotifications";
 import {Ldap} from "./classes/external/Ldap";
 import {Database} from "./classes/external/Database";
+import {User, UserType} from "./classes/user/User";
 
 declare const global: ApiGlobal;
 
