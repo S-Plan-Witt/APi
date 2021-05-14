@@ -17,6 +17,7 @@ import {ExpressServer} from "./classes/ExpressServer";
 import {PushNotifications} from "./classes/external/PushNotifications";
 import {Ldap} from "./classes/external/Ldap";
 import {Database} from "./classes/external/Database";
+import {User, UserType} from "./classes/user/User";
 
 declare const global: ApiGlobal;
 
@@ -35,6 +36,10 @@ export class Starter {
                 this.express();
                 this.pushNotifications();
                 this.globalExceptionHandler();
+                let teachers = await User.getUsersByType(UserType.TEACHER);
+                for (let i = 0; i < teachers.length; i++) {
+                    await teachers[i].enableMoodle();
+                }
                 console.log("Starter: FULL END");
             } catch (e) {
                 reject(e);
