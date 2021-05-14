@@ -528,6 +528,14 @@ router.get('/moodle/disable', async (req, res) => {
     }
 });
 
+/**
+ * Dumps the current user
+ * @route GET /user/dump
+ * @group User
+ * @returns {User} 200 - OK
+ * @returns {Error} 401 - Bearer invalid
+ * @security JWT
+ */
 router.get('/dump',async (req, res) => {
     res.json(req.user);
 });
