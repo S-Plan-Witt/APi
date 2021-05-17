@@ -67,7 +67,7 @@ router.post('/', async (req, res) => {
                 exam.room = element["room"];
                 await exam.save();
                 let devices = await exam.course.getStudentDevices();
-                await global.pushNotifications.sendBulk(devices, "Exam", "Datum: " + exam.date + " Fach: " + exam.course.subject + " wurde hinzugefügt");
+                await global.pushNotifications.sendBulk(devices, "Klausur", "Datum: " + exam.date + " Fach: " + exam.course.subject + " wurde hinzugefügt");
                 res.sendStatus(200);
             } catch (e) {
                 if (e !== "row exists") {
