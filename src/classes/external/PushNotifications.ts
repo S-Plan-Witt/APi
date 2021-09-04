@@ -88,7 +88,7 @@ export class PushNotifications {
                                 console.log("WebPush offline - no push");
                             }
                             resolve();
-                        } catch (e) {
+                        } catch (e: any) {
                             if (e.statusCode === 410 || e.statusCode === 403) {
                                 if (pushWebPush != undefined) {
                                     await pushWebPush.deleteSubscription(e.endpoint);

@@ -168,7 +168,7 @@ export class User {
      * @param sql
      */
     static async fromSqlUser(sql: UserSqlRow): Promise<User> {
-        return new Promise(async (resolve, eject) => {
+        return new Promise(async (resolve) => {
             let status = UserStatus.DISABLED;
             if (sql.active) {
                 status = UserStatus.ENABLED;
@@ -405,7 +405,7 @@ export class User {
      * Loads complete profile
      */
     populateUser(): Promise<void> {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve) => {
             this.courses = await this.getCourses();
             this.devices = await Device.getByUID(this.id);
             this.permissions = await Permissions.getByUID(this.id)
@@ -428,7 +428,7 @@ export class User {
                 conn = await global.mySQLPool.getConnection();
                 let result = await conn.query("INSERT INTO users ( username, firstname, lastname, type, displayname) VALUES (?, ?, ?, ?, ?)", [username, firstName, lastName, type, displayName]);
                 resolve(result);
-            } catch (e) {
+            } catch (e: any) {
                 if (e.code === "ER_DUP_ENTRY") {
                     resolve("Done");
                     return

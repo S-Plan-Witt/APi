@@ -147,7 +147,7 @@ export class ReplacementLesson {
      * @param entry
      */
     static fromSqlRow(entry: ReplacementLessonSqlRow): Promise<ReplacementLesson> {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve) => {
             entry.date = Utils.convertMysqlDate(entry.date)
             let lesson: Lesson = await Lesson.getById(entry.lessonId);
 
@@ -177,7 +177,7 @@ export class ReplacementLesson {
                         resolve(rows)
                     }
 
-                } catch (e) {
+                } catch (e: any) {
                     if (e.code === "ER_DUP_ENTRY") {
                         console.log("update Needed");
                     }

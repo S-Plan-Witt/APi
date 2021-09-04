@@ -1,8 +1,18 @@
+FROM node:16.0-buster-slim
+WORKDIR /usr/src/app
+COPY package.json ./
+COPY tsconfig.json ./
+RUN apt update && apt install mariadb-client python make g++ -y
+RUN npm install
+COPY ./src ./src
+RUN npx tsc
+
+
+
 FROM node:16-buster
 
 WORKDIR /usr/src/splan
 COPY package.json ./
-RUN apt update && apt install mariadb-client python make g++ -y
 RUN npm install --only=prod
 RUN mkdir /var/log/splan/
 
@@ -30,7 +40,6 @@ ENV VAPID_PRIVATE=""
 ENV VAPID_MAIL="mailto:"
 ENV GOOGLE_APPLICATION_CREDENTIALS="/usr/src/splan/keys/fcm_key.json"
 
-COPY build/ ./
-
+COPY --from=0 /usr/src/app/build ./
 CMD ["node","app.js"]
 EXPOSE 3000
