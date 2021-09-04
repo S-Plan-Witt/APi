@@ -1,10 +1,8 @@
 # S-Plan_APi
 
-## Travis CI Builds
+## CI Builds
 master / release:
-[![Build Status](https://travis-ci.com/Nils-witt/S-Plan_APi.svg?branch=master)](https://travis-ci.com/Nils-witt/S-Plan_APi)
-development / upcoming:
-[![Build Status](https://travis-ci.com/Nils-witt/S-Plan_APi.svg?branch=development)](https://travis-ci.com/Nils-witt/S-Plan_APi)
+[![Docker](https://github.com/S-Plan-Witt/APi/actions/workflows/docker-publish.yml/badge.svg?branch=master)](https://github.com/S-Plan-Witt/APi/actions/workflows/docker-publish.yml)
 
 ## Docker
 Mindestanpassung der `docker-compose.yaml`
