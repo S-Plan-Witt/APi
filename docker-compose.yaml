@@ -55,7 +55,7 @@ services:
       SQL_PORT: "3306"
       SQL_HOST: "mysql"
       SQL_USER: "splan"
-      SQL_PASS: ""
+      SQL_PASS: "splan"
       SQL_DB: "splan"
 
       # Moodle
@@ -63,3 +63,16 @@ services:
       MOODLE_HOST: "moodle.example.de"
       MOODLE_PATH: ""
       MOODLE_KEY: "KEY"
+
+  mysql:
+    image: mariadb:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: "splan"
+      MYSQL_DATABASE: "splan"
+      MYSQL_USER: "splan"
+      MYSQL_PASSWORD: "splan"
+    volumes:
+      - ./database:/var/lib/mysql
+      - ./ressources/splan-database.sql:/docker-entrypoint-initdb.d/splan-database.sql
+    ports:
+      - "3306:3306"

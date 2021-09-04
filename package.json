@@ -2,11 +2,11 @@
   "name": "splanapi",
   "version": "1.0.0",
   "description": "",
-  "main": "build/index.js",
+  "main": "build/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc",
-    "start": "node build/index.js"
+    "start": "node build/app.js"
   },
   "repository": {
     "type": "git",
@@ -30,32 +30,32 @@
     "node": ">= 14.0.0"
   },
   "dependencies": {
-    "@sendgrid/mail": "^7.4.4",
+    "@sendgrid/mail": "^7.4.6",
     "authy": "^1.4.0",
     "bcrypt": "^5.0.1",
-    "dotenv": "^9.0.1",
+    "dotenv": "^10.0.0",
     "express": "^4.17.1",
-    "firebase-admin": "^9.7.0",
+    "firebase-admin": "^9.11.1",
     "jsonwebtoken": "^8.5.1",
-    "ldapjs": "^2.2.4",
-    "mariadb": "^2.5.3",
+    "ldapjs": "^2.3.1",
+    "mariadb": "^2.5.4",
     "node-2fa": "^2.0.2",
-    "node-gyp": "^8.0.0",
-    "telegraf": "^4.3.0",
-    "web-push": "^3.4.4",
+    "node-gyp": "^8.2.0",
+    "telegraf": "^4.4.1",
+    "web-push": "^3.4.5",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.5"
   },
   "devDependencies": {
-    "@types/express": "^4.17.11",
-    "@types/jsonwebtoken": "^8.5.1",
-    "@types/ldapjs": "^1.0.10",
-    "@types/node": "^15.0.2",
-    "@types/notp": "^2.0.0",
-    "@types/speakeasy": "^2.0.5",
-    "@types/web-push": "^3.3.0",
+    "@types/express": "^4.17.13",
+    "@types/jsonwebtoken": "^8.5.5",
+    "@types/ldapjs": "^2.2.1",
+    "@types/node": "^16.7.10",
+    "@types/notp": "^2.0.1",
+    "@types/speakeasy": "^2.0.6",
+    "@types/web-push": "^3.3.2",
     "express-swagger-generator": "^1.1.17",
-    "nodemon": "^2.0.7",
-    "typescript": "^4.2.4"
+    "nodemon": "^2.0.12",
+    "typescript": "^4.4.2"
   }
 }
