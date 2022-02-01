@@ -34,7 +34,7 @@
     "@sendgrid/mail": "^7.6.0",
     "authy": "^1.4.0",
     "bcrypt": "^5.0.1",
-    "dotenv": "^14.2.0",
+    "dotenv": "^15.0.0",
     "express": "^4.17.2",
     "firebase-admin": "^10.0.2",
     "jsonwebtoken": "^8.5.1",
