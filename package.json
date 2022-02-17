@@ -35,7 +35,7 @@
     "authy": "^1.4.0",
     "bcrypt": "^5.0.1",
     "dotenv": "^16.0.0",
-    "express": "^4.17.2",
+    "express": "^4.17.3",
     "firebase-admin": "^10.0.2",
     "jsonwebtoken": "^8.5.1",
     "ldapjs": "^2.3.1",
