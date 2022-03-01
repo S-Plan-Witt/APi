@@ -41,7 +41,7 @@
     "ldapjs": "^2.3.1",
     "mariadb": "^2.5.4",
     "node-2fa": "^2.0.3",
-    "node-gyp": "^8.4.1",
+    "node-gyp": "^9.0.0",
     "telegraf": "^4.7.0",
     "web-push": "^3.4.5",
     "winston": "^3.5.1",
