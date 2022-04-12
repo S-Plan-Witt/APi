@@ -38,7 +38,7 @@
     "express": "^4.17.2",
     "firebase-admin": "^10.0.2",
     "jsonwebtoken": "^8.5.1",
-    "ldapjs": "^2.3.1",
+    "ldapjs": "^2.3.2",
     "mariadb": "^2.5.4",
     "node-2fa": "^2.0.3",
     "node-gyp": "^9.0.0",
